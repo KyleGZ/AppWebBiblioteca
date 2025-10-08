@@ -42,7 +42,7 @@ namespace AppWebBiblioteca.Controllers
         {
             // Si ya está autenticado, redirigir al home
             if (_authService.IsAuthenticated())
-                return RedirectToAction("Index", "Usuario");
+                return RedirectToAction("Index", "Home");
 
             return View();
         }
@@ -65,7 +65,7 @@ namespace AppWebBiblioteca.Controllers
                 {
                     // Login exitoso
                     TempData["SuccessMessage"] = $"¡Bienvenido {resultado.Nombre}!";
-                    return RedirectToAction("Index", "Usuario");
+                    return RedirectToAction("Index", "Home");
                 }
                 else
                 {
