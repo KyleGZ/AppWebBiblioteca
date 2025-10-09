@@ -1,0 +1,307 @@
+﻿/* StyleHome.css - Estilos específicos para la vista Home */
+
+/* Tarjetas principales de Home */
+.main-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    background: white;
+    margin-top: 1rem;
+    border-top: 4px solid var(--esparza-blue);
+}
+
+.feature-card {
+    border: none;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    background: white;
+    border-left: 4px solid var(--esparza-blue);
+    box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+}
+
+    .feature-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+
+    .feature-card.library {
+        border-left-color: var(--esparza-brown);
+    }
+
+    .feature-card.users {
+        border-left-color: var(--esparza-green);
+    }
+
+/* Botones específicos de Home */
+.btn-esparza-primary {
+    background: linear-gradient(135deg, var(--esparza-red) 0%, #a50e24 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 600;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+    .btn-esparza-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(200, 16, 46, 0.4);
+        color: white;
+    }
+
+.btn-library {
+    border: 2px solid var(--esparza-brown);
+    color: var(--esparza-brown);
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+    .btn-library:hover {
+        background-color: var(--esparza-brown);
+        color: white;
+    }
+
+/* Estadísticas y Métricas */
+.stats-card {
+    background: linear-gradient(135deg, var(--esparza-blue) 0%, #152a6e 100%);
+    color: white;
+    border-radius: 10px;
+    padding: 1.5rem;
+    transition: transform 0.3s ease;
+}
+
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+
+.stats-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    font-weight: 500;
+}
+
+/* Alertas Personalizadas */
+.alert-library {
+    background-color: rgba(255, 199, 44, 0.1);
+    border: 1px solid var(--esparza-gold);
+    color: #856404;
+    border-radius: 8px;
+}
+
+/* Animaciones */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Iconos decorativos */
+.library-icon {
+    color: var(--esparza-brown);
+}
+
+.book-icon {
+    color: var(--esparza-blue);
+}
+
+.user-icon {
+    color: var(--esparza-green);
+}
+
+/* ========== RESPONSIVE PARA HOME ========== */
+
+/* Clases para tamaños responsivos */
+.h4-md {
+    font-size: 1.5rem;
+}
+
+.h5-md {
+    font-size: 1.25rem;
+}
+
+.h6-md {
+    font-size: 1rem;
+}
+
+.small-md {
+    font-size: 0.9rem;
+}
+
+/* Botones responsivos */
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 8px;
+}
+
+.btn-md-normal {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* Ajustes para móviles */
+@media (max-width: 768px) {
+    .stats-card {
+        padding: 1rem 0.5rem;
+    }
+
+    .stats-number {
+        font-size: 1.5rem;
+    }
+
+    .stats-label {
+        font-size: 0.75rem;
+    }
+
+    .btn-text {
+        display: inline;
+    }
+
+    .main-card .card-body {
+        padding: 1.5rem 1rem;
+    }
+
+    .feature-card .card-body {
+        padding: 1rem;
+    }
+
+    .h4-md {
+        font-size: 1.3rem;
+    }
+
+    .h5-md {
+        font-size: 1.1rem;
+    }
+
+    .h6-md {
+        font-size: 0.95rem;
+    }
+
+    .small-md {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .stats-number {
+        font-size: 1.25rem;
+    }
+
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .btn-text {
+        font-size: 0.8rem;
+    }
+
+    .d-flex.flex-wrap.gap-2 {
+        gap: 0.5rem !important;
+    }
+
+    .alert-library {
+        padding: 1rem;
+    }
+
+    .stats-card {
+        padding: 0.75rem 0.5rem;
+    }
+}
+
+@media (max-width: 400px) {
+    .btn-text {
+        display: none;
+    }
+
+    .btn-sm {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+
+        .btn-sm i {
+            margin: 0 !important;
+        }
+
+    .d-flex.flex-wrap.gap-2 {
+        justify-content: center;
+    }
+
+    .stats-number {
+        font-size: 1.1rem;
+    }
+
+    .stats-label {
+        font-size: 0.7rem;
+    }
+}
+
+/* Ajustes para tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .stats-number {
+        font-size: 1.75rem;
+    }
+
+    .btn-md-normal {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Mejoras de hover para móviles */
+@media (hover: hover) {
+    .btn-esparza-primary:hover,
+    .btn-library:hover,
+    .btn-esparza-outline:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* Padding responsivo para contenedores */
+.container-fluid.p-3.p-md-4 {
+    padding: 1rem !important;
+}
+
+@media (min-width: 768px) {
+    .container-fluid.p-3.p-md-4 {
+        padding: 1.5rem !important;
+    }
+}
+
+/* Ajustes específicos para grid en móviles */
+@media (max-width: 576px) {
+    .row.g-2 {
+        --bs-gutter-y: 0.5rem;
+        --bs-gutter-x: 0.5rem;
+    }
+
+    .row.g-3 {
+        --bs-gutter-y: 1rem;
+        --bs-gutter-x: 1rem;
+    }
+}
