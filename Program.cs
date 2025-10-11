@@ -18,6 +18,8 @@ builder.Services.AddSession(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
+builder.Services.AddScoped<IRolService, RolService>();
+
 // Configurar HttpClient
 builder.Services.AddHttpClient("ApiClient", client =>
 {

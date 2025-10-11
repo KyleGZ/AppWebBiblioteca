@@ -87,7 +87,7 @@
                                             </td>
                                             <td>
                                                 <div class="btn-actions-group justify-content-center">
-                                                    <!-- Botón Editar -->
+                                                    <!-- Botón Editar (con posible rol actual para preselección) -->
                                                     <button type="button" class="btn btn-action btn-action-edit"
                                                             data-bs-toggle="modal" data-bs-target="#modalEditarUsuario"
                                                             data-id="@usuario.IdUsuario"
@@ -95,6 +95,7 @@
                                                             data-email="@usuario.Email"
                                                             data-cedula="@usuario.Cedula"
                                                             data-estado="@usuario.Estado"
+                                                            data-rol-id="@((usuario.RolesIds != null && usuario.RolesIds.Any()) ? usuario.RolesIds.First() : 0)"
                                                             title="Editar Usuario">
                                                         <i class="fas fa-user-edit icon-elegant"></i>
                                                     </button>
@@ -157,6 +158,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formAgregarUsuario" asp-action="CrearUsuario" method="post">
+                @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
@@ -188,6 +190,28 @@
                         </label>
                         <input type="password" class="form-control form-control-usuarios" id="password" name="password" required placeholder="Ingrese la contraseña">
                     </div>
+
+                    <!-- Dropdown de Rol (opcional). Se envía como idRol independiente al controlador -->
+                    <div class="form-group-usuarios">
+                        <label for="rolAgregar" class="form-label-usuarios">
+                            <i class="fas fa-user-shield"></i> Rol
+                        </label>
+                        <select id="rolAgregar" name="idRol" class="form-control form-control-usuarios">
+                            <option value="">— Seleccione un rol —</option>
+                            @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesAgregar && rolesAgregar.Any())
+                            {
+                                foreach (var r in rolesAgregar)
+                                {
+                                    <option value="@r.Value">@r.Text</option>
+                                }
+                            }
+                            else
+                            {
+                                <option disabled>— No hay roles disponibles —</option>
+                            }
+                        </select>
+                        <small class="text-muted">Opcional: si eliges un rol, se asignará después de crear el usuario.</small>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-usuarios-secondary" data-bs-dismiss="modal">
@@ -213,9 +237,12 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form id="formEditarUsuario" asp-action="EditarUsuario" method="post">
+
+            <!-- Formulario de datos del usuario (NO maneja roles) -->
+            <form id="formEditarUsuario" asp-action="EditarUsuario" method="post" class="mb-2">
+                @Html.AntiForgeryToken()
                 <input type="hidden" id="editarIdUsuario" name="idUsuario">
-                <div class="modal-body">
+                <div class="modal-body pb-2">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group-usuarios">
@@ -257,7 +284,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer pt-0">
                     <button type="button" class="btn btn-usuarios-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Cancelar
                     </button>
@@ -266,6 +293,64 @@
                     </button>
                 </div>
             </form>
+
+            <!-- Gestión de roles (separado): Asignar/Quitar rol usando AsignacionRolDto -->
+            <div class="border-top px-4 pt-3 pb-4">
+                <h6 class="mb-3"><i class="fas fa-user-shield me-2"></i>Gestión de roles</h6>
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-8">
+                        <label for="rolEditar" class="form-label-usuarios">
+                            Rol
+                        </label>
+                        <select id="rolEditar" class="form-control form-control-usuarios">
+                            <option value="">— Seleccione un rol —</option>
+                            @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesEditar && rolesEditar.Any())
+                            {
+                                foreach (var r in rolesEditar)
+                                {
+                                    <option value="@r.Value">@r.Text</option>
+                                }
+                            }
+                            else
+                            {
+                                <option disabled>— No hay roles disponibles —</option>
+                            }
+                        </select>
+                        <small class="text-muted">Selecciona un rol para asignarlo o quitarlo del usuario.</small>
+                    </div>
+                    <div class="col-md-4 d-flex gap-2">
+                        <!-- Form Asignar -->
+                        <form asp-action="AsignarRol" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="IdUsuario" id="asignarIdUsuario" />
+                            <input type="hidden" name="IdRol" id="asignarIdRol" />
+                            <button type="submit" class="btn btn-outline-primary w-100" onclick="syncRolInputs()">
+                                <i class="fas fa-plus-circle me-2"></i>Asignar rol
+                            </button>
+                        </form>
+                        <!-- Form Quitar -->
+                        <form asp-action="QuitarRol" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="IdUsuario" id="quitarIdUsuario" />
+                            <input type="hidden" name="IdRol" id="quitarIdRol" />
+                            <button type="submit" class="btn btn-outline-danger w-100" onclick="syncRolInputs()">
+                                <i class="fas fa-minus-circle me-2"></i>Quitar rol
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                <script>
+                    // Sincroniza los hidden con el usuario/rol seleccionados antes de enviar Asignar/Quitar
+                    function syncRolInputs() {
+                        const userId = document.getElementById('editarIdUsuario').value;
+                        const rolSel = document.getElementById('rolEditar').value || '';
+                        document.getElementById('asignarIdUsuario').value = userId;
+                        document.getElementById('quitarIdUsuario').value = userId;
+                        document.getElementById('asignarIdRol').value = rolSel;
+                        document.getElementById('quitarIdRol').value = rolSel;
+                    }
+                </script>
+            </div>
         </div>
     </div>
 </div>
@@ -282,6 +367,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formDesactivarUsuario" asp-action="DesactivarUsuario" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" id="desactivarIdUsuario" name="id">
                 <div class="modal-body text-center">
                     <div class="mb-4">
@@ -320,6 +406,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form id="formActivarUsuario" asp-action="ActivarUsuario" method="post">
+                @Html.AntiForgeryToken()
                 <input type="hidden" id="activarIdUsuario" name="id">
                 <div class="modal-body text-center">
                     <div class="mb-4">
@@ -362,14 +449,29 @@
                     const email = button.getAttribute('data-email');
                     const cedula = button.getAttribute('data-cedula');
                     const estado = button.getAttribute('data-estado');
+                    const rolId = button.getAttribute('data-rol-id'); // posible primer rol
 
-                    console.log('Editando usuario:', { id, nombre, email, cedula, estado });
+                    console.log('Editando usuario:', { id, nombre, email, cedula, estado, rolId });
 
                     document.getElementById('editarIdUsuario').value = id;
                     document.getElementById('editarNombre').value = nombre;
                     document.getElementById('editarEmail').value = email;
                     document.getElementById('editarCedula').value = cedula;
                     document.getElementById('editarEstado').value = estado;
+
+                    // Preseleccionar Rol en sección de Gestión de Roles
+                    const selectRolEditar = document.getElementById('rolEditar');
+                    if (selectRolEditar) {
+                        if (rolId && rolId !== '0') {
+                            selectRolEditar.value = rolId;
+                        } else {
+                            selectRolEditar.value = '';
+                        }
+                    }
+
+                    // Asegurar que los forms de Asignar/Quitar conozcan el IdUsuario
+                    document.getElementById('asignarIdUsuario').value = id;
+                    document.getElementById('quitarIdUsuario').value = id;
                 });
             } else {
                 console.error('Modal Editar no encontrado');
