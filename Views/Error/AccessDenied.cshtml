@@ -1,0 +1,44 @@
+﻿@using System.Security.Claims
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Acceso Denegado";
+    ViewData["PageTitle"] = "Acceso Denegado";
+}
+
+<div class="container-fluid p-4">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-6">
+            <div class="card usuarios-card">
+                <div class="card-body text-center p-5">
+                    <div class="mb-4">
+                        <i class="fas fa-ban fa-5x text-danger mb-3"></i>
+                        <h2 class="text-danger">Acceso Denegado</h2>
+                    </div>
+
+                    <p class="lead mb-4">
+                        No tienes permisos para acceder a esta página.
+                    </p>
+
+                    <div class="mb-4">
+                        <p class="text-muted">
+                            <strong>Usuario:</strong> @User.Identity.Name<br>
+                            <strong>Roles:</strong> @string.Join(", ", User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value))
+                        </p>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="@Url.Action("Index", "Home")" class="btn btn-esparza-primary">
+                            <i class="fas fa-home me-2"></i>Volver al Inicio
+                        </a>
+                        <form asp-controller="Usuario" asp-action="Logout" method="post">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-esparza-outline">
+                                <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

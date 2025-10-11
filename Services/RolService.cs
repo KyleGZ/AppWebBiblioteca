@@ -18,7 +18,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
-                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Roles/ObtenerRoles";
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Rol/ObtenerRoles";
                 var response = await _httpClient.GetAsync(apiUrl);
 
                 if (response.IsSuccessStatusCode)
@@ -39,7 +39,7 @@ namespace AppWebBiblioteca.Services
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"]
-                           + $"/Roles/AsignarRolAUsuario?idUsuario={dto.IdUsuario}&idRol={dto.IdRol}";
+                           + $"/Rol/AsignarRolAUsuario?idUsuario={dto.IdUsuario}&idRol={dto.IdRol}";
 
                 using var resp = await _httpClient.PostAsync(apiUrl, content: null);
 
@@ -64,7 +64,7 @@ namespace AppWebBiblioteca.Services
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"]
-                           + $"/Roles/QuitarRolAUsuario?idUsuario={dto.IdUsuario}&idRol={dto.IdRol}";
+                           + $"/Rol/QuitarRolAUsuario?idUsuario={dto.IdUsuario}&idRol={dto.IdRol}";
 
                 using var resp = await _httpClient.PostAsync(apiUrl, content: null);
 
@@ -83,7 +83,15 @@ namespace AppWebBiblioteca.Services
                 return (false, "Error de conexión al quitar rol.");
             }
         }
+
+        
+
     }
+
+
+
+
+
 
     // Para leer { mensaje: "..." } de tu API
     public class ApiMensajeResponse

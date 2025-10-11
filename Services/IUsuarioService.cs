@@ -5,6 +5,7 @@ namespace AppWebBiblioteca.Services
     public interface IUsuarioService
     {
         Task<List<UsuarioListaViewModel>> ObtenerUsuariosAsync();
+        Task<List<string>> ObtenerRolesDeUsuarioAsync(int idUsuario);
         Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id);
 
         Task<bool> CrearUsuarioAsync(RegistroUsuarioDto usuario);

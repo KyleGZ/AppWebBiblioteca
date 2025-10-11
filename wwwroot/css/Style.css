@@ -269,3 +269,68 @@ body {
         opacity: 1;
     }
 }
+
+
+/* Badges para roles en el sidebar y top bar */
+.badge-admin {
+    background: linear-gradient(135deg, var(--esparza-red) 0%, #a50e24 100%);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+}
+
+.badge-bibliotecario {
+    background: linear-gradient(135deg, var(--esparza-green) 0%, #1b5e20 100%);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.2rem 0.4rem;
+    border-radius: 8px;
+}
+
+.badge-rol-small {
+    background: linear-gradient(135deg, var(--esparza-blue) 0%, #152a6e 100%);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+    /* Colores específicos para roles en el top bar */
+    .badge-rol-small[data-rol="Administrador"] {
+        background: linear-gradient(135deg, var(--esparza-red) 0%, #a50e24 100%);
+    }
+
+    .badge-rol-small[data-rol="Bibliotecario"] {
+        background: linear-gradient(135deg, var(--esparza-green) 0%, #1b5e20 100%);
+    }
+
+    .badge-rol-small[data-rol="Lector"] {
+        background: linear-gradient(135deg, var(--esparza-brown) 0%, #5d4037 100%);
+    }
+
+/* Responsive para badges */
+@media (max-width: 768px) {
+    .badge-rol-small {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .user-info .d-flex.gap-1 {
+        display: none !important; /* Ocultar badges en móviles */
+    }
+}
+
+/* Estilo para items de menú restringidos */
+.nav-item .badge {
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+}
+
+.nav-item:hover .badge {
+    opacity: 1;
+}

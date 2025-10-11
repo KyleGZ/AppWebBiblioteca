@@ -396,3 +396,44 @@
         transform: scale(1);
     }
 }
+/* Estilos para la sección de gestión de roles */
+.border-top {
+    border-top: 2px solid var(--esparza-gold) !important;
+}
+
+/* Mejoras para los botones de roles */
+.btn-outline-primary:hover {
+    background-color: var(--esparza-blue);
+    border-color: var(--esparza-blue);
+    color: white;
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--esparza-red);
+    border-color: var(--esparza-red);
+    color: white;
+}
+
+/* Responsive para la sección de roles */
+@media (max-width: 768px) {
+    .col-md-8, .col-md-4 {
+        width: 100% !important;
+    }
+
+        .col-md-4.d-flex.gap-2 {
+            margin-top: 1rem;
+            justify-content: space-between;
+        }
+
+            .col-md-4.d-flex.gap-2 .btn {
+                flex: 1;
+                margin: 0 0.25rem;
+            }
+}
+
+/* Estados de los botones de roles */
+.btn-outline-primary:disabled,
+.btn-outline-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

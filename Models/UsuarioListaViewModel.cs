@@ -8,7 +8,7 @@
         public string Email { get; set; } = null!;
         public string Estado { get; set; } = null!;
         public List<int> RolesIds { get; set; } = new();
-        public List<string> RolesNombres { get; set; } = new();
+        public List<string> Roles { get; set; } = new();
     }
 
 

@@ -1,10 +1,14 @@
 using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.Security.Claims;
 
 namespace AppWebBiblioteca.Controllers
 {
+  
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly IAuthService _authService;
@@ -20,8 +24,17 @@ namespace AppWebBiblioteca.Controllers
                 return RedirectToAction("Login", "Usuario");
 
             ViewBag.UserEmail = _authService.GetUserEmail();
-            ViewBag.UserRoles = _authService.GetUserRoles();
+           
+            ViewBag.UserRoles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
 
+            return View();
+        }
+
+        public IActionResult AccessDenied()
+        {
             return View();
         }
 

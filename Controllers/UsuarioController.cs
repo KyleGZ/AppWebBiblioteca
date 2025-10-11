@@ -1,7 +1,10 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Security.Claims;
 
 namespace AppWebBiblioteca.Controllers
 {
@@ -21,6 +24,7 @@ namespace AppWebBiblioteca.Controllers
             _rolService = rolService;
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -30,21 +34,30 @@ namespace AppWebBiblioteca.Controllers
                     return RedirectToAction("Login", "Usuario");
 
                 var usuarios = await _usuarioService.ObtenerUsuariosAsync();
+                await CargarRolesAsync();
                 return View(usuarios);
             }
             catch
             {
                 ViewBag.Error = "Error al cargar la lista de usuarios";
+                await CargarRolesAsync();
                 return View(new List<UsuarioListaViewModel>());
             }
         }
 
         private async Task CargarRolesAsync(int? rolSeleccionadoId = null)
         {
-            var roles = await _rolService.ObtenerRolesAsync(); // [{Id, Nombre}]
-            ViewBag.Roles = new SelectList(roles, "Id", "Nombre", rolSeleccionadoId);
-        }
+            var roles = await _rolService.ObtenerRolesAsync();
 
+            // Agregar opción por defecto
+            var rolesConDefault = new List<RolDto>
+    {
+        new RolDto { Id = 0, Nombre = "Seleccione un rol..." }
+    };
+            rolesConDefault.AddRange(roles);
+
+            ViewBag.Roles = new SelectList(rolesConDefault, "Id", "Nombre", rolSeleccionadoId);
+        }
         [HttpGet]
         public IActionResult Login()
         {
@@ -67,6 +80,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Resultado)
                 {
+            
+
+
                     TempData["SuccessMessage"] = $"¡Bienvenido {resultado.Nombre}!";
                     return RedirectToAction("Index", "Home");
                 }
@@ -81,6 +97,8 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+
+
         // ======== CREAR ========
 
         [HttpGet]
@@ -89,48 +107,10 @@ namespace AppWebBiblioteca.Controllers
             if (!_authService.IsAuthenticated())
                 return RedirectToAction("Login", "Usuario");
 
-            await CargarRolesAsync(); // Dropdown de roles
+            await CargarRolesAsync();
             return View(new RegistroUsuarioDto());
         }
 
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> CrearUsuario(RegistroUsuarioDto usuario)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //        {
-        //            TempData["ErrorMessage"] = "Debe iniciar sesión para realizar esta acción";
-        //            return RedirectToAction("Login");
-        //        }
-
-        //        if (!ModelState.IsValid)
-        //        {
-        //            TempData["ErrorMessage"] = "Datos del usuario inválidos";
-        //            await CargarRolesAsync(usuario.IdRol); // mantener selección
-        //            return View("Crear", usuario);
-        //        }
-
-        //        var resultado = await _usuarioService.CrearUsuarioAsync(usuario);
-
-        //        if (resultado)
-        //        {
-        //            TempData["SuccessMessage"] = "Usuario creado exitosamente";
-        //            return RedirectToAction(nameof(Index));
-        //        }
-
-        //        TempData["ErrorMessage"] = "Error al crear el usuario";
-        //        await CargarRolesAsync(usuario.IdRol);
-        //        return View("Crear", usuario);
-        //    }
-        //    catch
-        //    {
-        //        TempData["ErrorMessage"] = "Error interno del sistema al crear usuario";
-        //        await CargarRolesAsync(usuario.IdRol);
-        //        return View("Crear", usuario);
-        //    }
-        //}
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -201,72 +181,6 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-
-
-
-        // ======== EDITAR ========
-
-        //[HttpGet]
-        //public async Task<IActionResult> Editar(int id)
-        //{
-        //    if (!_authService.IsAuthenticated())
-        //        return RedirectToAction("Login", "Usuario");
-
-        //    var usuario = await _usuarioService.ObtenerUsuarioPorIdAsync(id);
-        //    if (usuario == null) return NotFound();
-
-        //    var dto = new EditarUsuarioDto
-        //    {
-        //        IdUsuario = usuario.IdUsuario,
-        //        Nombre = usuario.Nombre,
-        //        Email = usuario.Email,
-        //        IdRol = usuario.IdRol,
-        //        // mapear otros campos si aplica...
-        //    };
-
-        //    await CargarRolesAsync(dto.IdRol);
-        //    return View(dto);
-        //}
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> EditarUsuario(EditarUsuarioDto usuario)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //            return RedirectToAction("Login", "Usuario");
-
-        //        if (!ModelState.IsValid)
-        //        {
-        //            TempData["ErrorMessage"] = "Datos del usuario inválidos";
-        //            await CargarRolesAsync(usuario.IdRol);
-        //            return View("Editar", usuario);
-        //        }
-
-        //        var resultado = await _usuarioService.ActualizarUsuarioAsync(usuario);
-
-        //        if (resultado)
-        //        {
-        //            TempData["SuccessMessage"] = "Usuario actualizado exitosamente";
-        //            return RedirectToAction(nameof(Index));
-        //        }
-
-        //        TempData["ErrorMessage"] = "Error al actualizar el usuario";
-        //        await CargarRolesAsync(usuario.IdRol);
-        //        return View("Editar", usuario);
-        //    }
-        //    catch
-        //    {
-        //        TempData["ErrorMessage"] = "Error interno del sistema al actualizar usuario";
-        //        await CargarRolesAsync(usuario.IdRol);
-        //        return View("Editar", usuario);
-        //    }
-        //}
-
-        // ======== EDITAR ========
-        // Ya no mapeamos rol único porque existe tabla puente UsuarioRol.
-        // La edición de datos no toca roles; roles se gestionan con acciones separadas.
 
         [HttpGet]
         public async Task<IActionResult> Editar(int id)
@@ -367,6 +281,98 @@ namespace AppWebBiblioteca.Controllers
                 return RedirectToAction(nameof(Index));
             }
         }
+
+
+
+
+        /*
+         * 
+         */
+        // En UsuarioController.cs
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AsignarRol(AsignacionRolDto dto)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                {
+                    TempData["ErrorMessage"] = "Debe iniciar sesión para realizar esta acción";
+                    return RedirectToAction("Login");
+                }
+
+                if (dto.IdUsuario <= 0 || dto.IdRol <= 0)
+                {
+                    TempData["ErrorMessage"] = "Datos inválidos para asignar rol";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var (ok, mensaje) = await _rolService.AsignarRolAUsuarioAsync(dto);
+
+                if (ok)
+                {
+                    TempData["SuccessMessage"] = mensaje ?? "Rol asignado correctamente";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = mensaje ?? "Error al asignar el rol";
+                }
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error interno al asignar rol";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> QuitarRol(AsignacionRolDto dto)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                {
+                    TempData["ErrorMessage"] = "Debe iniciar sesión para realizar esta acción";
+                    return RedirectToAction("Login");
+                }
+
+                if (dto.IdUsuario <= 0 || dto.IdRol <= 0)
+                {
+                    TempData["ErrorMessage"] = "Datos inválidos para quitar rol";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Necesitarías un método en tu servicio para quitar roles
+                var (ok, mensaje) = await _rolService.QuitarRolAUsuarioAsync(dto);
+
+                if (ok)
+                {
+                    TempData["SuccessMessage"] = mensaje ?? "Rol quitado correctamente";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = mensaje ?? "Error al quitar el rol";
+                }
+
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = "Error interno al quitar rol";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+
+
+
+
+
+
 
         // ======== LOGOUT ========
 

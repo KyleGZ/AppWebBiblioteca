@@ -1,4 +1,5 @@
-using AppWebBiblioteca.Services;
+﻿using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,39 +7,81 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
+
+// CONFIGURACIÓN DE AUTENTICACIÓN CON COOKIES
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/Usuario/Login";
+        options.AccessDeniedPath = "/Home/AccessDenied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+    });
+
+// CONFIGURACIÓN DE AUTORIZACIÓN CON POLICIES
+builder.Services.AddAuthorization(options =>
+{
+    // Policy para Admin (acceso total)
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("Admin"));
+
+    // Policy para Supervisor (puede supervisar pero no administrar)
+    options.AddPolicy("SupervisorOnly", policy =>
+        policy.RequireRole("Supervisor"));
+
+    // Policy para Staff (Admin + Supervisor)
+    options.AddPolicy("StaffOnly", policy =>
+        policy.RequireRole("Admin", "Supervisor"));
+
+    // Policy para usuarios autenticados (cualquier rol excepto Lector básico)
+    options.AddPolicy("AuthenticatedUsers", policy =>
+        policy.RequireAuthenticatedUser());
+
+    // Policy para gestión de usuarios (solo Admin y Supervisor)
+    options.AddPolicy("PuedeGestionarUsuarios", policy =>
+        policy.RequireRole("Admin", "Supervisor"));
+
+    // Policy para contenido privilegiado (no Lectores básicos)
+    options.AddPolicy("ContenidoPrivilegiado", policy =>
+        policy.RequireRole("Admin", "Supervisor"));
+});
+
+// CONFIGURACIÓN DE SESIÓN
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // ? Mejora seguridad
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
-// Registrar servicios
+// REGISTRO DE SERVICIOS
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
-
 builder.Services.AddScoped<IRolService, RolService>();
 
-// Configurar HttpClient
+// CONFIGURAR HTTP CLIENT
 builder.Services.AddHttpClient("ApiClient", client =>
 {
     client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"]);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
-    client.Timeout = TimeSpan.FromSeconds(30); // ? Timeout configurado
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// CONFIGURE THE HTTP REQUEST PIPELINE
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    app.UseHsts(); // HTTP Strict Transport Security
+    app.UseHsts();
 }
 else
 {
-    // En desarrollo, mostrar p�ginas de error detalladas
     app.UseDeveloperExceptionPage();
 }
 
@@ -47,9 +90,10 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-app.UseSession(); // ? Session debe ir antes de Authorization
-
-app.UseAuthorization(); // ? Aunque no uses autenticaci�n de ASP.NET Identity, esto es bueno tenerlo
+// IMPORTANTE: ORDEN CORRECTO DE MIDDLEWARES
+app.UseSession();
+app.UseAuthentication(); // ← Debe ir antes de Authorization
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",

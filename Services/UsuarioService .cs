@@ -36,6 +36,27 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        public async Task<List<string>> ObtenerRolesDeUsuarioAsync(int idUsuario)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Rol/ObtenerRolesDeUsuario/{idUsuario}";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var roles = await response.Content.ReadFromJsonAsync<List<string>>();
+                    return roles ?? new List<string>();
+                }
+                return new List<string>();
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+
+
         public async Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id)
         {
             try
