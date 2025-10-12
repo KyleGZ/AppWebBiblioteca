@@ -319,6 +319,13 @@
             <!-- Gestión de roles -->
             <div class="border-top px-4 pt-3 pb-4">
                 <h6 class="mb-3"><i class="fas fa-user-shield me-2"></i>Gestión de Roles</h6>
+
+                <!-- AVISO: no se pueden asignar roles a usuario Inactivo -->
+                <div id="rolesWarning" class="alert alert-warning-usuarios d-none mb-3" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    No se pueden asignar roles a un usuario <strong>Inactivo</strong>. Cambie el estado a <em>Activo</em> para continuar.
+                </div>
+
                 <div class="row g-2 align-items-end">
                     <div class="col-md-8">
                         <label for="rolEditar" class="form-label-usuarios">
@@ -478,11 +485,31 @@
                     const selectRolEditar = document.getElementById('rolEditar');
                     if (selectRolEditar && rolId && rolId !== '0') {
                         selectRolEditar.value = rolId;
+                    } else if (selectRolEditar) {
+                        selectRolEditar.value = ''; // reset
                     }
 
                     // Sincronizar IDs para los forms de roles
                     document.getElementById('asignarIdUsuario').value = id;
                     document.getElementById('quitarIdUsuario').value = id;
+
+                    // --- NUEVO: Aviso y bloqueo si el usuario está "Inactivo"
+                    const rolesWarning = document.getElementById('rolesWarning');
+                    const btnAsignar = document.getElementById('btnAsignarRol');
+                    const btnQuitar = document.getElementById('btnQuitarRol');
+
+                    const esInactivo = (estado || '').trim().toLowerCase() === 'inactivo';
+                    if (esInactivo) {
+                        rolesWarning?.classList.remove('d-none');
+                        btnAsignar?.setAttribute('disabled', 'disabled');
+                        // Si también deseas bloquear "Quitar", descomenta:
+                        // btnQuitar?.setAttribute('disabled', 'disabled');
+                    } else {
+                        rolesWarning?.classList.add('d-none');
+                        btnAsignar?.removeAttribute('disabled');
+                        // btnQuitar?.removeAttribute('disabled');
+                    }
+                    // --- FIN NUEVO
                 });
             }
 
@@ -500,6 +527,13 @@
 
             // Sincronizar inputs antes de enviar forms de roles
             function syncRolInputs() {
+                // 🚫 Bloqueo por estado Inactivo (UX inmediato)
+                const estadoActual = document.getElementById('editarEstado')?.value || '';
+                if (estadoActual.trim().toLowerCase() === 'inactivo') {
+                    alert('No se pueden asignar roles a un usuario Inactivo');
+                    return false;
+                }
+
                 if (!validarRolSeleccionado()) {
                     return false;
                 }

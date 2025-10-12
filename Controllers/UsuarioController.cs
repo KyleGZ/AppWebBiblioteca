@@ -290,6 +290,44 @@ namespace AppWebBiblioteca.Controllers
          */
         // En UsuarioController.cs
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> AsignarRol(AsignacionRolDto dto)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //        {
+        //            TempData["ErrorMessage"] = "Debe iniciar sesión para realizar esta acción";
+        //            return RedirectToAction("Login");
+        //        }
+
+        //        if (dto.IdUsuario <= 0 || dto.IdRol <= 0)
+        //        {
+        //            TempData["ErrorMessage"] = "Datos inválidos para asignar rol";
+        //            return RedirectToAction(nameof(Index));
+        //        }
+
+        //        var (ok, mensaje) = await _rolService.AsignarRolAUsuarioAsync(dto);
+
+        //        if (ok)
+        //        {
+        //            TempData["SuccessMessage"] = mensaje ?? "Rol asignado correctamente";
+        //        }
+        //        else
+        //        {
+        //            TempData["ErrorMessage"] = mensaje ?? "Error al asignar el rol";
+        //        }
+
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        TempData["ErrorMessage"] = "Error interno al asignar rol";
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //}
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AsignarRol(AsignacionRolDto dto)
@@ -308,25 +346,36 @@ namespace AppWebBiblioteca.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
+                // 👇 BLOQUEO: no permitir asignar a usuarios Inactivos
+                var usuario = await _usuarioService.ObtenerUsuarioPorIdAsync(dto.IdUsuario);
+                if (usuario == null)
+                {
+                    TempData["ErrorMessage"] = "El usuario no existe";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var estado = (usuario.Estado ?? string.Empty).Trim();
+                if (estado.Equals("Inactivo", StringComparison.OrdinalIgnoreCase))
+                {
+                    TempData["ErrorMessage"] = "No se pueden añadir roles al usuario porque está inactivo.";
+                    return RedirectToAction(nameof(Index));
+                }
+                // ☝️ Fin bloqueo
+
                 var (ok, mensaje) = await _rolService.AsignarRolAUsuarioAsync(dto);
 
-                if (ok)
-                {
-                    TempData["SuccessMessage"] = mensaje ?? "Rol asignado correctamente";
-                }
-                else
-                {
-                    TempData["ErrorMessage"] = mensaje ?? "Error al asignar el rol";
-                }
+                TempData[ok ? "SuccessMessage" : "ErrorMessage"] =
+                    mensaje ?? (ok ? "Rol asignado correctamente" : "Error al asignar el rol");
 
                 return RedirectToAction(nameof(Index));
             }
-            catch (Exception ex)
+            catch
             {
                 TempData["ErrorMessage"] = "Error interno al asignar rol";
                 return RedirectToAction(nameof(Index));
             }
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]

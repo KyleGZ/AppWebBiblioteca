@@ -57,7 +57,28 @@ namespace AppWebBiblioteca.Services
         }
 
 
-        public async Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id)
+        //public async Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/Obtener/{id}";
+        //        var response = await _httpClient.GetAsync(apiUrl);
+
+        //        if (response.IsSuccessStatusCode)
+        //        {
+        //            var result = await response.Content.ReadFromJsonAsync<dynamic>();
+        //            return result?.usuario?.ToObject<UsuarioListaViewModel>();
+        //        }
+
+        //        return null;
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return null;
+        //    }
+        //}
+
+        public async Task<UsuarioListaViewModel?> ObtenerUsuarioPorIdAsync(int id)
         {
             try
             {
@@ -66,13 +87,18 @@ namespace AppWebBiblioteca.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<dynamic>();
-                    return result?.usuario?.ToObject<UsuarioListaViewModel>();
+                    var wrapper = await response.Content.ReadFromJsonAsync<UsuarioWrapper>(
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    if (wrapper?.Usuario != null)
+                        return wrapper.Usuario;
                 }
 
-                return null;
+                // Fallback: si /Obtener no trae el esquema esperado, uso /Listar y filtro
+                var lista = await ObtenerUsuariosAsync();
+                return lista?.FirstOrDefault(u => u.IdUsuario == id);
             }
-            catch (Exception)
+            catch
             {
                 return null;
             }
@@ -159,4 +185,12 @@ namespace AppWebBiblioteca.Services
             }
         }
     }
+
+    public class UsuarioWrapper
+    {
+        public UsuarioListaViewModel? Usuario { get; set; }
+        public string? Msj { get; set; }
+        public bool Resultado { get; set; }
+    }
+
 }
