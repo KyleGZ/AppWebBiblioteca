@@ -83,7 +83,7 @@ namespace AppWebBiblioteca.Controllers
             
 
 
-                    TempData["SuccessMessage"] = $"¡Bienvenido {resultado.Nombre}!";
+                    //TempData["SuccessMessage"] = $"¡Bienvenido {resultado.Nombre}!";
                     return RedirectToAction("Index", "Home");
                 }
 
@@ -344,6 +344,48 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+        [HttpGet]
+
+        public async Task<IActionResult> PerfilUsuario()
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return RedirectToAction("Login", "Usuario");
+
+                // Obtener el ID del usuario actual
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+                if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+                {
+                    return RedirectToAction("Login", "Account");
+                }
+
+                // Llamar al servicio - ahora puede lanzar excepciones
+                var perfil = await _usuarioService.PerfilUsuarioViewAsync(userId);
+
+                if (perfil == null)
+                {
+                    TempData["Error"] = "No se encontró información del perfil";
+                    return View(new PerfilUsuarioDto());
+                }
+
+                return View(perfil);
+            }
+            catch (HttpRequestException ex)
+            {
+                // Manejar errores específicos de la API
+                TempData["Error"] = $"Error de conexión: {ex.Message}";
+                return View(new PerfilUsuarioDto());
+            }
+            catch (Exception ex)
+            {
+                // Manejar otros errores
+                TempData["Error"] = "Error interno al cargar el perfil";
+                // Log: _logger.LogError(ex, "Error al cargar perfil para usuario {UserId}", userId);
+                return View(new PerfilUsuarioDto());
+            }
+        }
 
 
 
@@ -356,6 +398,8 @@ namespace AppWebBiblioteca.Controllers
         {
             await _authService.LogoutAsync();
             TempData["SuccessMessage"] = "Sesión cerrada exitosamente";
+
+            
             return RedirectToAction("Login");
         }
     }

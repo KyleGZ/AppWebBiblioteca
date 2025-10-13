@@ -1,0 +1,248 @@
+﻿@model PerfilUsuarioDto
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Mi Perfil";
+    ViewData["PageTitle"] = "Mi Perfil";
+}
+
+<div class="container-fluid">
+    <!-- Mensajes de alerta -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Columna izquierda - Información de perfil -->
+        <div class="col-lg-4 col-md-5">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-id-card me-2"></i>Mi Perfil
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Avatar -->
+                    <div class="mb-3">
+                        <div class="avatar-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center rounded-circle"
+                             style="width: 100px; height: 100px; font-size: 2rem;">
+                            @if (!string.IsNullOrEmpty(Model.Nombre))
+                            {
+                                @Model.Nombre.Split(' ').Select(x => x[0]).Take(2).Aggregate("", (a, b) => a + b)
+                            }
+                            else
+                            {
+                                <i class="fas fa-user"></i>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Información básica -->
+                    <h4 class="mb-1">@Model.Nombre</h4>
+                    <p class="text-muted mb-3">@Model.Email</p>
+
+                    <!-- Información adicional -->
+                    <div class="d-grid gap-2">
+                        <div class="d-flex justify-content-between text-start">
+                            <small class="text-muted">Cédula:</small>
+                            <small class="fw-bold">@Model.Cedula</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de estadísticas rápidas -->
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Mi Actividad
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <h5 class="text-primary mb-1">5</h5>
+                                <small class="text-muted">Préstamos Activos</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="border rounded p-2">
+                                <h5 class="text-success mb-1">12</h5>
+                                <small class="text-muted">Historial</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha - Formulario de edición -->
+        <div class="col-lg-8 col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Editar Información
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="formPerfil" asp-action="ActualizarPerfil" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Nombre -->
+                        <div class="mb-3">
+                            <label for="Nombre" class="form-label">Nombre Completo</label>
+                            <input type="text" class="form-control" id="Nombre" name="Nombre"
+                                   value="@Model.Nombre" required>
+                            <div class="form-text">Tu nombre completo como aparece en el sistema.</div>
+                        </div>
+
+                        <!-- Email (solo lectura) -->
+                        <div class="mb-3">
+                            <label for="Email" class="form-label">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="Email"
+                                   value="@Model.Email" readonly>
+                            <div class="form-text">El correo electrónico no puede ser modificado.</div>
+                        </div>
+
+                        <!-- Cédula -->
+                        <div class="mb-3">
+                            <label for="Cedula" class="form-label">Cédula</label>
+                            <input type="text" class="form-control" id="Cedula" name="Cedula"
+                                   value="@Model.Cedula" required>
+                            <div class="form-text">Tu número de identificación.</div>
+                        </div>
+
+                        <!-- Cambio de contraseña (opcional) -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <label class="form-label">Contraseña</label>
+                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                        data-bs-toggle="collapse" data-bs-target="#cambioPassword">
+                                    <i class="fas fa-key me-1"></i>Cambiar Contraseña
+                                </button>
+                            </div>
+
+                            <div class="collapse mt-2" id="cambioPassword">
+                                <div class="card card-body">
+                                    <div class="mb-2">
+                                        <label for="PasswordActual" class="form-label">Contraseña Actual</label>
+                                        <input type="password" class="form-control" id="PasswordActual" name="PasswordActual">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label for="NuevoPassword" class="form-label">Nueva Contraseña</label>
+                                        <input type="password" class="form-control" id="NuevoPassword" name="NuevoPassword">
+                                    </div>
+                                    <div>
+                                        <label for="ConfirmarPassword" class="form-label">Confirmar Nueva Contraseña</label>
+                                        <input type="password" class="form-control" id="ConfirmarPassword" name="ConfirmarPassword">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Guardar Cambios
+                            </button>
+                            <button type="reset" class="btn btn-outline-secondary">
+                                <i class="fas fa-undo me-1"></i>Cancelar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Preferencias de notificaciones -->
+            <div class="card shadow-sm mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>Preferencias de Notificaciones
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="notificacionesEmail" checked>
+                                <label class="form-check-label" for="notificacionesEmail">
+                                    Notificaciones por Email
+                                </label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="recordatoriosPrestamos" checked>
+                                <label class="form-check-label" for="recordatoriosPrestamos">
+                                    Recordatorios de Préstamos
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="noticiasBiblioteca">
+                                <label class="form-check-label" for="noticiasBiblioteca">
+                                    Noticias de la Biblioteca
+                                </label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="eventosCulturales" checked>
+                                <label class="form-check-label" for="eventosCulturales">
+                                    Eventos Culturales
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Validación del formulario
+        document.getElementById('formPerfil').addEventListener('submit', function(e) {
+            const nuevoPassword = document.getElementById('NuevoPassword').value;
+            const confirmarPassword = document.getElementById('ConfirmarPassword').value;
+
+            if (nuevoPassword && nuevoPassword !== confirmarPassword) {
+                e.preventDefault();
+                alert('Las contraseñas no coinciden');
+                return false;
+            }
+        });
+
+        // Mostrar/ocultar contraseñas
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                const icon = this.querySelector('i');
+
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+    </script>
+}

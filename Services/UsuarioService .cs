@@ -4,6 +4,21 @@ using System.Text.Json;
 
 namespace AppWebBiblioteca.Services
 {
+
+    public interface IUsuarioService
+    {
+        Task<List<UsuarioListaViewModel>> ObtenerUsuariosAsync();
+        Task<List<string>> ObtenerRolesDeUsuarioAsync(int idUsuario);
+        Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id);
+        Task<PerfilUsuarioDto> PerfilUsuarioViewAsync(int id);
+        Task<bool> CrearUsuarioAsync(RegistroUsuarioDto usuario);
+        Task<bool> ActualizarUsuarioAsync(EditarUsuarioDto usuario);
+        Task<bool> EliminarUsuarioAsync(int id);
+        Task<bool> DesactivarUsuarioAsync(int id);
+        Task<bool> ActivarUsuarioAsync(int id);
+    }
+
+
     public class UsuarioService : IUsuarioService
     {
         private readonly HttpClient _httpClient;
@@ -182,6 +197,39 @@ namespace AppWebBiblioteca.Services
             catch (Exception)
             {
                 return false;
+            }
+        }
+
+        public async Task<PerfilUsuarioDto> PerfilUsuarioViewAsync(int id)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/PerfilUsuario?idUsuario={id}";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var perfil = await response.Content.ReadFromJsonAsync<PerfilUsuarioDto>(
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    return perfil;
+                }
+                else
+                {
+                    // Si la API retorna error, lanzar excepción con detalles
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new HttpRequestException($"Error al obtener perfil: {response.StatusCode} - {errorContent}");
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                // Relanzar la excepción HTTP específica
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Lanzar cualquier otra excepción
+                throw new Exception($"Error inesperado al obtener perfil del usuario {id}: {ex.Message}", ex);
             }
         }
     }

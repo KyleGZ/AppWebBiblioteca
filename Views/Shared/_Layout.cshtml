@@ -6,7 +6,6 @@
         .Select(c => c.Value)
         .ToList();
 }
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -26,6 +25,34 @@
     <link rel="stylesheet" href="~/css/StyleHome.css" asp-append-version="true" />
 
     @await RenderSectionAsync("Styles", required: false)
+
+    <style>
+        /* Estilos para el nuevo menú de usuario */
+        .user-menu-dropdown .dropdown-menu {
+            min-width: 200px;
+            padding: 0.5rem 0;
+        }
+
+        .user-menu-dropdown .dropdown-item {
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+        }
+
+            .user-menu-dropdown .dropdown-item i {
+                width: 20px;
+                margin-right: 8px;
+            }
+
+        .user-menu-dropdown .dropdown-divider {
+            margin: 0.3rem 0;
+        }
+
+        .user-info-text {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+    </style>
 </head>
 <body>
     <div class="main-container">
@@ -49,6 +76,14 @@
                     <a href="@Url.Action("Index", "Home")" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")">
                         <i class="fas fa-home"></i>
                         <span class="nav-text">Inicio</span>
+                    </a>
+                </div>
+
+                <!-- Mi Perfil - Nueva opción agregada -->
+                <div class="nav-item">
+                    <a href="@Url.Action("PerfilUsuario", "Usuario")" class="nav-link">
+                        <i class="fas fa-user-circle"></i>
+                        <span class="nav-text">Mi Perfil</span>
                     </a>
                 </div>
 
@@ -147,49 +182,47 @@
                     <div class="user-info">
                         @if (User.Identity.IsAuthenticated)
                         {
-                            <span class="text-dark me-2">
-                                <i class="fas fa-user me-1"></i>@userEmail
-                            </span>
-
-                            <!-- Badge de roles del usuario -->
-                            @if (userRoles.Any())
-                            {
-                                <div class="d-flex gap-1 me-2">
-                                    @foreach (var rol in userRoles)
-                                    {
-                                        <span class="badge badge-rol-small" data-rol="@rol">
-                                            @rol
+                            <!-- Nuevo menú de usuario sin roles visibles -->
+                            <div class="dropdown user-menu-dropdown">
+                                <button class="btn btn-esparza-outline dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    <span class="text-dark">@userEmail</span>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <span class="dropdown-item-text user-info-text">
+                                            <i class="fas fa-envelope me-1"></i>@userEmail
                                         </span>
-                                    }
-                                </div>
-                            }
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="@Url.Action("PerfilUsuario", "Usuario")">
+                                            <i class="fas fa-user me-1"></i>Perfil
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-envelope me-1"></i>Mensajes
+                                            <span class="badge bg-primary rounded-pill ms-2">3</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="#">
+                                            <i class="fas fa-cog me-1"></i>Preferencias
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-controller="Usuario" asp-action="Logout" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="dropdown-item text-danger">
+                                                <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
                         }
-                        <div class="dropdown">
-                            <button class="btn btn-esparza-outline dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-cog"></i>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <span class="dropdown-item-text small">
-                                        <strong>Usuario:</strong> @userEmail
-                                    </span>
-                                </li>
-                                <li>
-                                    <span class="dropdown-item-text small">
-                                        <strong>Roles:</strong> @string.Join(", ", userRoles)
-                                    </span>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <form asp-controller="Usuario" asp-action="Logout" method="post" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="dropdown-item text-danger">
-                                            <i class="fas fa-sign-out-alt me-1"></i>Cerrar Sesión
-                                        </button>
-                                    </form>
-                                </li>
-                            </ul>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -268,4 +301,4 @@
     <!-- Scripts específicos de cada vista -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>
-</html>
+</html></html>
