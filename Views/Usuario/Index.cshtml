@@ -260,6 +260,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
+            <!-- Contenedor de alertas -->
+
+            <div id="modalAlerts" class="px-4 pt-3"></div>
+
             <!-- Formulario de datos del usuario -->
             <form id="formEditarUsuario" asp-action="EditarUsuario" method="post" class="mb-2">
                 @Html.AntiForgeryToken()
@@ -320,12 +324,6 @@
             <div class="border-top px-4 pt-3 pb-4">
                 <h6 class="mb-3"><i class="fas fa-user-shield me-2"></i>Gestión de Roles</h6>
 
-                <!-- AVISO: no se pueden asignar roles a usuario Inactivo -->
-                <div id="rolesWarning" class="alert alert-warning-usuarios d-none mb-3" role="alert">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    No se pueden asignar roles a un usuario <strong>Inactivo</strong>. Cambie el estado a <em>Activo</em> para continuar.
-                </div>
-
                 <div class="row g-2 align-items-end">
                     <div class="col-md-8">
                         <label for="rolEditar" class="form-label-usuarios">
@@ -352,7 +350,7 @@
                     </div>
                     <div class="col-md-4 d-flex gap-2">
                         <!-- Form Asignar Rol -->
-                        <form asp-action="AsignarRol" method="post" class="d-inline flex-fill">
+                        <form asp-action="AsignarRol" method="post" class="d-inline flex-fill" id="formAsignarRol">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="IdUsuario" id="asignarIdUsuario" />
                             <input type="hidden" name="IdRol" id="asignarIdRol" />
@@ -360,8 +358,9 @@
                                 <i class="fas fa-plus-circle me-2"></i>Asignar
                             </button>
                         </form>
+
                         <!-- Form Quitar Rol -->
-                        <form asp-action="QuitarRol" method="post" class="d-inline flex-fill">
+                        <form asp-action="QuitarRol" method="post" class="d-inline flex-fill" id="formQuitarRol">
                             @Html.AntiForgeryToken()
                             <input type="hidden" name="IdUsuario" id="quitarIdUsuario" />
                             <input type="hidden" name="IdRol" id="quitarIdRol" />
@@ -460,6 +459,34 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM cargado - inicializando modales');
 
+            // Función para mostrar alertas en el modal
+            function showModalAlert(message, type = 'success') {
+                const alertClass = type === 'success' ? 'alert-success-usuarios' : 'alert-danger-usuarios';
+                const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+
+                const alertHtml = `
+                    <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                        <i class="fas ${iconClass} me-2"></i>
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+
+                const modalAlerts = document.getElementById('modalAlerts');
+                if (modalAlerts) {
+                    modalAlerts.innerHTML = alertHtml;
+
+                    // Auto-ocultar después de 5 segundos
+                    setTimeout(() => {
+                        const alertElement = modalAlerts.querySelector('.alert');
+                        if (alertElement) {
+                            const bsAlert = new bootstrap.Alert(alertElement);
+                            bsAlert.close();
+                        }
+                    }, 5000);
+                }
+            }
+
             // Modal Editar Usuario
             const modalEditar = document.getElementById('modalEditarUsuario');
             if (modalEditar) {
@@ -473,6 +500,12 @@
                     const rolId = button.getAttribute('data-rol-id');
 
                     console.log('Editando usuario:', { id, nombre, email, cedula, estado, rolId });
+
+                    // Limpiar alertas al abrir el modal
+                    const modalAlerts = document.getElementById('modalAlerts');
+                    if (modalAlerts) {
+                        modalAlerts.innerHTML = '';
+                    }
 
                     // Datos básicos del usuario
                     document.getElementById('editarIdUsuario').value = id;
@@ -492,24 +525,6 @@
                     // Sincronizar IDs para los forms de roles
                     document.getElementById('asignarIdUsuario').value = id;
                     document.getElementById('quitarIdUsuario').value = id;
-
-                    // --- NUEVO: Aviso y bloqueo si el usuario está "Inactivo"
-                    const rolesWarning = document.getElementById('rolesWarning');
-                    const btnAsignar = document.getElementById('btnAsignarRol');
-                    const btnQuitar = document.getElementById('btnQuitarRol');
-
-                    const esInactivo = (estado || '').trim().toLowerCase() === 'inactivo';
-                    if (esInactivo) {
-                        rolesWarning?.classList.remove('d-none');
-                        btnAsignar?.setAttribute('disabled', 'disabled');
-                        // Si también deseas bloquear "Quitar", descomenta:
-                        // btnQuitar?.setAttribute('disabled', 'disabled');
-                    } else {
-                        rolesWarning?.classList.add('d-none');
-                        btnAsignar?.removeAttribute('disabled');
-                        // btnQuitar?.removeAttribute('disabled');
-                    }
-                    // --- FIN NUEVO
                 });
             }
 
@@ -519,7 +534,7 @@
                 const rolValue = rolSelect.value;
 
                 if (!rolValue) {
-                    alert('Por favor seleccione un rol antes de continuar');
+                    showModalAlert('Por favor seleccione un rol antes de continuar', 'error');
                     return false;
                 }
                 return true;
@@ -527,13 +542,6 @@
 
             // Sincronizar inputs antes de enviar forms de roles
             function syncRolInputs() {
-                // 🚫 Bloqueo por estado Inactivo (UX inmediato)
-                const estadoActual = document.getElementById('editarEstado')?.value || '';
-                if (estadoActual.trim().toLowerCase() === 'inactivo') {
-                    alert('No se pueden asignar roles a un usuario Inactivo');
-                    return false;
-                }
-
                 if (!validarRolSeleccionado()) {
                     return false;
                 }
@@ -550,17 +558,73 @@
                 return true;
             }
 
-            // Asignar eventos a los botones de roles
-            document.getElementById('btnAsignarRol')?.addEventListener('click', function(e) {
-                if (!syncRolInputs()) {
-                    e.preventDefault();
+        // Función para enviar datos como objeto DTO
+        async function enviarRolAccion(action, userId, rolId) {
+            try {
+                const dto = {
+                    IdUsuario: parseInt(userId),
+                    IdRol: parseInt(rolId)
+                };
+
+                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                const response = await fetch(action, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': token
+                    },
+                    body: JSON.stringify(dto)
+                });
+
+                // Verificar si la respuesta es JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    const result = await response.json();
+
+                    if (result.success) {
+                        showModalAlert(result.message, 'success');
+                    } else {
+                        showModalAlert(result.message, 'error');
+                    }
+                } else {
+                    // Si no es JSON, probablemente es una redirección
+                    console.warn('Respuesta no es JSON, recargando página...');
+                    window.location.reload();
                 }
+            } catch (error) {
+                console.error('Error en la solicitud:', error);
+                showModalAlert('Error de conexión al procesar la solicitud', 'error');
+            }
+        }
+
+            // Manejar envío de formularios de roles
+            document.getElementById('btnAsignarRol')?.addEventListener('click', async function(e) {
+                e.preventDefault();
+
+                if (!syncRolInputs()) {
+                    return;
+                }
+
+                const userId = document.getElementById('asignarIdUsuario').value;
+                const rolId = document.getElementById('asignarIdRol').value;
+                const action = document.getElementById('formAsignarRol').getAttribute('action');
+
+                await enviarRolAccion(action, userId, rolId);
             });
 
-            document.getElementById('btnQuitarRol')?.addEventListener('click', function(e) {
+            document.getElementById('btnQuitarRol')?.addEventListener('click', async function(e) {
+                e.preventDefault();
+
                 if (!syncRolInputs()) {
-                    e.preventDefault();
+                    return;
                 }
+
+                const userId = document.getElementById('quitarIdUsuario').value;
+                const rolId = document.getElementById('quitarIdRol').value;
+                const action = document.getElementById('formQuitarRol').getAttribute('action');
+
+                await enviarRolAccion(action, userId, rolId);
             });
 
             // Modal Desactivar Usuario
@@ -593,12 +657,15 @@
                 });
             }
 
-            // Auto-ocultar alertas después de 5 segundos
+            // Auto-ocultar alertas después de 5 segundos (para alertas fuera del modal)
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
+                    // Solo cerrar alertas que no están dentro del modal
+                    if (!alert.closest('.modal')) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
                 });
             }, 5000);
 
@@ -610,4 +677,5 @@
             }
         });
     </script>
+}
 }
