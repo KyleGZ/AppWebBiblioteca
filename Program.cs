@@ -63,6 +63,9 @@ builder.Services.AddSession(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IRolService, RolService>();
+builder.Services.AddScoped<ILibroService, LibroService>();
+
+
 
 // CONFIGURAR HTTP CLIENT
 builder.Services.AddHttpClient("ApiClient", client =>

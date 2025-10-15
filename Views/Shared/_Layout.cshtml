@@ -23,6 +23,9 @@
     <link rel="stylesheet" href="~/css/Style.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/StyleUsuarios.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/StyleHome.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/StyleLibros.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/StylePerfil.css" asp-append-version="true" />
+
 
     @await RenderSectionAsync("Styles", required: false)
 
@@ -89,9 +92,9 @@
 
                 <!-- Menús para todos los usuarios autenticados -->
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="@Url.Action("Index", "Libro")" class="nav-link">
                         <i class="fas fa-book-open"></i>
-                        <span class="nav-text">Catálogo Digital</span>
+                        <span class="nav-text">Catálogo de Libros</span>
                     </a>
                 </div>
 

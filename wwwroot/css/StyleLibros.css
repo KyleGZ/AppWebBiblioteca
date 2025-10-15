@@ -1,0 +1,588 @@
+﻿/* StyleLibros.css - Estilos optimizados y completamente responsivos */
+:root {
+    --esparza-red: #C8102E;
+    --esparza-gold: #FFC72C;
+    --esparza-blue: #1E3A8A;
+    --esparza-green: #2E7D32;
+    --esparza-dark: #2C3E50;
+    --esparza-light: #F8F9FA;
+    --esparza-brown: #8B4513;
+    --esparza-cream: #F5F1E6;
+}
+
+/* ========== RESET Y BASE ========== */
+.libros-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e8e8e8;
+    transition: all 0.3s ease;
+}
+
+/* ========== CONTENEDORES PRINCIPALES ========== */
+.container-fluid.p-4 {
+    padding: 1.5rem !important;
+}
+
+.card-body.p-4 {
+    padding: 1.5rem !important;
+}
+
+/* ========== HEADER ========== */
+.d-flex.justify-content-between.align-items-center.mb-4 {
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* ========== BÚSQUEDA Y FILTROS - COMPLETAMENTE REDISEÑADO ========== */
+.search-filter-section {
+    margin-bottom: 2rem;
+}
+
+/* Contenedor principal de búsqueda */
+.search-container .input-group {
+    min-height: 48px;
+    flex-wrap: nowrap;
+}
+
+/* Input de búsqueda */
+#searchInput {
+    font-size: 0.9rem;
+    min-width: 120px;
+    flex: 1 1 auto;
+}
+
+    #searchInput::placeholder {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+
+/* Botón de búsqueda */
+#btnBuscar {
+    white-space: nowrap;
+    font-size: 0.9rem;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+}
+
+/* Contenedor de filtros */
+.filter-container .input-group {
+    min-height: 48px;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+}
+
+/* Selects de filtros */
+#filterEstado,
+#filterGenero {
+    font-size: 0.85rem;
+    min-width: 140px;
+    flex: 1 1 auto;
+    background-color: white !important;
+    border: 1px solid #ced4da !important;
+}
+
+/* Iconos en inputs */
+.input-group-text {
+    background-color: #f8f9fa !important;
+    border: 1px solid #ced4da !important;
+    font-size: 0.9rem;
+}
+
+/* ========== GRID DE LIBROS ========== */
+.libro-item {
+    margin-bottom: 1.5rem;
+}
+
+.libro-card {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+    .libro-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        border-color: var(--esparza-blue);
+    }
+
+    .libro-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--esparza-blue), var(--esparza-gold));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .libro-card:hover::before {
+        opacity: 1;
+    }
+
+    /* ========== CONTENIDO DE CARDS ========== */
+    .libro-card .card-body {
+        padding: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+/* Portada */
+.libro-portada {
+    max-height: 160px;
+    width: auto;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid #f0f0f0;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.libro-card:hover .libro-portada {
+    border-color: var(--esparza-gold);
+    transform: scale(1.02);
+}
+
+/* Título */
+.libro-titulo {
+    font-weight: 700;
+    color: var(--esparza-dark);
+    line-height: 1.3;
+    margin-bottom: 0.75rem;
+    min-height: 2.6rem;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    font-size: 0.95rem;
+}
+
+/* Información del libro */
+.libro-info {
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+
+    .libro-info small {
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .libro-info i {
+        width: 14px;
+        text-align: center;
+        font-size: 0.75rem;
+    }
+
+/* Footer de la card (estado + botón) */
+.libro-card .card-body > .d-flex:last-child {
+    margin-top: auto;
+    padding-top: 0.5rem;
+    border-top: 1px solid #f0f0f0;
+    min-height: 40px;
+    align-items: center;
+}
+
+/* ========== BADGES DE ESTADO ========== */
+.badge-estado {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.bg-success {
+    background: linear-gradient(135deg, var(--esparza-green), #1b5e20) !important;
+}
+
+.bg-warning {
+    background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+}
+
+.bg-info {
+    background: linear-gradient(135deg, #2196f3, #1976d2) !important;
+}
+
+.bg-secondary {
+    background: linear-gradient(135deg, #757575, #424242) !important;
+}
+
+/* ========== BOTONES ========== */
+.btn-libro-detalle {
+    background: transparent;
+    border: 1.5px solid var(--esparza-blue);
+    color: var(--esparza-blue);
+    border-radius: 6px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-width: 90px;
+}
+
+    .btn-libro-detalle:hover {
+        background: var(--esparza-blue);
+        color: white;
+        transform: translateY(-1px);
+    }
+
+.btn-esparza-primary {
+    background: linear-gradient(135deg, var(--esparza-blue), #152a6e);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 0.6rem 1.25rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
+    font-size: 0.9rem;
+}
+
+    .btn-esparza-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
+        background: linear-gradient(135deg, #152a6e, var(--esparza-blue));
+        color: white;
+    }
+
+/* ========== ESTADOS VACÍOS ========== */
+.empty-state {
+    color: #6c757d;
+    padding: 3rem 1rem;
+}
+
+    .empty-state i {
+        opacity: 0.5;
+        margin-bottom: 1rem;
+    }
+
+/* ========== ANIMACIONES ========== */
+.fade-in {
+    animation: fadeIn 0.6s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.zoom-in {
+    animation: zoomIn 0.3s ease;
+}
+
+@keyframes zoomIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ========== ALERTAS ========== */
+.alert-success {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+
+/* Pantallas grandes (1200px+) */
+@media (min-width: 1200px) {
+    .col-xxl-3 {
+        flex: 0 0 auto;
+        width: 25%;
+    }
+}
+
+/* Laptops (992px - 1199px) */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .col-xl-4 {
+        flex: 0 0 auto;
+        width: 33.333%;
+    }
+
+    .container-fluid.p-4 {
+        padding: 1.25rem !important;
+    }
+
+    .libro-portada {
+        max-height: 140px;
+    }
+
+    .libro-titulo {
+        font-size: 0.9rem;
+        min-height: 2.4rem;
+    }
+
+    .libro-info {
+        font-size: 0.75rem;
+    }
+}
+
+/* Tablets grandes / Laptops pequeñas (768px - 991px) */
+@media (max-width: 991px) and (min-width: 768px) {
+    .col-lg-6 {
+        flex: 0 0 auto;
+        width: 50%;
+    }
+
+    /* Header en columna */
+    .d-flex.justify-content-between.align-items-center.mb-4 {
+        flex-direction: column;
+        align-items: flex-start !important;
+        text-align: left;
+    }
+
+        .d-flex.justify-content-between.align-items-center.mb-4 > div {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .d-flex.justify-content-between.align-items-center.mb-4 > button {
+            align-self: flex-start;
+        }
+
+    /* Búsqueda y filtros en columna */
+    .search-filter-section .row > div {
+        margin-bottom: 1rem;
+    }
+
+    .search-container .input-group,
+    .filter-container .input-group {
+        flex-wrap: wrap;
+    }
+
+    #searchInput {
+        min-width: 200px;
+    }
+
+    .filter-container .input-group {
+        gap: 0.75rem;
+    }
+
+    #filterEstado,
+    #filterGenero {
+        min-width: 160px;
+        flex: 1;
+    }
+
+    .container-fluid.p-4 {
+        padding: 1rem !important;
+    }
+
+    .card-body.p-4 {
+        padding: 1.25rem !important;
+    }
+}
+
+/* Tablets (576px - 767px) */
+@media (max-width: 767px) and (min-width: 576px) {
+    .col-md-6 {
+        flex: 0 0 auto;
+        width: 50%;
+    }
+
+    .libro-portada {
+        max-height: 130px;
+    }
+
+    .libro-titulo {
+        font-size: 0.85rem;
+        min-height: 2.2rem;
+    }
+
+    .btn-libro-detalle {
+        font-size: 0.7rem;
+        padding: 0.3rem 0.6rem;
+        min-width: 80px;
+    }
+
+    .badge-estado {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    /* Búsqueda y filtros en columna completa */
+    .search-container .input-group,
+    .filter-container .input-group {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+        .search-container .input-group > *,
+        .filter-container .input-group > * {
+            width: 100% !important;
+            border-radius: 0.375rem !important;
+        }
+
+    #btnBuscar {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+}
+
+/* Móviles (575px y menos) */
+@media (max-width: 575px) {
+    .col-12 {
+        flex: 0 0 auto;
+        width: 100%;
+    }
+
+    .container-fluid.p-4 {
+        padding: 0.75rem !important;
+    }
+
+    .card-body.p-4 {
+        padding: 1rem !important;
+    }
+
+    .libros-card .card-body {
+        padding: 1rem !important;
+    }
+
+    .libro-card .card-body {
+        padding: 1rem;
+    }
+
+    .libro-portada {
+        max-height: 120px;
+    }
+
+    .libro-titulo {
+        font-size: 0.85rem;
+        min-height: 2.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .libro-info {
+        font-size: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .btn-esparza-primary {
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+        width: 100%;
+    }
+
+    .btn-libro-detalle {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+        min-width: 70px;
+    }
+
+    .badge-estado {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    /* Header centrado en móviles */
+    .d-flex.justify-content-between.align-items-center.mb-4 {
+        text-align: center;
+        align-items: center !important;
+    }
+
+        .d-flex.justify-content-between.align-items-center.mb-4 > button {
+            align-self: center;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+    /* Búsqueda y filtros en columna */
+    .search-container .input-group,
+    .filter-container .input-group {
+        flex-direction: column;
+    }
+
+        .search-container .input-group > *,
+        .filter-container .input-group > * {
+            width: 100% !important;
+            border-radius: 0.375rem !important;
+            margin-bottom: 0.5rem;
+        }
+}
+
+/* Pantallas muy pequeñas (375px y menos) */
+@media (max-width: 375px) {
+    .container-fluid.p-4 {
+        padding: 0.5rem !important;
+    }
+
+    .libro-card .card-body {
+        padding: 0.75rem;
+    }
+
+    .libro-titulo {
+        font-size: 0.8rem;
+    }
+
+    .libro-info {
+        font-size: 0.7rem;
+    }
+
+    .btn-libro-detalle {
+        font-size: 0.65rem;
+        min-width: 65px;
+    }
+}
+
+/* Corrección para asegurar que los placeholders sean visibles */
+.form-control::placeholder {
+    font-size: 0.85rem;
+    opacity: 0.7;
+}
+
+/* Mejora de contraste para mejor legibilidad */
+.form-control, .form-select {
+    color: #495057 !important;
+    background-color: white !important;
+    border: 1px solid #ced4da !important;
+}
+
+/* Asegurar que los textos no se corten */
+.libro-info small {
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Espaciado consistente en el grid */
+.row.g-4 {
+    margin: 0 -0.75rem;
+}
+
+    .row.g-4 > [class*="col-"] {
+        padding: 0 0.75rem;
+    }

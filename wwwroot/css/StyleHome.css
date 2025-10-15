@@ -67,7 +67,7 @@
 /* Estadísticas y Métricas */
 .stats-card {
     background: linear-gradient(135deg, var(--esparza-blue) 0%, #152a6e 100%);
-    color: white;
+    color: black;
     border-radius: 10px;
     padding: 1.5rem;
     transition: transform 0.3s ease;

@@ -1,0 +1,376 @@
+﻿/* StylePerfil.css - Estilos específicos para el perfil de usuario */
+:root {
+    --esparza-red: #C8102E;
+    --esparza-gold: #FFC72C;
+    --esparza-blue: #1E3A8A;
+    --esparza-green: #2E7D32;
+    --esparza-dark: #2C3E50;
+    --esparza-light: #F8F9FA;
+    --esparza-brown: #8B4513;
+    --esparza-cream: #F5F1E6;
+}
+
+/* ========== LAYOUT PRINCIPAL ========== */
+.perfil-container {
+    padding: 2rem 0;
+    background: linear-gradient(135deg, var(--esparza-cream) 0%, #ffffff 100%);
+    min-height: calc(100vh - 200px);
+}
+
+/* ========== TARJETAS PRINCIPALES ========== */
+.perfil-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+    .perfil-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .perfil-card .card-header {
+        background: linear-gradient(135deg, var(--esparza-blue), #152a6e);
+        border-bottom: 3px solid var(--esparza-gold);
+        padding: 1.25rem 1.5rem;
+    }
+
+        .perfil-card .card-header h5 {
+            color: white;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .perfil-card .card-header i {
+            color: var(--esparza-gold);
+        }
+
+/* ========== AVATAR Y INFO DE USUARIO ========== */
+.avatar-circle {
+    background: linear-gradient(135deg, var(--esparza-blue), var(--esparza-dark));
+    border: 4px solid white;
+    box-shadow: 0 4px 16px rgba(30, 58, 138, 0.3);
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+
+    .avatar-circle:hover {
+        transform: scale(1.05);
+        box-shadow: 0 6px 20px rgba(30, 58, 138, 0.4);
+    }
+
+.user-name {
+    color: var(--esparza-dark);
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.user-email {
+    color: #6c757d;
+    font-size: 0.95rem;
+}
+
+/* ========== ESTADÍSTICAS DE ACTIVIDAD ========== */
+.stats-card {
+    border: 2px solid transparent;
+    background: linear-gradient(white, white) padding-box, linear-gradient(135deg, var(--esparza-blue), var(--esparza-gold)) border-box;
+    transition: all 0.3s ease;
+}
+
+    .stats-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+
+.stats-number {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.stats-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* ========== FORMULARIOS ========== */
+.form-perfil .form-label {
+    font-weight: 600;
+    color: var(--esparza-dark);
+    margin-bottom: 0.5rem;
+}
+
+.form-perfil .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+}
+
+    .form-perfil .form-control:focus {
+        border-color: var(--esparza-blue);
+        box-shadow: 0 0 0 0.2rem rgba(30, 58, 138, 0.15);
+        transform: translateY(-1px);
+    }
+
+    .form-perfil .form-control:read-only {
+        background-color: #f8f9fa;
+        border-color: #dee2e6;
+        color: #6c757d;
+    }
+
+.form-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* ========== SECCIÓN CAMBIO DE CONTRASEÑA ========== */
+.password-section {
+    border-left: 4px solid var(--esparza-green);
+    background: linear-gradient(135deg, #f8fff8, #ffffff);
+}
+
+    .password-section .card-body {
+        background: rgba(46, 125, 50, 0.02);
+    }
+
+.btn-toggle-password {
+    border: 2px solid var(--esparza-blue);
+    color: var(--esparza-blue);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+    .btn-toggle-password:hover {
+        background: var(--esparza-blue);
+        color: white;
+        transform: translateY(-1px);
+    }
+
+.collapse.show .card {
+    border: 2px solid var(--esparza-green);
+    background: rgba(46, 125, 50, 0.03);
+}
+
+/* ========== BOTONES ========== */
+.btn-perfil-primary {
+    background: linear-gradient(135deg, var(--esparza-blue), #152a6e);
+    border: none;
+    color: white;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.3);
+}
+
+    .btn-perfil-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(30, 58, 138, 0.4);
+        background: linear-gradient(135deg, #152a6e, var(--esparza-blue));
+    }
+
+.btn-perfil-secondary {
+    border: 2px solid var(--esparza-dark);
+    color: var(--esparza-dark);
+    background: transparent;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+    .btn-perfil-secondary:hover {
+        background: var(--esparza-dark);
+        color: white;
+        transform: translateY(-1px);
+    }
+
+/* ========== PREFERENCIAS DE NOTIFICACIONES ========== */
+.notifications-section {
+    border-left: 4px solid var(--esparza-gold);
+}
+
+.form-switch .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    border: 2px solid #dee2e6;
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+    .form-switch .form-check-input:checked {
+        background-color: var(--esparza-blue);
+        border-color: var(--esparza-blue);
+    }
+
+.form-switch .form-check-label {
+    font-weight: 500;
+    color: var(--esparza-dark);
+    cursor: pointer;
+}
+
+/* ========== ALERTAS ========== */
+.alert-perfil {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda, #c3e6cb);
+    border-left: 4px solid var(--esparza-green);
+    color: #155724;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+    border-left: 4px solid var(--esparza-red);
+    color: #721c24;
+}
+
+/* ========== ANIMACIONES ========== */
+.fade-in-perfil {
+    animation: fadeInPerfil 0.6s ease-out;
+}
+
+@keyframes fadeInPerfil {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.5s ease-out;
+}
+
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.slide-in-right {
+    animation: slideInRight 0.5s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ========== RESPONSIVE DESIGN ========== */
+@media (max-width: 768px) {
+    .perfil-container {
+        padding: 1rem 0;
+    }
+
+    .perfil-card .card-header {
+        padding: 1rem;
+    }
+
+    .avatar-circle {
+        width: 80px !important;
+        height: 80px !important;
+        font-size: 1.5rem !important;
+    }
+
+    .btn-perfil-primary,
+    .btn-perfil-secondary {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .stats-card {
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .perfil-container {
+        padding: 0.5rem;
+    }
+
+    .perfil-card {
+        border-radius: 12px;
+    }
+
+    .user-name {
+        font-size: 1.25rem;
+    }
+
+    .form-perfil .form-control {
+        padding: 0.6rem 0.8rem;
+    }
+
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+
+    .btn-perfil-primary,
+    .btn-perfil-secondary {
+        width: 100%;
+    }
+}
+
+/* ========== MEJORAS PARA LAPTOPS ========== */
+@media (min-width: 992px) and (max-width: 1366px) {
+    .perfil-container {
+        padding: 1.5rem 0;
+    }
+
+    .perfil-card .card-body {
+        padding: 1.25rem;
+    }
+}
+
+/* ========== EFECTOS ESPECIALES ========== */
+.gradient-border {
+    position: relative;
+    background: linear-gradient(white, white) padding-box, linear-gradient(135deg, var(--esparza-blue), var(--esparza-gold)) border-box;
+    border: 2px solid transparent;
+}
+
+.hover-lift {
+    transition: all 0.3s ease;
+}
+
+    .hover-lift:hover {
+        transform: translateY(-3px);
+    }
+
+/* ========== ICONOS ANIMADOS ========== */
+.animated-icon {
+    transition: all 0.3s ease;
+}
+
+.perfil-card:hover .animated-icon {
+    transform: scale(1.1);
+    color: var(--esparza-gold);
+}

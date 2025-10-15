@@ -1,0 +1,323 @@
+﻿@model PaginacionResponse<LibroListaView>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Gestión de Libros - Biblioteca Esparza";
+    ViewData["PageTitle"] = "Catálogo de Libros";
+
+    var libros = Model?.Data ?? new List<LibroListaView>();
+    var paginacion = Model?.Pagination ?? new PaginationInfo();
+    var terminoBusqueda = ViewBag.TerminoBusqueda as string ?? "";
+}
+
+<!-- Contenido específico de Libros -->
+<div class="container-fluid p-4">
+    <div class="row justify-content-center fade-in">
+        <div class="col-12">
+            <div class="card libros-card">
+                <div class="card-body p-4">
+                    <!-- Header con Título y Botón -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-book me-2" style="color: var(--esparza-blue);"></i>
+                                Catálogo de Libros
+                            </h2>
+                            <p class="text-muted mb-0">Gestiona el inventario de libros de la biblioteca</p>
+                        </div>
+                        <button type="button" class="btn btn-esparza-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarLibro">
+                            <i class="fas fa-book-medical"></i>
+                            Nuevo Libro
+                        </button>
+                    </div>
+
+                    <!-- Formulario de Búsqueda -->
+                    <form asp-action="Buscar" method="post" class="search-filter-section">
+                        <div class="row g-3">
+                            <!-- Búsqueda -->
+                            <div class="col-12 col-xl-6">
+                                <div class="search-container">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-search text-muted"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="termino" id="searchInput"
+                                               placeholder="Buscar por título, autor, ISBN..."
+                                               value="@terminoBusqueda">
+                                        <button class="btn btn-esparza-primary" type="submit" id="btnBuscar">
+                                            <i class="fas fa-search me-1"></i>Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filtros -->
+                            <div class="col-12 col-xl-6">
+                                <div class="filter-container">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-filter text-muted"></i>
+                                        </span>
+                                        <select class="form-select" id="filterEstado">
+                                            <option value="">Todos los estados</option>
+                                            <option value="disponible">Disponible</option>
+                                            <option value="prestado">Prestado</option>
+                                            <option value="reservado">Reservado</option>
+                                            <option value="reparacion">En reparación</option>
+                                        </select>
+                                        <select class="form-select" id="filterGenero">
+                                            <option value="">Todos los géneros</option>
+                                            <option value="1">Realismo Mágico</option>
+                                            <option value="2">Clásico</option>
+                                            <option value="3">Ciencia Ficción</option>
+                                            <option value="4">Poesía</option>
+                                            <option value="5">Historia</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos ocultos para paginación -->
+                        <input type="hidden" name="pagina" id="paginaHidden" value="1" />
+                    </form>
+
+                    <!-- Información de resultados -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-muted small">
+                            @if (!string.IsNullOrEmpty(terminoBusqueda))
+                            {
+                                <span id="resultCount">@paginacion.TotalResultados</span>
+                                <span>libros encontrados para "@terminoBusqueda"</span>
+                            }
+                            else
+                            {
+                                <span id="resultCount">@paginacion.TotalResultados</span>
+                                <span>libros en el catálogo</span>
+                            }
+                        </div>
+                        <div class="d-flex gap-2">
+                            @if (!string.IsNullOrEmpty(terminoBusqueda))
+                            {
+                                <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Limpiar búsqueda
+                                </a>
+                            }
+                            <button class="btn btn-sm btn-outline-secondary" id="btnLimpiarFiltros">
+                                <i class="fas fa-filter me-1"></i>Limpiar filtros
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Alertas -->
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
+                            @TempData["SuccessMessage"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    @if (!Model.Success && !string.IsNullOrEmpty(Model.Message))
+                    {
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            @Model.Message
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <!-- Grid de Libros -->
+                    @if (libros.Any())
+                    {
+                        <div class="row g-4" id="librosGrid">
+                            @foreach (var libro in libros)
+                            {
+                                <div class="col-xxl-3 col-xl-4 col-lg-6 col-md-6 col-sm-12 libro-item">
+                                    <div class="card libro-card h-100 zoom-in mb-3">
+                                        <div class="card-body">
+                                            <!-- Portada -->
+                                            <div class="text-center mb-3">
+                                                <img src="@libro.PortadaUrl"
+                                                     alt="Portada de @libro.Titulo"
+                                                     class="libro-portada img-fluid rounded"
+                                                     onerror="this.src='/imagenes/portadas/default-book-cover.jpg'">
+                                            </div>
+
+                                            <!-- Información del libro -->
+                                            <h6 class="card-title libro-titulo">@libro.Titulo</h6>
+
+                                            <div class="libro-info">
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <i class="fas fa-barcode me-2 text-muted small"></i>
+                                                    <small class="text-muted">@libro.ISBN</small>
+                                                </div>
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <i class="fas fa-user-edit me-2 text-muted small"></i>
+                                                    <small>@libro.Autor</small>
+                                                </div>
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <i class="fas fa-building me-2 text-muted small"></i>
+                                                    <small>@libro.Editorial</small>
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <i class="fas fa-tag me-2 text-muted small"></i>
+                                                    <small>@libro.Genero</small>
+                                                </div>
+                                            </div>
+
+                                            <!-- Estado -->
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span class="badge badge-estado @GetEstadoBadgeClass(libro.Estado)">
+                                                    <i class="fas @GetEstadoIcon(libro.Estado) me-1"></i>
+                                                    @libro.Estado
+                                                </span>
+                                                <button type="button" class="btn btn-sm btn-libro-detalle"
+                                                        onclick="verDetalle(@libro.IdLibro)">
+                                                    <i class="fas fa-eye"></i>
+                                                    Ver Detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Paginación -->
+                        @if (paginacion.TotalPaginas > 1)
+                        {
+                            <nav aria-label="Paginación de resultados">
+                                <ul class="pagination justify-content-center mt-4">
+                                    @for (int i = 1; i <= paginacion.TotalPaginas; i++)
+                                    {
+                                        <li class="page-item @(i == paginacion.PaginaActual ? "active" : "")">
+                                            <button type="submit" form="searchForm" name="pagina" value="@i"
+                                                    class="page-link">
+                                                @i
+                                            </button>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(terminoBusqueda))
+                    {
+                        <div class="empty-state text-center py-5">
+                            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                            <h4>No se encontraron resultados</h4>
+                            <p class="text-muted">No hay libros que coincidan con "@terminoBusqueda"</p>
+                            <a href="@Url.Action("Index")" class="btn btn-esparza-primary mt-3">
+                                <i class="fas fa-book me-2"></i>Ver todos los libros
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state text-center py-5">
+                            <i class="fas fa-book-open fa-4x text-muted mb-3"></i>
+                            <h4>No hay libros en el catálogo</h4>
+                            <p class="text-muted">No se encontraron libros en el sistema. Comienza agregando el primer libro.</p>
+                            <button type="button" class="btn btn-esparza-primary mt-3" data-bs-toggle="modal" data-bs-target="#modalAgregarLibro">
+                                <i class="fas fa-book-medical me-2"></i>Agregar Primer Libro
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const filterEstado = document.getElementById('filterEstado');
+            const filterGenero = document.getElementById('filterGenero');
+            const btnBuscar = document.getElementById('btnBuscar');
+            const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
+            const paginaHidden = document.getElementById('paginaHidden');
+            const searchForm = document.querySelector('form');
+
+            // Función para cambiar página
+            function cambiarPagina(pagina) {
+                paginaHidden.value = pagina;
+                searchForm.submit();
+            }
+
+            // Limpiar filtros del frontend
+            function limpiarFiltros() {
+                filterEstado.value = '';
+                filterGenero.value = '';
+                // Aquí puedes agregar lógica de filtrado en el frontend si es necesario
+            }
+
+            // Event listeners
+            btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
+
+            // Auto-ocultar alertas después de 5 segundos
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+
+            // Focus en el input de búsqueda si hay término
+            @if (!string.IsNullOrEmpty(terminoBusqueda))
+            {
+                    <text>
+                    setTimeout(function() {
+                        searchInput.focus();
+                        searchInput.select();
+                    }, 100);
+                    </text>
+            }
+        });
+
+        function verDetalle(idLibro) {
+            // Aquí implementaremos la lógica para ver el detalle
+            alert('Ver detalle del libro ID: ' + idLibro);
+        }
+    </script>
+}
+
+@functions {
+    // Función para obtener la clase CSS del badge según el estado
+    public string GetEstadoBadgeClass(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "disponible" => "bg-success",
+            "prestado" => "bg-warning",
+            "reservado" => "bg-info",
+            "reparacion" => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    // Función para obtener el icono según el estado
+    public string GetEstadoIcon(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "disponible" => "fa-check",
+            "prestado" => "fa-exchange-alt",
+            "reservado" => "fa-clock",
+            "reparacion" => "fa-tools",
+            _ => "fa-question"
+        };
+    }
+}

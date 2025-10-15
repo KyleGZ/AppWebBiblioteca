@@ -1,17 +1,19 @@
 ﻿@model PerfilUsuarioDto
-
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Mi Perfil";
     ViewData["PageTitle"] = "Mi Perfil";
 }
 
-<div class="container-fluid">
+<!-- Agregar el CSS -->
+<link rel="stylesheet" href="~/css/StylePerfil.css" asp-append-version="true" />
+
+<div class="container-fluid perfil-container">
     <!-- Mensajes de alerta -->
     @if (TempData["Error"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
+        <div class="alert alert-danger alert-perfil alert-dismissible fade show fade-in-perfil" role="alert">
+            <i class="fas fa-exclamation-triangle me-2 animated-icon"></i>
             @TempData["Error"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -19,8 +21,8 @@
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
+        <div class="alert alert-success alert-perfil alert-dismissible fade show fade-in-perfil" role="alert">
+            <i class="fas fa-check-circle me-2 animated-icon"></i>
             @TempData["Success"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -28,17 +30,17 @@
 
     <div class="row">
         <!-- Columna izquierda - Información de perfil -->
-        <div class="col-lg-4 col-md-5">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
+        <div class="col-lg-4 col-md-5 slide-in-left">
+            <div class="card perfil-card hover-lift mb-4">
+                <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-id-card me-2"></i>Mi Perfil
+                        <i class="fas fa-id-card me-2 animated-icon"></i>Mi Perfil
                     </h5>
                 </div>
                 <div class="card-body text-center">
                     <!-- Avatar -->
                     <div class="mb-3">
-                        <div class="avatar-circle bg-secondary text-white d-inline-flex align-items-center justify-content-center rounded-circle"
+                        <div class="avatar-circle d-inline-flex align-items-center justify-content-center rounded-circle"
                              style="width: 100px; height: 100px; font-size: 2rem;">
                             @if (!string.IsNullOrEmpty(Model.Nombre))
                             {
@@ -52,8 +54,8 @@
                     </div>
 
                     <!-- Información básica -->
-                    <h4 class="mb-1">@Model.Nombre</h4>
-                    <p class="text-muted mb-3">@Model.Email</p>
+                    <h4 class="user-name">@Model.Nombre</h4>
+                    <p class="user-email mb-3">@Model.Email</p>
 
                     <!-- Información adicional -->
                     <div class="d-grid gap-2">
@@ -66,24 +68,24 @@
             </div>
 
             <!-- Tarjeta de estadísticas rápidas -->
-            <div class="card shadow-sm">
+            <div class="card perfil-card hover-lift">
                 <div class="card-header">
                     <h6 class="card-title mb-0">
-                        <i class="fas fa-chart-bar me-2"></i>Mi Actividad
+                        <i class="fas fa-chart-bar me-2 animated-icon"></i>Mi Actividad
                     </h6>
                 </div>
                 <div class="card-body">
                     <div class="row text-center">
                         <div class="col-6 mb-3">
-                            <div class="border rounded p-2">
-                                <h5 class="text-primary mb-1">5</h5>
-                                <small class="text-muted">Préstamos Activos</small>
+                            <div class="stats-card border rounded p-2 hover-lift">
+                                <h5 class="stats-number text-primary">5</h5>
+                                <small class="stats-label">Préstamos Activos</small>
                             </div>
                         </div>
                         <div class="col-6 mb-3">
-                            <div class="border rounded p-2">
-                                <h5 class="text-success mb-1">12</h5>
-                                <small class="text-muted">Historial</small>
+                            <div class="stats-card border rounded p-2 hover-lift">
+                                <h5 class="stats-number text-success">12</h5>
+                                <small class="stats-label">Historial</small>
                             </div>
                         </div>
                     </div>
@@ -92,15 +94,15 @@
         </div>
 
         <!-- Columna derecha - Formulario de edición -->
-        <div class="col-lg-8 col-md-7">
-            <div class="card shadow-sm">
+        <div class="col-lg-8 col-md-7 slide-in-right">
+            <div class="card perfil-card hover-lift">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-edit me-2"></i>Editar Información
+                        <i class="fas fa-edit me-2 animated-icon"></i>Editar Información
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form id="formPerfil" asp-action="ActualizarPerfil" method="post">
+                    <form id="formPerfil" class="form-perfil" asp-action="ActualizarPerfil" method="post">
                         @Html.AntiForgeryToken()
 
                         <!-- Nombre -->
@@ -128,10 +130,10 @@
                         </div>
 
                         <!-- Cambio de contraseña (opcional) -->
-                        <div class="mb-4">
+                        <div class="mb-4 password-section">
                             <div class="d-flex justify-content-between align-items-center">
                                 <label class="form-label">Contraseña</label>
-                                <button type="button" class="btn btn-outline-secondary btn-sm"
+                                <button type="button" class="btn btn-toggle-password btn-sm"
                                         data-bs-toggle="collapse" data-bs-target="#cambioPassword">
                                     <i class="fas fa-key me-1"></i>Cambiar Contraseña
                                 </button>
@@ -157,10 +159,10 @@
 
                         <!-- Botones de acción -->
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" class="btn btn-perfil-primary">
                                 <i class="fas fa-save me-1"></i>Guardar Cambios
                             </button>
-                            <button type="reset" class="btn btn-outline-secondary">
+                            <button type="reset" class="btn btn-perfil-secondary">
                                 <i class="fas fa-undo me-1"></i>Cancelar
                             </button>
                         </div>
@@ -169,10 +171,10 @@
             </div>
 
             <!-- Preferencias de notificaciones -->
-            <div class="card shadow-sm mt-4">
+            <div class="card perfil-card hover-lift mt-4 notifications-section">
                 <div class="card-header">
                     <h5 class="card-title mb-0">
-                        <i class="fas fa-bell me-2"></i>Preferencias de Notificaciones
+                        <i class="fas fa-bell me-2 animated-icon"></i>Preferencias de Notificaciones
                     </h5>
                 </div>
                 <div class="card-body">
@@ -226,23 +228,13 @@
             }
         });
 
-        // Mostrar/ocultar contraseñas
-        document.querySelectorAll('.toggle-password').forEach(button => {
-            button.addEventListener('click', function() {
-                const targetId = this.getAttribute('data-target');
-                const input = document.getElementById(targetId);
-                const icon = this.querySelector('i');
-
-                if (input.type === 'password') {
-                    input.type = 'text';
-                    icon.classList.remove('fa-eye');
-                    icon.classList.add('fa-eye-slash');
-                } else {
-                    input.type = 'password';
-                    icon.classList.remove('fa-eye-slash');
-                    icon.classList.add('fa-eye');
-                }
+        // Auto-ocultar alertas después de 5 segundos
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
             });
-        });
+        }, 5000);
     </script>
 }

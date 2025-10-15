@@ -397,7 +397,7 @@ namespace AppWebBiblioteca.Controllers
         public async Task<IActionResult> Logout()
         {
             await _authService.LogoutAsync();
-            TempData["SuccessMessage"] = "Sesión cerrada exitosamente";
+            //TempData["SuccessMessage"] = "Sesión cerrada exitosamente";
 
             
             return RedirectToAction("Login");
