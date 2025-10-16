@@ -257,7 +257,12 @@
                     <i class="fas fa-user-edit me-2"></i>
                     Editar Usuario
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                @* <button type="button" class="btn-close" data-bs-dismiss="modal"></button> *@
+                <a asp-controller="Usuario"
+                   asp-action="Index"
+                   class="btn-close"
+                   aria-label="Cerrar"></a>
+
             </div>
 
             <!-- Contenedor de alertas -->
