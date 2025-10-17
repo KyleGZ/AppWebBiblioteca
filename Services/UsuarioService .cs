@@ -13,6 +13,7 @@ namespace AppWebBiblioteca.Services
         Task<PerfilUsuarioDto> PerfilUsuarioViewAsync(int id);
         Task<bool> CrearUsuarioAsync(RegistroUsuarioDto usuario);
         Task<bool> ActualizarUsuarioAsync(EditarUsuarioDto usuario);
+        Task<bool> ActualizarPerfilsync(PerfilUsuarioDto perfilUsuario);
         Task<bool> EliminarUsuarioAsync(int id);
         Task<bool> DesactivarUsuarioAsync(int id);
         Task<bool> ActivarUsuarioAsync(int id);
@@ -155,6 +156,7 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+      
         public async Task<bool> EliminarUsuarioAsync(int id)
         {
             try
@@ -230,6 +232,24 @@ namespace AppWebBiblioteca.Services
             {
                 // Lanzar cualquier otra excepción
                 throw new Exception($"Error inesperado al obtener perfil del usuario {id}: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> ActualizarPerfilsync(PerfilUsuarioDto perfilUsuario)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/EditarPerfil";
+
+                var json = JsonSerializer.Serialize(perfilUsuario);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync(apiUrl, content);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception)
+            {
+                return false;
             }
         }
     }

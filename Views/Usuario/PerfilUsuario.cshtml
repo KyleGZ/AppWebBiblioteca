@@ -10,23 +10,25 @@
 
 <div class="container-fluid perfil-container">
     <!-- Mensajes de alerta -->
-    @if (TempData["Error"] != null)
+    <!-- Alertas -->
+    @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-danger alert-perfil alert-dismissible fade show fade-in-perfil" role="alert">
-            <i class="fas fa-exclamation-triangle me-2 animated-icon"></i>
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-success-usuarios alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    @if (TempData["Success"] != null)
+    @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-success alert-perfil alert-dismissible fade show fade-in-perfil" role="alert">
-            <i class="fas fa-check-circle me-2 animated-icon"></i>
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        <div class="alert alert-danger-usuarios alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
+
 
     <div class="row">
         <!-- Columna izquierda - Información de perfil -->
@@ -56,14 +58,17 @@
                     <!-- Información básica -->
                     <h4 class="user-name">@Model.Nombre</h4>
                     <p class="user-email mb-3">@Model.Email</p>
+                    <p class="user-cedula mb-3">@Model.Cedula</p>
 
-                    <!-- Información adicional -->
+
+
+                    @* <!-- Información adicional -->
                     <div class="d-grid gap-2">
                         <div class="d-flex justify-content-between text-start">
                             <small class="text-muted">Cédula:</small>
                             <small class="fw-bold">@Model.Cedula</small>
                         </div>
-                    </div>
+                    </div> *@
                 </div>
             </div>
 
@@ -102,8 +107,16 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <form id="formPerfil" class="form-perfil" asp-action="ActualizarPerfil" method="post">
+                    <form id="formPerfil" class="form-perfil" asp-controller="Usuario" asp-action="EditarPerfil" method="post">
                         @Html.AntiForgeryToken()
+
+                        <!-- Campo oculto para el idUsuario -->
+                        <input type="hidden" name="idUsuario" value="@Model.idUsuario" />
+                        <input type="hidden" name="Cedula" value="@Model.Cedula" />
+
+                        <input type="hidden" id="DebeReautenticar" name="DebeReautenticar" value="false" />
+
+
 
                         <!-- Nombre -->
                         <div class="mb-3">
@@ -113,20 +126,12 @@
                             <div class="form-text">Tu nombre completo como aparece en el sistema.</div>
                         </div>
 
-                        <!-- Email (solo lectura) -->
+                        <!-- Email -->
                         <div class="mb-3">
                             <label for="Email" class="form-label">Correo Electrónico</label>
-                            <input type="email" class="form-control" id="Email"
-                                   value="@Model.Email" readonly>
+                            <input type="email" class="form-control" id="Email" name="Email"
+                                   value="@Model.Email" required>
                             <div class="form-text">El correo electrónico no puede ser modificado.</div>
-                        </div>
-
-                        <!-- Cédula -->
-                        <div class="mb-3">
-                            <label for="Cedula" class="form-label">Cédula</label>
-                            <input type="text" class="form-control" id="Cedula" name="Cedula"
-                                   value="@Model.Cedula" required>
-                            <div class="form-text">Tu número de identificación.</div>
                         </div>
 
                         <!-- Cambio de contraseña (opcional) -->
@@ -142,12 +147,8 @@
                             <div class="collapse mt-2" id="cambioPassword">
                                 <div class="card card-body">
                                     <div class="mb-2">
-                                        <label for="PasswordActual" class="form-label">Contraseña Actual</label>
-                                        <input type="password" class="form-control" id="PasswordActual" name="PasswordActual">
-                                    </div>
-                                    <div class="mb-2">
-                                        <label for="NuevoPassword" class="form-label">Nueva Contraseña</label>
-                                        <input type="password" class="form-control" id="NuevoPassword" name="NuevoPassword">
+                                        <label for="Password" class="form-label">Nueva Contraseña</label>
+                                        <input type="password" class="form-control" id="Password" name="Password">
                                     </div>
                                     <div>
                                         <label for="ConfirmarPassword" class="form-label">Confirmar Nueva Contraseña</label>
@@ -157,14 +158,14 @@
                             </div>
                         </div>
 
-                        <!-- Botones de acción -->
+                        <!-- Botones de acción CORREGIDOS -->
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-perfil-primary">
                                 <i class="fas fa-save me-1"></i>Guardar Cambios
                             </button>
-                            <button type="reset" class="btn btn-perfil-secondary">
+                            <a href="@Url.Action("Index", "Usuario")" class="btn btn-perfil-secondary">
                                 <i class="fas fa-undo me-1"></i>Cancelar
-                            </button>
+                            </a>
                         </div>
                     </form>
                 </div>
@@ -216,25 +217,69 @@
 
 @section Scripts {
     <script>
-        // Validación del formulario
-        document.getElementById('formPerfil').addEventListener('submit', function(e) {
-            const nuevoPassword = document.getElementById('NuevoPassword').value;
-            const confirmarPassword = document.getElementById('ConfirmarPassword').value;
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('formPerfil');
+            const emailOriginal = '@Model.Email';
+            const passwordInput = document.getElementById('Password');
+            const confirmarPassword = document.getElementById('ConfirmarPassword');
+            const emailInput = document.getElementById('Email');
+            const campoReautenticar = document.getElementById('DebeReautenticar');
+            const passwordCollapse = document.getElementById('cambioPassword');
 
-            if (nuevoPassword && nuevoPassword !== confirmarPassword) {
-                e.preventDefault();
-                alert('Las contraseñas no coinciden');
-                return false;
-            }
-        });
+            // Validar formulario antes de enviar
+            form.addEventListener('submit', function(e) {
+                const password = passwordInput.value;
+                const confirmar = confirmarPassword.value;
+                const emailActual = emailInput.value;
 
-        // Auto-ocultar alertas después de 5 segundos
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
+                // Validar contraseñas coincidan
+                if (password && password !== confirmar) {
+                    e.preventDefault();
+                    alert('Las contraseñas no coinciden');
+                    return false;
+                }
+
+                // Detectar si cambió correo o contraseña
+                const cambioCorreo = emailActual !== emailOriginal;
+                const cambioPassword = password && password.trim() !== '';
+
+                if (cambioCorreo || cambioPassword) {
+                    const mensaje = cambioCorreo && cambioPassword
+                        ? "Has cambiado tu correo y contraseña. Por seguridad deberás iniciar sesión nuevamente. ¿Deseas continuar?"
+                        : "Has cambiado tu " + (cambioCorreo ? "correo" : "contraseña") + ". Por seguridad deberás iniciar sesión nuevamente. ¿Deseas continuar?";
+
+                    if (!confirm(mensaje)) {
+                        e.preventDefault();
+                        return false;
+                    }
+
+                    campoReautenticar.value = "true";
+                }
+
+                // Si no se cambia password, no se envía
+                if (!password) {
+                    passwordInput.disabled = true;
+                }
             });
-        }, 5000);
+
+            // Manejo del colapso de contraseña
+            passwordCollapse.addEventListener('show.bs.collapse', function () {
+                passwordInput.disabled = false;
+                confirmarPassword.disabled = false;
+            });
+
+            passwordCollapse.addEventListener('hidden.bs.collapse', function () {
+                passwordInput.value = '';
+                confirmarPassword.value = '';
+            });
+
+            // Auto-ocultar alertas después de 5 segundos
+            setTimeout(function() {
+                document.querySelectorAll('.alert').forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
     </script>
 }

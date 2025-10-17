@@ -345,7 +345,6 @@ namespace AppWebBiblioteca.Controllers
         }
 
         [HttpGet]
-
         public async Task<IActionResult> PerfilUsuario()
         {
             try
@@ -387,6 +386,85 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+
+
+
+
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> EditarPerfil(PerfilUsuarioDto perfilUsuario)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        if (!ModelState.IsValid)
+        //        {
+        //            TempData["ErrorMessage"] = "Datos del usuario inválidos";
+        //            return View("PerfilUsuario", perfilUsuario);
+        //        }
+
+        //        var actualizado = await _usuarioService.ActualizarPerfilsync(perfilUsuario);
+
+        //        if (actualizado)
+        //        {
+        //            TempData["SuccessMessage"] = "Perfil actualizado exitosamente";
+        //            return RedirectToAction(nameof(PerfilUsuario));
+        //        }
+
+        //        TempData["ErrorMessage"] = "Error al actualizar el perfil";
+
+        //        return View("PerfilUsuario", perfilUsuario);
+        //    }
+        //    catch
+        //    {
+        //        TempData["ErrorMessage"] = "Error interno del sistema al actualizar el perfil";
+        //        return View("PerfilUsuario", perfilUsuario);
+        //    }
+        //}
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditarPerfil(PerfilUsuarioDto perfilUsuario, bool DebeReautenticar)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return RedirectToAction("Login", "Usuario");
+
+                if (!ModelState.IsValid)
+                {
+                    TempData["ErrorMessage"] = "Datos del usuario inválidos";
+                    return View("PerfilUsuario", perfilUsuario);
+                }
+
+                var actualizado = await _usuarioService.ActualizarPerfilsync(perfilUsuario);
+
+                if (actualizado)
+                {
+                    if (DebeReautenticar)
+                    {
+                        //TempData["SuccessMessage"] = "Tu perfil fue actualizado. Por seguridad, inicia sesión nuevamente.";
+                        // Cierra sesión y redirige al login
+                        await _authService.LogoutAsync();
+                        return RedirectToAction("Login", "Usuario");
+                    }
+
+                    TempData["SuccessMessage"] = "Perfil actualizado exitosamente";
+                    return RedirectToAction(nameof(PerfilUsuario));
+                }
+
+                TempData["ErrorMessage"] = "Error al actualizar el perfil";
+                return View("PerfilUsuario", perfilUsuario);
+            }
+            catch
+            {
+                TempData["ErrorMessage"] = "Error interno del sistema al actualizar el perfil";
+                return View("PerfilUsuario", perfilUsuario);
+            }
+        }
 
 
 
