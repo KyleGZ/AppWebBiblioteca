@@ -109,6 +109,51 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        /*
+         * Busqueda por descripcion
+         */
+
+        public async Task<PaginacionResponse<LibroListaView>> BuscarLibrosDescripcionAsync(
+       string termino,
+       int pagina = 1,
+       int resultadosPorPagina = 20)
+        {
+            try
+            {
+                var buscarUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/Busqueda-Descripcion?terminoBusqueda={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={resultadosPorPagina}";
+
+                var buscarResponse = await _httpClient.GetAsync(buscarUrl);
+
+                if (buscarResponse.IsSuccessStatusCode)
+                {
+                    var result = await buscarResponse.Content.ReadFromJsonAsync<PaginacionResponse<LibroListaView>>();
+                    return result ?? new PaginacionResponse<LibroListaView>
+                    {
+                        Success = false,
+                        Message = "No se pudieron procesar los resultados"
+                    };
+                }
+                else
+                {
+                    return new PaginacionResponse<LibroListaView>
+                    {
+                        Success = false,
+                        Message = $"Error en la búsqueda por descripción: {buscarResponse.StatusCode}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new PaginacionResponse<LibroListaView>
+                {
+                    Success = false,
+                    Message = $"Error de conexión: {ex.Message}"
+                };
+            }
+        }
+
+
+
     }
 
 
@@ -117,5 +162,7 @@ namespace AppWebBiblioteca.Services
     {
         Task<List<LibroListaView>> ObtenerLibrosAsync();
         Task<PaginacionResponse<LibroListaView>> BuscarLibrosRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
+        Task<PaginacionResponse<LibroListaView>> BuscarLibrosDescripcionAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
+
     }
 }

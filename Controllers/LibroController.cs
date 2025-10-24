@@ -43,14 +43,24 @@ namespace AppWebBiblioteca.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Buscar(string termino, int pagina = 1) {
+        public async Task<IActionResult> Buscar(string termino, bool buscarPorDescripcion = false, int pagina = 1) {
 
             try
             {
                 if (!_authService.IsAuthenticated())
                     return RedirectToAction("Login", "Usuario");
-                var resultado = await _libroService.BuscarLibrosRapidaAsync(termino, pagina, 20);
-                return View("Index",resultado);
+
+                if (buscarPorDescripcion)
+                {
+                    var resultado = await _libroService.BuscarLibrosDescripcionAsync(termino, pagina, 20);
+                    return View("Index", resultado);
+
+                }
+                else {
+                    var resultado = await _libroService.BuscarLibrosRapidaAsync(termino, pagina, 20);
+                    return View("Index", resultado);
+                }
+                    
             }
             catch (Exception)
             {
@@ -65,5 +75,48 @@ namespace AppWebBiblioteca.Controllers
             }
 
         }
+
+        ///*
+        // * Metodo para buscar por descripcion
+        // */
+
+        //[HttpPost]
+        //public async Task<IActionResult> BuscarDescripcion(string termino, bool buscarPorDescripcion = false, int pagina = 1)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        PaginacionResponse<LibroListaView> resultado;
+
+        //        if (buscarPorDescripcion && !string.IsNullOrWhiteSpace(termino))
+        //        {
+        //            // Usar el NUEVO método para búsqueda por descripción
+        //            resultado = await _libroService.BuscarLibrosDescripcionAsync(termino, pagina, 20);
+        //        }
+        //        else
+        //        {
+        //            // Usar el método EXISTENTE para búsquedas rápidas
+        //            resultado = await _libroService.BuscarLibrosRapidaAsync(termino, pagina, 20);
+        //        }
+
+        //        ViewBag.TerminoBusqueda = termino;
+        //        ViewBag.BuscarPorDescripcion = buscarPorDescripcion;
+
+        //        return View("Index", resultado);
+        //    }
+        //    catch (Exception)
+        //    {
+        //        ViewBag.Error = "Error al realizar la búsqueda";
+        //        return View("Index", new PaginacionResponse<LibroListaView>
+        //        {
+        //            Success = false,
+        //            Message = "Error en la búsqueda"
+        //        });
+        //    }
+        //}
+
+
     }
 }

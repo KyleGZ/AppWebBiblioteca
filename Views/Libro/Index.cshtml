@@ -7,6 +7,7 @@
     var libros = Model?.Data ?? new List<LibroListaView>();
     var paginacion = Model?.Pagination ?? new PaginationInfo();
     var terminoBusqueda = ViewBag.TerminoBusqueda as string ?? "";
+    var buscarPorDescripcion = ViewBag.BuscarPorDescripcion as bool? ?? false;
 }
 
 <!-- Contenido específico de Libros -->
@@ -31,10 +32,10 @@
                     </div>
 
                     <!-- Formulario de Búsqueda -->
-                    <form asp-action="Buscar" method="post" class="search-filter-section">
+                    <form asp-action="Buscar" method="post" class="search-filter-section" id="searchForm">
                         <div class="row g-3">
                             <!-- Búsqueda -->
-                            <div class="col-12 col-xl-6">
+                            <div class="col-12 col-xl-8">
                                 <div class="search-container">
                                     <div class="input-group">
                                         <span class="input-group-text bg-light">
@@ -50,28 +51,17 @@
                                 </div>
                             </div>
 
-                            <!-- Filtros -->
-                            <div class="col-12 col-xl-6">
+                            <!-- Opción Buscar por Descripción -->
+                            <div class="col-12 col-xl-4">
                                 <div class="filter-container">
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-light">
-                                            <i class="fas fa-filter text-muted"></i>
-                                        </span>
-                                        <select class="form-select" id="filterEstado">
-                                            <option value="">Todos los estados</option>
-                                            <option value="disponible">Disponible</option>
-                                            <option value="prestado">Prestado</option>
-                                            <option value="reservado">Reservado</option>
-                                            <option value="reparacion">En reparación</option>
-                                        </select>
-                                        <select class="form-select" id="filterGenero">
-                                            <option value="">Todos los géneros</option>
-                                            <option value="1">Realismo Mágico</option>
-                                            <option value="2">Clásico</option>
-                                            <option value="3">Ciencia Ficción</option>
-                                            <option value="4">Poesía</option>
-                                            <option value="5">Historia</option>
-                                        </select>
+                                    <div class="form-check form-switch d-flex align-items-center h-100">
+                                        <input class="form-check-input me-2" type="checkbox"
+                                               id="buscarPorDescripcion" name="buscarPorDescripcion"
+                                               value="true" @(buscarPorDescripcion ? "checked" : "")>
+                                        <label class="form-check-label fw-medium" for="buscarPorDescripcion">
+                                            <i class="fas fa-align-left me-1 text-muted"></i>
+                                            Buscar por descripción
+                                        </label>
                                     </div>
                                 </div>
                             </div>
@@ -88,6 +78,12 @@
                             {
                                 <span id="resultCount">@paginacion.TotalResultados</span>
                                 <span>libros encontrados para "@terminoBusqueda"</span>
+                                @if (buscarPorDescripcion)
+                                {
+                                    <span class="badge bg-info ms-2">
+                                        <i class="fas fa-align-left me-1"></i>Incluyendo descripción
+                                    </span>
+                                }
                             }
                             else
                             {
@@ -96,14 +92,14 @@
                             }
                         </div>
                         <div class="d-flex gap-2">
-                            @if (!string.IsNullOrEmpty(terminoBusqueda))
+                            @if (!string.IsNullOrEmpty(terminoBusqueda) || buscarPorDescripcion)
                             {
                                 <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-times me-1"></i>Limpiar búsqueda
                                 </a>
                             }
                             <button class="btn btn-sm btn-outline-secondary" id="btnLimpiarFiltros">
-                                <i class="fas fa-filter me-1"></i>Limpiar filtros
+                                <i class="fas fa-filter me-1"></i>Limpiar filtro
                             </button>
                         </div>
                     </div>
@@ -162,7 +158,6 @@
                                                     <small class="text-muted">@libro.ISBN</small>
                                                 </div>
 
-
                                                 <div class="d-flex align-items-center mb-1">
                                                     <i class="fas fa-user-edit me-2 text-muted small"></i>
                                                     @if (libro.Autor != null && libro.Autor.Any())
@@ -175,25 +170,20 @@
                                                     }
                                                 </div>
 
-
-
-
                                                 <div class="d-flex align-items-center mb-1">
                                                     <i class="fas fa-building me-2 text-muted small"></i>
                                                     <small>@libro.Editorial</small>
                                                 </div>
 
-
                                                 <div class="d-flex align-items-center mb-2">
                                                     <i class="fas fa-tag me-2 text-muted small"></i>
                                                     @if (libro.Genero != null && libro.Genero.Any())
                                                     {
-                                                    <small>@string.Join(", ",libro.Genero)</small>
-
+                                                        <small>@string.Join(", ", libro.Genero)</small>
                                                     }
                                                     else
                                                     {
-                                                        <small class="text-muted"> Sin genero</small>
+                                                        <small class="text-muted">Sin género</small>
                                                     }
                                                 </div>
                                             </div>
@@ -240,6 +230,10 @@
                             <i class="fas fa-search fa-4x text-muted mb-3"></i>
                             <h4>No se encontraron resultados</h4>
                             <p class="text-muted">No hay libros que coincidan con "@terminoBusqueda"</p>
+                            @if (buscarPorDescripcion)
+                            {
+                                <p class="text-muted small">Incluyendo búsqueda en descripciones</p>
+                            }
                             <a href="@Url.Action("Index")" class="btn btn-esparza-primary mt-3">
                                 <i class="fas fa-book me-2"></i>Ver todos los libros
                             </a>
@@ -266,12 +260,11 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const searchInput = document.getElementById('searchInput');
-            const filterEstado = document.getElementById('filterEstado');
-            const filterGenero = document.getElementById('filterGenero');
+            const buscarPorDescripcion = document.getElementById('buscarPorDescripcion');
             const btnBuscar = document.getElementById('btnBuscar');
             const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
             const paginaHidden = document.getElementById('paginaHidden');
-            const searchForm = document.querySelector('form');
+            const searchForm = document.getElementById('searchForm');
 
             // Función para cambiar página
             function cambiarPagina(pagina) {
@@ -279,17 +272,30 @@
                 searchForm.submit();
             }
 
-            // Limpiar filtros del frontend
+            // Limpiar filtro de búsqueda por descripción
             function limpiarFiltros() {
-                filterEstado.value = '';
-                filterGenero.value = '';
-                // Aquí puedes agregar lógica de filtrado en el frontend si es necesario
+                if (buscarPorDescripcion.checked) {
+                    buscarPorDescripcion.checked = false;
+                    // Si hay término de búsqueda, mantenerlo pero sin el filtro de descripción
+                    if (searchInput.value.trim() !== '') {
+                        paginaHidden.value = 1;
+                        searchForm.submit();
+                    }
+                }
             }
+
+            // ✅ SIMPLIFICADO: Enviar formulario automáticamente al cambiar el checkbox
+            buscarPorDescripcion.addEventListener('change', function() {
+                if (searchInput.value.trim() !== '') {
+                    paginaHidden.value = 1;
+                    searchForm.submit();
+                }
+            });
 
             // Event listeners
             btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
 
-            // Auto-ocultar alertas después de 5 segundos
+            // Auto-ocultar alertas
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(function(alert) {
@@ -308,11 +314,27 @@
                     }, 100);
                     </text>
             }
+
+            // Actualizar texto del botón "Limpiar filtro"
+            function actualizarTextoBotonLimpiar() {
+                if (buscarPorDescripcion.checked) {
+                    btnLimpiarFiltros.innerHTML = '<i class="fas fa-filter me-1"></i>Quitar filtro descripción';
+                } else {
+                    btnLimpiarFiltros.innerHTML = '<i class="fas fa-filter me-1"></i>Limpiar filtro';
+                }
+            }
+
+            actualizarTextoBotonLimpiar();
+            buscarPorDescripcion.addEventListener('change', actualizarTextoBotonLimpiar);
         });
 
         function verDetalle(idLibro) {
-            // Aquí implementaremos la lógica para ver el detalle
             alert('Ver detalle del libro ID: ' + idLibro);
+        }
+
+        function cambiarPagina(pagina) {
+            document.getElementById('paginaHidden').value = pagina;
+            document.getElementById('searchForm').submit();
         }
     </script>
 }
