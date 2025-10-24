@@ -8,6 +8,36 @@
     var paginacion = Model?.Pagination ?? new PaginationInfo();
     var terminoBusqueda = ViewBag.TerminoBusqueda as string ?? "";
     var buscarPorDescripcion = ViewBag.BuscarPorDescripcion as bool? ?? false;
+
+
+    ViewBag.Generos = new List<SelectListItem>
+    {
+        new SelectListItem { Value = "1", Text = "Ficción" },
+        new SelectListItem { Value = "2", Text = "Ciencia Ficción" },
+        new SelectListItem { Value = "3", Text = "Fantasia" },
+        new SelectListItem { Value = "4", Text = "Misterio" },
+        new SelectListItem { Value = "5", Text = "Romance" },
+        new SelectListItem { Value = "6", Text = "Terror" }
+    };
+
+    ViewBag.Autores = new List<SelectListItem>
+    {
+        new SelectListItem { Value = "1", Text = "Gabriel García Márquez" },
+        new SelectListItem { Value = "2", Text = "Isabel Allende" },
+        new SelectListItem { Value = "3", Text = "Mario Vargas Llosa" },
+        new SelectListItem { Value = "4", Text = "Julio Cortázar" },
+        new SelectListItem { Value = "5", Text = "Jorge Luis Borges" }
+    };
+
+    ViewBag.Secciones = new List<SelectListItem>
+    {
+        new SelectListItem { Value = "1", Text = "Literatura" },
+        new SelectListItem { Value = "2", Text = "Ciencias" },
+        new SelectListItem { Value = "3", Text = "Arte" },
+        new SelectListItem { Value = "4", Text = "Historia" }
+    };
+
+
 }
 
 <!-- Contenido específico de Libros -->
@@ -25,9 +55,8 @@
                             </h2>
                             <p class="text-muted mb-0">Gestiona el inventario de libros de la biblioteca</p>
                         </div>
-                        <button type="button" class="btn btn-esparza-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarLibro">
-                            <i class="fas fa-book-medical"></i>
-                            Nuevo Libro
+                        <button class="btn btn-libros-primary" data-bs-toggle="modal" data-bs-target="#agregarLibroModal">
+                            <i class="fas fa-plus-circle"></i> Nuevo Libro
                         </button>
                     </div>
 
@@ -254,7 +283,297 @@
             </div>
         </div>
     </div>
+    <!-- MODAL AGREGAR LIBRO ACTUALIZADO CON DROPDOWN Y CHIPS -->
+    <div class="modal fade modal-libros" id="agregarLibroModal" tabindex="-1" aria-labelledby="agregarLibroModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content zoom-in">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="agregarLibroModalLabel">
+                        <i class="fas fa-book-medical me-2"></i> Agregar Nuevo Libro
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <form id="formAgregarLibro" asp-action="Create" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="row">
+                            <!-- Título -->
+                            <div class="col-md-6">
+                                <div class="form-group-libros">
+                                    <label for="Titulo" class="form-label-libros">
+                                        <i class="fas fa-heading"></i> Título
+                                    </label>
+                                    <input type="text" id="Titulo" name="Titulo" class="form-control form-control-libros" required placeholder="Ingrese el título del libro">
+                                </div>
+                            </div>
+
+                            <!-- ISBN -->
+                            <div class="col-md-6">
+                                <div class="form-group-libros">
+                                    <label for="ISBN" class="form-label-libros">
+                                        <i class="fas fa-barcode"></i> ISBN
+                                    </label>
+                                    <input type="text" id="ISBN" name="ISBN" class="form-control form-control-libros" placeholder="Ingrese el ISBN">
+                                </div>
+                            </div>
+
+                            <!-- Imagen del Libro -->
+                            <div class="col-md-12">
+                                <div class="form-group-libros">
+                                    <label for="ImagenArchivo" class="form-label-libros">
+                                        <i class="fas fa-image"></i> Imagen del Libro
+                                    </label>
+                                    <input type="file" id="ImagenArchivo" name="ImagenArchivo" class="form-control form-control-libros" accept="image/*" />
+                                    <small class="text-muted">Formatos aceptados: JPG, PNG, GIF. Tamaño máximo: 5MB</small>
+                                    <div class="mt-3 text-center">
+                                        <img id="previewImagenLibro" src="#" alt="Vista previa de la imagen" class="img-thumbnail d-none" style="max-height: 150px;" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Géneros (Dropdown con Chips) -->
+                            <div class="col-md-6">
+                                <div class="form-group-libros">
+                                    <label class="form-label-libros">
+                                        <i class="fas fa-tags"></i> Género(s)
+                                    </label>
+                                    <div class="dropdown-chip-container">
+                                        <div class="selected-chips-container" id="generosChipsContainer">
+                                            <!-- Los chips de géneros seleccionados aparecerán aquí -->
+                                        </div>
+                                        <div class="dropdown-search-container">
+                                            <input type="text"
+                                                   class="form-control form-control-libros dropdown-search-input"
+                                                   id="generosSearch"
+                                                   placeholder="Buscar géneros..."
+                                                   data-bs-toggle="dropdown"
+                                                   aria-expanded="false">
+                                            <i class="fas fa-search dropdown-search-icon"></i>
+                                            <ul class="dropdown-menu dropdown-chip-menu w-100" id="generosDropdown">
+                                                <li class="dropdown-header">Seleccione uno o más géneros</li>
+                                                <li class="dropdown-divider"></li>
+                                                @if (ViewBag.Generos is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> generos && generos.Any())
+                                                {
+                                                    foreach (var genero in generos)
+                                                    {
+                                                        if (genero.Value != "0")
+                                                        {
+                                                            <li>
+                                                                <a class="dropdown-item" href="#" data-value="@genero.Value" data-text="@genero.Text">
+                                                                    <i class="fas fa-tag me-2"></i>@genero.Text
+                                                                </a>
+                                                            </li>
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <li><a class="dropdown-item disabled" href="#">No hay géneros disponibles</a></li>
+                                                }
+                                            </ul>
+                                        </div>
+                                        <input type="hidden" id="GenerosSeleccionados" name="GenerosSeleccionados" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Autores (Dropdown con Chips) -->
+                            <div class="col-md-6">
+                                <div class="form-group-libros">
+                                    <label class="form-label-libros">
+                                        <i class="fas fa-user-edit"></i> Autor(es)
+                                    </label>
+                                    <div class="dropdown-chip-container">
+                                        <div class="selected-chips-container" id="autoresChipsContainer">
+                                            <!-- Los chips de autores seleccionados aparecerán aquí -->
+                                        </div>
+                                        <div class="dropdown-search-container">
+                                            <input type="text"
+                                                   class="form-control form-control-libros dropdown-search-input"
+                                                   id="autoresSearch"
+                                                   placeholder="Buscar autores..."
+                                                   data-bs-toggle="dropdown"
+                                                   aria-expanded="false">
+                                            <i class="fas fa-search dropdown-search-icon"></i>
+                                            <ul class="dropdown-menu dropdown-chip-menu w-100" id="autoresDropdown">
+                                                <li class="dropdown-header">Seleccione uno o más autores</li>
+                                                <li class="dropdown-divider"></li>
+                                                @if (ViewBag.Autores is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> autores && autores.Any())
+                                                {
+                                                    foreach (var autor in autores)
+                                                    {
+                                                        if (autor.Value != "0")
+                                                        {
+                                                            <li>
+                                                                <a class="dropdown-item" href="#" data-value="@autor.Value" data-text="@autor.Text">
+                                                                    <i class="fas fa-user me-2"></i>@autor.Text
+                                                                </a>
+                                                            </li>
+                                                        }
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <li><a class="dropdown-item disabled" href="#">No hay autores disponibles</a></li>
+                                                }
+                                            </ul>
+                                        </div>
+                                        <input type="hidden" id="AutoresSeleccionados" name="AutoresSeleccionados" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sección -->
+                            <div class="col-md-6">
+                                <div class="form-group-libros">
+                                    <label for="SeccionId" class="form-label-libros">
+                                        <i class="fas fa-layer-group"></i> Sección
+                                    </label>
+                                    <select id="SeccionId" name="SeccionId" class="form-control form-control-libros">
+                                        <option value="0">— Seleccione una sección —</option>
+                                        @if (ViewBag.Secciones is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> secciones && secciones.Any())
+                                        {
+                                            foreach (var seccion in secciones)
+                                            {
+                                                if (seccion.Value != "0")
+                                                {
+                                                    <option value="@seccion.Value">@seccion.Text</option>
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <option disabled>— No hay secciones disponibles —</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="col-md-6">
+                                <div class="form-group-libros">
+                                    <label for="Estado" class="form-label-libros">
+                                        <i class="fas fa-toggle-on"></i> Estado
+                                    </label>
+                                    <select id="Estado" name="Estado" class="form-control form-control-libros">
+                                        <option value="Disponible">Disponible</option>
+                                        <option value="No Disponible">No Disponible</option>
+                                        <option value="En Préstamo">En Préstamo</option>
+                                        <option value="En Reparación">En Reparación</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-libros-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-libros-primary">
+                            <i class="fas fa-save me-2"></i> Guardar Libro
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    
 </div>
+
+<style>
+    .dropdown-chip-container {
+        position: relative;
+    }
+
+    .selected-chips-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        min-height: 45px;
+        padding: 0.375rem 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        background-color: white;
+        margin-bottom: 0.5rem;
+        align-items: center;
+    }
+
+    .chip {
+        display: inline-flex;
+        align-items: center;
+        background-color: #e9ecef;
+        border: 1px solid #dee2e6;
+        border-radius: 1rem;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        gap: 0.5rem;
+    }
+
+    .chip-remove {
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        padding: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+    }
+
+        .chip-remove:hover {
+            background-color: #dc3545;
+            color: white;
+        }
+
+    .dropdown-search-container {
+        position: relative;
+    }
+
+    .dropdown-search-input {
+        padding-right: 2.5rem;
+    }
+
+    .dropdown-search-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        pointer-events: none;
+    }
+
+    .dropdown-chip-menu {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+        .dropdown-chip-menu .dropdown-item {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+        }
+
+            .dropdown-chip-menu .dropdown-item:hover {
+                background-color: #e9ecef;
+            }
+
+            .dropdown-chip-menu .dropdown-item.selected {
+                background-color: #007bff;
+                color: white;
+            }
+
+    .empty-chips-message {
+        color: #6c757d;
+        font-style: italic;
+        font-size: 0.875rem;
+    }
+</style>
 
 @section Scripts {
     <script>
@@ -265,6 +584,243 @@
             const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
             const paginaHidden = document.getElementById('paginaHidden');
             const searchForm = document.getElementById('searchForm');
+
+
+            /*
+             *
+             */document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM cargado - inicializando modal de libros con chips');
+
+            // Vista previa de imagen
+            const imagenArchivo = document.getElementById('ImagenArchivo');
+            const previewImagen = document.getElementById('previewImagenLibro');
+
+            if (imagenArchivo && previewImagen) {
+                imagenArchivo.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewImagen.src = e.target.result;
+                            previewImagen.classList.remove('d-none');
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        previewImagen.src = '#';
+                        previewImagen.classList.add('d-none');
+                    }
+                });
+            }
+
+            // Sistema de chips para géneros y autores
+            class ChipManager {
+                constructor(containerId, dropdownId, searchId, hiddenInputId) {
+                    this.container = document.getElementById(containerId);
+                    this.dropdown = document.getElementById(dropdownId);
+                    this.searchInput = document.getElementById(searchId);
+                    this.hiddenInput = document.getElementById(hiddenInputId);
+                    this.selectedItems = new Map();
+
+                    this.init();
+                }
+
+                init() {
+                    this.setupSearch();
+                    this.setupDropdown();
+                    this.updateHiddenInput();
+                    this.showEmptyMessage();
+                }
+
+                setupSearch() {
+                    this.searchInput.addEventListener('input', (e) => {
+                        const searchTerm = e.target.value.toLowerCase();
+                        const items = this.dropdown.querySelectorAll('.dropdown-item:not(.disabled)');
+
+                        items.forEach(item => {
+                            const text = item.textContent.toLowerCase();
+                            if (text.includes(searchTerm)) {
+                                item.style.display = 'block';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+                    });
+
+                    this.searchInput.addEventListener('focus', () => {
+                        const bootstrapDropdown = new bootstrap.Dropdown(this.searchInput);
+                        bootstrapDropdown.show();
+                    });
+                }
+
+                setupDropdown() {
+                    this.dropdown.addEventListener('click', (e) => {
+                        const target = e.target.closest('.dropdown-item');
+                        if (target && !target.classList.contains('disabled')) {
+                            e.preventDefault();
+                            const value = target.getAttribute('data-value');
+                            const text = target.getAttribute('data-text');
+
+                            if (!this.selectedItems.has(value)) {
+                                this.addChip(value, text);
+                                target.classList.add('selected');
+                            }
+
+                            this.searchInput.value = '';
+                            this.searchInput.focus();
+
+                            // Ocultar dropdown después de seleccionar
+                            const bootstrapDropdown = bootstrap.Dropdown.getInstance(this.searchInput);
+                            bootstrapDropdown.hide();
+                        }
+                    });
+                }
+
+                addChip(value, text) {
+                    this.selectedItems.set(value, text);
+
+                    const chip = document.createElement('div');
+                    chip.className = 'chip';
+                    chip.innerHTML = `
+                        <span>${text}</span>
+                        <button type="button" class="chip-remove" data-value="${value}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+
+                    this.container.appendChild(chip);
+                    this.hideEmptyMessage();
+
+                    // Event listener para eliminar chip
+                    chip.querySelector('.chip-remove').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.removeChip(value);
+                    });
+
+                    this.updateHiddenInput();
+                }
+
+                removeChip(value) {
+                    this.selectedItems.delete(value);
+
+                    // Remover chip visual
+                    const chip = this.container.querySelector(`.chip-remove[data-value="${value}"]`)?.closest('.chip');
+                    if (chip) {
+                        chip.remove();
+                    }
+
+                    // Remover selección del dropdown
+                    const dropdownItem = this.dropdown.querySelector(`.dropdown-item[data-value="${value}"]`);
+                    if (dropdownItem) {
+                        dropdownItem.classList.remove('selected');
+                    }
+
+                    if (this.selectedItems.size === 0) {
+                        this.showEmptyMessage();
+                    }
+
+                    this.updateHiddenInput();
+                }
+
+                updateHiddenInput() {
+                    const values = Array.from(this.selectedItems.keys());
+                    this.hiddenInput.value = values.join(',');
+                }
+
+                showEmptyMessage() {
+                    if (!this.container.querySelector('.empty-chips-message')) {
+                        const emptyMessage = document.createElement('div');
+                        emptyMessage.className = 'empty-chips-message';
+                        emptyMessage.textContent = 'No hay elementos seleccionados';
+                        this.container.appendChild(emptyMessage);
+                    }
+                }
+
+                hideEmptyMessage() {
+                    const emptyMessage = this.container.querySelector('.empty-chips-message');
+                    if (emptyMessage) {
+                        emptyMessage.remove();
+                    }
+                }
+            }
+
+            // Inicializar managers para géneros y autores
+            const generosManager = new ChipManager(
+                'generosChipsContainer',
+                'generosDropdown',
+                'generosSearch',
+                'GenerosSeleccionados'
+            );
+
+            const autoresManager = new ChipManager(
+                'autoresChipsContainer',
+                'autoresDropdown',
+                'autoresSearch',
+                'AutoresSeleccionados'
+            );
+
+            // Validación del formulario
+            const formAgregarLibro = document.getElementById('formAgregarLibro');
+            if (formAgregarLibro) {
+                formAgregarLibro.addEventListener('submit', function(e) {
+                    const generosSeleccionados = generosManager.selectedItems.size;
+                    const autoresSeleccionados = autoresManager.selectedItems.size;
+                    let isValid = true;
+
+                    if (generosSeleccionados === 0) {
+                        isValid = false;
+                        showAlert('Por favor seleccione al menos un género', 'error');
+                    }
+
+                    if (autoresSeleccionados === 0) {
+                        isValid = false;
+                        showAlert('Por favor seleccione al menos un autor', 'error');
+                    }
+
+                    if (!isValid) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // Función para mostrar alertas
+            function showAlert(message, type = 'success') {
+                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                const alertHtml = `
+                    <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;" role="alert">
+                        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                document.body.insertAdjacentHTML('beforeend', alertHtml);
+
+                setTimeout(() => {
+                    const alertElement = document.querySelector('.alert.position-fixed');
+                    if (alertElement) {
+                        const bsAlert = new bootstrap.Alert(alertElement);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            }
+
+            // Cerrar dropdown cuando se hace click fuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown-chip-container')) {
+                    const dropdowns = document.querySelectorAll('.dropdown-chip-menu');
+                    dropdowns.forEach(dropdown => {
+                        if (dropdown.classList.contains('show')) {
+                            const searchInput = dropdown.previousElementSibling;
+                            const bootstrapDropdown = bootstrap.Dropdown.getInstance(searchInput);
+                            if (bootstrapDropdown) {
+                                bootstrapDropdown.hide();
+                            }
+                        }
+                    });
+                }
+            });
+        });
+               //////////////////////////////////
 
             // Función para cambiar página
             function cambiarPagina(pagina) {
@@ -337,6 +893,7 @@
             document.getElementById('searchForm').submit();
         }
     </script>
+
 }
 
 @functions {

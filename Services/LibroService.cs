@@ -1,4 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
+using System.Text;
+using System.Text.Json;
 
 namespace AppWebBiblioteca.Services
 {
@@ -152,6 +154,36 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        public async Task<ApiResponse> RegistrarLibroAsync(CrearLibroDto libroDto)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Libro/Registro-Libro";
+
+                var json = JsonSerializer.Serialize(libroDto);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(apiUrl, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return apiResponse ?? new ApiResponse
+                {
+                    Success = false,
+                    Message = "No se pudo procesar la respuesta del servidor"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error al registrar el libro: {ex.Message}"
+                };
+            }
+        }
 
 
     }
@@ -163,6 +195,7 @@ namespace AppWebBiblioteca.Services
         Task<List<LibroListaView>> ObtenerLibrosAsync();
         Task<PaginacionResponse<LibroListaView>> BuscarLibrosRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
         Task<PaginacionResponse<LibroListaView>> BuscarLibrosDescripcionAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
+        Task<ApiResponse> RegistrarLibroAsync(CrearLibroDto crearLibroDto);
 
     }
 }
