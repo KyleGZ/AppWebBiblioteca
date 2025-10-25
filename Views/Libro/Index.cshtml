@@ -8,36 +8,6 @@
     var paginacion = Model?.Pagination ?? new PaginationInfo();
     var terminoBusqueda = ViewBag.TerminoBusqueda as string ?? "";
     var buscarPorDescripcion = ViewBag.BuscarPorDescripcion as bool? ?? false;
-
-
-    ViewBag.Generos = new List<SelectListItem>
-    {
-        new SelectListItem { Value = "1", Text = "Ficción" },
-        new SelectListItem { Value = "2", Text = "Ciencia Ficción" },
-        new SelectListItem { Value = "3", Text = "Fantasia" },
-        new SelectListItem { Value = "4", Text = "Misterio" },
-        new SelectListItem { Value = "5", Text = "Romance" },
-        new SelectListItem { Value = "6", Text = "Terror" }
-    };
-
-    ViewBag.Autores = new List<SelectListItem>
-    {
-        new SelectListItem { Value = "1", Text = "Gabriel García Márquez" },
-        new SelectListItem { Value = "2", Text = "Isabel Allende" },
-        new SelectListItem { Value = "3", Text = "Mario Vargas Llosa" },
-        new SelectListItem { Value = "4", Text = "Julio Cortázar" },
-        new SelectListItem { Value = "5", Text = "Jorge Luis Borges" }
-    };
-
-    ViewBag.Secciones = new List<SelectListItem>
-    {
-        new SelectListItem { Value = "1", Text = "Literatura" },
-        new SelectListItem { Value = "2", Text = "Ciencias" },
-        new SelectListItem { Value = "3", Text = "Arte" },
-        new SelectListItem { Value = "4", Text = "Historia" }
-    };
-
-
 }
 
 <!-- Contenido específico de Libros -->
@@ -283,6 +253,8 @@
             </div>
         </div>
     </div>
+
+
     <!-- MODAL AGREGAR LIBRO ACTUALIZADO CON DROPDOWN Y CHIPS -->
     <div class="modal fade modal-libros" id="agregarLibroModal" tabindex="-1" aria-labelledby="agregarLibroModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -294,7 +266,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
-                <form id="formAgregarLibro" asp-action="Create" method="post" enctype="multipart/form-data">
+                <form id="formAgregarLibro" asp-action="RegistroLibro" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
                     <div class="modal-body">
                         <div class="row">
@@ -357,7 +329,7 @@
                                                 {
                                                     foreach (var genero in generos)
                                                     {
-                                                        if (genero.Value != "0")
+                                                        if (genero.Value != "0") // Excluir la opción por defecto
                                                         {
                                                             <li>
                                                                 <a class="dropdown-item" href="#" data-value="@genero.Value" data-text="@genero.Text">
@@ -403,7 +375,7 @@
                                                 {
                                                     foreach (var autor in autores)
                                                     {
-                                                        if (autor.Value != "0")
+                                                        if (autor.Value != "0") // Excluir la opción por defecto
                                                         {
                                                             <li>
                                                                 <a class="dropdown-item" href="#" data-value="@autor.Value" data-text="@autor.Text">
@@ -421,6 +393,32 @@
                                         </div>
                                         <input type="hidden" id="AutoresSeleccionados" name="AutoresSeleccionados" />
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Editorial -->
+                            <div class="col-md-6">
+                                <div class="form-group-libros">
+                                    <label for="EditorialId" class="form-label-libros">
+                                        <i class="fas fa-building"></i> Editorial
+                                    </label>
+                                    <select id="EditorialId" name="EditorialId" class="form-control form-control-libros">
+                                        <option value="0">— Seleccione una editorial —</option>
+                                        @if (ViewBag.Editoriales is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> editoriales && editoriales.Any())
+                                        {
+                                            foreach (var editorial in editoriales)
+                                            {
+                                                if (editorial.Value != "0")
+                                                {
+                                                    <option value="@editorial.Value">@editorial.Text</option>
+                                                }
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <option disabled>— No hay editoriales disponibles —</option>
+                                        }
+                                    </select>
                                 </div>
                             </div>
 
@@ -464,6 +462,24 @@
                                     </select>
                                 </div>
                             </div>
+
+                            <!-- Año de Publicación -->
+                            <div class="col-md-6">
+                                
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="col-md-12">
+                                <div class="form-group-libros">
+                                    <label for="Descripcion" class="form-label-libros">
+                                        <i class="fas fa-align-left"></i> Descripción
+                                    </label>
+                                    <textarea id="Descripcion" name="Descripcion"
+                                              class="form-control form-control-libros"
+                                              rows="3"
+                                              placeholder="Ingrese una descripción del libro (opcional)"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -479,7 +495,6 @@
             </div>
         </div>
     </div>
-
     
 </div>
 
@@ -578,249 +593,14 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // =============================================
+            // FUNCIONALIDAD DE BÚSQUEDA Y PAGINACIÓN
+            // =============================================
             const searchInput = document.getElementById('searchInput');
             const buscarPorDescripcion = document.getElementById('buscarPorDescripcion');
-            const btnBuscar = document.getElementById('btnBuscar');
             const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
             const paginaHidden = document.getElementById('paginaHidden');
             const searchForm = document.getElementById('searchForm');
-
-
-            /*
-             *
-             */document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM cargado - inicializando modal de libros con chips');
-
-            // Vista previa de imagen
-            const imagenArchivo = document.getElementById('ImagenArchivo');
-            const previewImagen = document.getElementById('previewImagenLibro');
-
-            if (imagenArchivo && previewImagen) {
-                imagenArchivo.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            previewImagen.src = e.target.result;
-                            previewImagen.classList.remove('d-none');
-                        }
-                        reader.readAsDataURL(file);
-                    } else {
-                        previewImagen.src = '#';
-                        previewImagen.classList.add('d-none');
-                    }
-                });
-            }
-
-            // Sistema de chips para géneros y autores
-            class ChipManager {
-                constructor(containerId, dropdownId, searchId, hiddenInputId) {
-                    this.container = document.getElementById(containerId);
-                    this.dropdown = document.getElementById(dropdownId);
-                    this.searchInput = document.getElementById(searchId);
-                    this.hiddenInput = document.getElementById(hiddenInputId);
-                    this.selectedItems = new Map();
-
-                    this.init();
-                }
-
-                init() {
-                    this.setupSearch();
-                    this.setupDropdown();
-                    this.updateHiddenInput();
-                    this.showEmptyMessage();
-                }
-
-                setupSearch() {
-                    this.searchInput.addEventListener('input', (e) => {
-                        const searchTerm = e.target.value.toLowerCase();
-                        const items = this.dropdown.querySelectorAll('.dropdown-item:not(.disabled)');
-
-                        items.forEach(item => {
-                            const text = item.textContent.toLowerCase();
-                            if (text.includes(searchTerm)) {
-                                item.style.display = 'block';
-                            } else {
-                                item.style.display = 'none';
-                            }
-                        });
-                    });
-
-                    this.searchInput.addEventListener('focus', () => {
-                        const bootstrapDropdown = new bootstrap.Dropdown(this.searchInput);
-                        bootstrapDropdown.show();
-                    });
-                }
-
-                setupDropdown() {
-                    this.dropdown.addEventListener('click', (e) => {
-                        const target = e.target.closest('.dropdown-item');
-                        if (target && !target.classList.contains('disabled')) {
-                            e.preventDefault();
-                            const value = target.getAttribute('data-value');
-                            const text = target.getAttribute('data-text');
-
-                            if (!this.selectedItems.has(value)) {
-                                this.addChip(value, text);
-                                target.classList.add('selected');
-                            }
-
-                            this.searchInput.value = '';
-                            this.searchInput.focus();
-
-                            // Ocultar dropdown después de seleccionar
-                            const bootstrapDropdown = bootstrap.Dropdown.getInstance(this.searchInput);
-                            bootstrapDropdown.hide();
-                        }
-                    });
-                }
-
-                addChip(value, text) {
-                    this.selectedItems.set(value, text);
-
-                    const chip = document.createElement('div');
-                    chip.className = 'chip';
-                    chip.innerHTML = `
-                        <span>${text}</span>
-                        <button type="button" class="chip-remove" data-value="${value}">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-
-                    this.container.appendChild(chip);
-                    this.hideEmptyMessage();
-
-                    // Event listener para eliminar chip
-                    chip.querySelector('.chip-remove').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        this.removeChip(value);
-                    });
-
-                    this.updateHiddenInput();
-                }
-
-                removeChip(value) {
-                    this.selectedItems.delete(value);
-
-                    // Remover chip visual
-                    const chip = this.container.querySelector(`.chip-remove[data-value="${value}"]`)?.closest('.chip');
-                    if (chip) {
-                        chip.remove();
-                    }
-
-                    // Remover selección del dropdown
-                    const dropdownItem = this.dropdown.querySelector(`.dropdown-item[data-value="${value}"]`);
-                    if (dropdownItem) {
-                        dropdownItem.classList.remove('selected');
-                    }
-
-                    if (this.selectedItems.size === 0) {
-                        this.showEmptyMessage();
-                    }
-
-                    this.updateHiddenInput();
-                }
-
-                updateHiddenInput() {
-                    const values = Array.from(this.selectedItems.keys());
-                    this.hiddenInput.value = values.join(',');
-                }
-
-                showEmptyMessage() {
-                    if (!this.container.querySelector('.empty-chips-message')) {
-                        const emptyMessage = document.createElement('div');
-                        emptyMessage.className = 'empty-chips-message';
-                        emptyMessage.textContent = 'No hay elementos seleccionados';
-                        this.container.appendChild(emptyMessage);
-                    }
-                }
-
-                hideEmptyMessage() {
-                    const emptyMessage = this.container.querySelector('.empty-chips-message');
-                    if (emptyMessage) {
-                        emptyMessage.remove();
-                    }
-                }
-            }
-
-            // Inicializar managers para géneros y autores
-            const generosManager = new ChipManager(
-                'generosChipsContainer',
-                'generosDropdown',
-                'generosSearch',
-                'GenerosSeleccionados'
-            );
-
-            const autoresManager = new ChipManager(
-                'autoresChipsContainer',
-                'autoresDropdown',
-                'autoresSearch',
-                'AutoresSeleccionados'
-            );
-
-            // Validación del formulario
-            const formAgregarLibro = document.getElementById('formAgregarLibro');
-            if (formAgregarLibro) {
-                formAgregarLibro.addEventListener('submit', function(e) {
-                    const generosSeleccionados = generosManager.selectedItems.size;
-                    const autoresSeleccionados = autoresManager.selectedItems.size;
-                    let isValid = true;
-
-                    if (generosSeleccionados === 0) {
-                        isValid = false;
-                        showAlert('Por favor seleccione al menos un género', 'error');
-                    }
-
-                    if (autoresSeleccionados === 0) {
-                        isValid = false;
-                        showAlert('Por favor seleccione al menos un autor', 'error');
-                    }
-
-                    if (!isValid) {
-                        e.preventDefault();
-                    }
-                });
-            }
-
-            // Función para mostrar alertas
-            function showAlert(message, type = 'success') {
-                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-                const alertHtml = `
-                    <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;" role="alert">
-                        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-
-                document.body.insertAdjacentHTML('beforeend', alertHtml);
-
-                setTimeout(() => {
-                    const alertElement = document.querySelector('.alert.position-fixed');
-                    if (alertElement) {
-                        const bsAlert = new bootstrap.Alert(alertElement);
-                        bsAlert.close();
-                    }
-                }, 5000);
-            }
-
-            // Cerrar dropdown cuando se hace click fuera
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.dropdown-chip-container')) {
-                    const dropdowns = document.querySelectorAll('.dropdown-chip-menu');
-                    dropdowns.forEach(dropdown => {
-                        if (dropdown.classList.contains('show')) {
-                            const searchInput = dropdown.previousElementSibling;
-                            const bootstrapDropdown = bootstrap.Dropdown.getInstance(searchInput);
-                            if (bootstrapDropdown) {
-                                bootstrapDropdown.hide();
-                            }
-                        }
-                    });
-                }
-            });
-        });
-               //////////////////////////////////
 
             // Función para cambiar página
             function cambiarPagina(pagina) {
@@ -832,7 +612,6 @@
             function limpiarFiltros() {
                 if (buscarPorDescripcion.checked) {
                     buscarPorDescripcion.checked = false;
-                    // Si hay término de búsqueda, mantenerlo pero sin el filtro de descripción
                     if (searchInput.value.trim() !== '') {
                         paginaHidden.value = 1;
                         searchForm.submit();
@@ -840,7 +619,7 @@
                 }
             }
 
-            // ✅ SIMPLIFICADO: Enviar formulario automáticamente al cambiar el checkbox
+            // Enviar formulario automáticamente al cambiar el checkbox
             buscarPorDescripcion.addEventListener('change', function() {
                 if (searchInput.value.trim() !== '') {
                     paginaHidden.value = 1;
@@ -882,8 +661,204 @@
 
             actualizarTextoBotonLimpiar();
             buscarPorDescripcion.addEventListener('change', actualizarTextoBotonLimpiar);
+
+            // =============================================
+            // FUNCIONALIDAD DEL MODAL (SIMPLIFICADA)
+            // =============================================
+            console.log('Inicializando modal de libros...');
+
+            // Vista previa de imagen
+            const imagenArchivo = document.getElementById('ImagenArchivo');
+            const previewImagen = document.getElementById('previewImagenLibro');
+
+            if (imagenArchivo && previewImagen) {
+                imagenArchivo.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewImagen.src = e.target.result;
+                            previewImagen.classList.remove('d-none');
+                        }
+                        reader.readAsDataURL(file);
+                    } else {
+                        previewImagen.src = '#';
+                        previewImagen.classList.add('d-none');
+                    }
+                });
+            }
+
+            // Sistema de chips simplificado
+            class ChipManager {
+                constructor(containerId, dropdownId, searchId, hiddenInputId) {
+                    this.container = document.getElementById(containerId);
+                    this.dropdown = document.getElementById(dropdownId);
+                    this.searchInput = document.getElementById(searchId);
+                    this.hiddenInput = document.getElementById(hiddenInputId);
+                    this.selectedItems = new Map();
+                    this.init();
+                }
+
+                init() {
+                    this.setupSearch();
+                    this.setupDropdown();
+                    this.updateHiddenInput();
+                    this.showEmptyMessage();
+                }
+
+                setupSearch() {
+                    this.searchInput.addEventListener('input', (e) => {
+                        const searchTerm = e.target.value.toLowerCase();
+                        const items = this.dropdown.querySelectorAll('.dropdown-item:not(.disabled)');
+
+                        items.forEach(item => {
+                            const text = item.textContent.toLowerCase();
+                            item.style.display = text.includes(searchTerm) ? 'block' : 'none';
+                        });
+                    });
+
+                    this.searchInput.addEventListener('focus', () => {
+                        new bootstrap.Dropdown(this.searchInput).show();
+                    });
+                }
+
+                setupDropdown() {
+                    this.dropdown.addEventListener('click', (e) => {
+                        const target = e.target.closest('.dropdown-item');
+                        if (target && !target.classList.contains('disabled')) {
+                            e.preventDefault();
+                            const value = target.getAttribute('data-value');
+                            const text = target.getAttribute('data-text');
+
+                            if (!this.selectedItems.has(value)) {
+                                this.addChip(value, text);
+                                target.classList.add('selected');
+                            }
+
+                            this.searchInput.value = '';
+                            this.searchInput.focus();
+                            bootstrap.Dropdown.getInstance(this.searchInput)?.hide();
+                        }
+                    });
+                }
+
+                addChip(value, text) {
+                    this.selectedItems.set(value, text);
+
+                    const chip = document.createElement('div');
+                    chip.className = 'chip';
+                    chip.innerHTML = `
+                        <span>${text}</span>
+                        <button type="button" class="chip-remove" data-value="${value}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+
+                    this.container.appendChild(chip);
+                    this.hideEmptyMessage();
+
+                    // Event listener para eliminar chip
+                    chip.querySelector('.chip-remove').addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.removeChip(value);
+                    });
+
+                    this.updateHiddenInput();
+                }
+
+                removeChip(value) {
+                    this.selectedItems.delete(value);
+
+                    // Remover chip visual
+                    const chip = this.container.querySelector(`.chip-remove[data-value="${value}"]`)?.closest('.chip');
+                    if (chip) chip.remove();
+
+                    // Remover selección del dropdown
+                    const dropdownItem = this.dropdown.querySelector(`.dropdown-item[data-value="${value}"]`);
+                    if (dropdownItem) dropdownItem.classList.remove('selected');
+
+                    if (this.selectedItems.size === 0) this.showEmptyMessage();
+                    this.updateHiddenInput();
+                }
+
+                updateHiddenInput() {
+                    this.hiddenInput.value = Array.from(this.selectedItems.keys()).join(',');
+                }
+
+                showEmptyMessage() {
+                    if (!this.container.querySelector('.empty-chips-message')) {
+                        const emptyMessage = document.createElement('div');
+                        emptyMessage.className = 'empty-chips-message';
+                        emptyMessage.textContent = 'No hay elementos seleccionados';
+                        this.container.appendChild(emptyMessage);
+                    }
+                }
+
+                hideEmptyMessage() {
+                    const emptyMessage = this.container.querySelector('.empty-chips-message');
+                    if (emptyMessage) emptyMessage.remove();
+                }
+            }
+
+            // Inicializar managers para géneros y autores
+            const generosManager = new ChipManager('generosChipsContainer', 'generosDropdown', 'generosSearch', 'GenerosSeleccionados');
+            const autoresManager = new ChipManager('autoresChipsContainer', 'autoresDropdown', 'autoresSearch', 'AutoresSeleccionados');
+
+            // Validación del formulario del modal
+            const formAgregarLibro = document.getElementById('formAgregarLibro');
+            if (formAgregarLibro) {
+                formAgregarLibro.addEventListener('submit', function(e) {
+                    const generosSeleccionados = generosManager.selectedItems.size;
+                    const autoresSeleccionados = autoresManager.selectedItems.size;
+
+                    if (generosSeleccionados === 0) {
+                        e.preventDefault();
+                        showAlert('Por favor seleccione al menos un género', 'error');
+                        return;
+                    }
+
+                    if (autoresSeleccionados === 0) {
+                        e.preventDefault();
+                        showAlert('Por favor seleccione al menos un autor', 'error');
+                        return;
+                    }
+                });
+            }
+
+            // Función para mostrar alertas (simplificada)
+            function showAlert(message, type = 'success') {
+                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+
+                const alertHtml = `
+                    <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;" role="alert">
+                        <i class="fas ${iconClass} me-2"></i>${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+                document.body.insertAdjacentHTML('beforeend', alertHtml);
+
+                setTimeout(() => {
+                    const alertElement = document.querySelector('.alert.position-fixed');
+                    if (alertElement) {
+                        new bootstrap.Alert(alertElement).close();
+                    }
+                }, 5000);
+            }
+
+            // Cerrar dropdown cuando se hace click fuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.dropdown-chip-container')) {
+                    document.querySelectorAll('.dropdown-chip-menu.show').forEach(dropdown => {
+                        const searchInput = dropdown.previousElementSibling;
+                        bootstrap.Dropdown.getInstance(searchInput)?.hide();
+                    });
+                }
+            });
         });
 
+        // Funciones globales
         function verDetalle(idLibro) {
             alert('Ver detalle del libro ID: ' + idLibro);
         }
@@ -893,9 +868,7 @@
             document.getElementById('searchForm').submit();
         }
     </script>
-
 }
-
 @functions {
     // Función para obtener la clase CSS del badge según el estado
     public string GetEstadoBadgeClass(string estado)

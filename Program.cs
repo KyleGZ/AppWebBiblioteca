@@ -64,7 +64,15 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<IRolService, RolService>();
 builder.Services.AddScoped<ILibroService, LibroService>();
+builder.Services.AddScoped<IAutorService, AutorService>();
+builder.Services.AddScoped<IGeneroService, GeneroService>();
+builder.Services.AddScoped<ISeccionService, SeccionService>();
+builder.Services.AddScoped<IEditorialService, EditorialService>();
 
+/*
+ * Servicio para manejo de imágenes
+ */
+builder.Services.AddScoped<IImageService, ImageService>();
 
 
 // CONFIGURAR HTTP CLIENT
@@ -76,6 +84,10 @@ builder.Services.AddHttpClient("ApiClient", client =>
 });
 
 var app = builder.Build();
+
+app.UseStaticFiles();
+
+var imagesPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "imagenes", "portadas");
 
 // CONFIGURE THE HTTP REQUEST PIPELINE
 if (!app.Environment.IsDevelopment())
