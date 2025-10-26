@@ -44,38 +44,38 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
-                // Si el término está vacío, usar el endpoint que devuelve todos los libros
+                
                 if (string.IsNullOrWhiteSpace(termino))
                 {
-                    var apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/ListaView";
+                    var apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/ListaView?pagina={pagina}&resultadosPorPagina={resultadosPorPagina}";
                     var response = await _httpClient.GetAsync(apiUrl);
 
                     if (response.IsSuccessStatusCode)
                     {
-                        var todosLosLibros = await response.Content.ReadFromJsonAsync<List<LibroListaView>>();
+                        var resultadoPaginado = await response.Content.ReadFromJsonAsync<PaginacionResponse<LibroListaView>>();
 
-                        // Paginar manualmente los resultados
-                        var librosPaginados = todosLosLibros?
-                            .Skip((pagina - 1) * resultadosPorPagina)
-                            .Take(resultadosPorPagina)
-                            .ToList() ?? new List<LibroListaView>();
-
+                        if (resultadoPaginado != null && resultadoPaginado.Success)
+                        {
+                            return resultadoPaginado;
+                        }
+                        else
+                        {
+                            return new PaginacionResponse<LibroListaView>
+                            {
+                                Success = false,
+                                Message = "No se pudieron obtener los libros del catálogo"
+                            };
+                        }
+                    }
+                    else
+                    {
                         return new PaginacionResponse<LibroListaView>
                         {
-                            Success = true,
-                            Message = $"Se encontraron {todosLosLibros?.Count ?? 0} libros en el catálogo",
-                            Data = librosPaginados,
-                            Pagination = new PaginationInfo
-                            {
-                                PaginaActual = pagina,
-                                TotalPaginas = (int)Math.Ceiling((todosLosLibros?.Count ?? 0) / (double)resultadosPorPagina),
-                                TotalResultados = todosLosLibros?.Count ?? 0,
-                                ResultadosPorPagina = resultadosPorPagina
-                            }
+                            Success = false,
+                            Message = $"Error al obtener el catálogo: {response.StatusCode}"
                         };
                     }
                 }
-
 
 
 
@@ -185,17 +185,115 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        /*
+         * Metodo para editar libro
+         */
+        public async Task<ApiResponse> EditarLibroAsync(int idLibro, CrearLibroDto libroDto)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/Editar-Libro?idLibro={idLibro}";
+
+                var json = JsonSerializer.Serialize(libroDto);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PutAsync(apiUrl, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return apiResponse ?? new ApiResponse
+                {
+                    Success = false,
+                    Message = "No se pudo procesar la respuesta del servidor"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error al editar el libro: {ex.Message}"
+                };
+            }
+        }
+
+
+        /*
+         * Este metodo obtiene la info del libro para actualizarlo
+         */
+        public async Task<ObtenerLibroEditar> ObtenerLibroParaEditarAsync(int idLibro)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/ObtenerLibro-Editar?idLibro={idLibro}";
+
+                var response = await _httpClient.GetAsync(apiUrl);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (apiResponse.Success && apiResponse.Data != null)
+                {
+                    // Convertir el objeto Data a ObtenerLibroEditar
+                    var jsonElement = (JsonElement)apiResponse.Data;
+                    var libroEditar = JsonSerializer.Deserialize<ObtenerLibroEditar>(
+                        jsonElement.GetRawText(),
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    return libroEditar;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener libro para editar: {ex.Message}");
+                return null;
+            }
+        }
+
+
+        /*
+         * Detalle del libro
+         */
+
+        public async Task<LibroDetalleDto> ObtenerDetalleLibroAsync(int idLibro)
+        {
+
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/Detalle-Libro?idLibro={idLibro}";
+                var response = await _httpClient.GetAsync(apiUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    var libroDetalle = await response.Content.ReadFromJsonAsync<LibroDetalleDto>();
+                    return libroDetalle ?? new LibroDetalleDto();
+                }
+                return new LibroDetalleDto();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener detalle del libro: {ex.Message}");
+                return new LibroDetalleDto();
+            }
+        }
 
     }
 
 
-    
+
     public interface ILibroService
     {
         Task<List<LibroListaView>> ObtenerLibrosAsync();
+        Task<LibroDetalleDto> ObtenerDetalleLibroAsync(int idLibro);
         Task<PaginacionResponse<LibroListaView>> BuscarLibrosRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
         Task<PaginacionResponse<LibroListaView>> BuscarLibrosDescripcionAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
         Task<ApiResponse> RegistrarLibroAsync(CrearLibroDto crearLibroDto);
+        Task<ObtenerLibroEditar> ObtenerLibroParaEditarAsync(int idLibro);
+        Task<ApiResponse> EditarLibroAsync(int idLibro, CrearLibroDto libroDto);
 
     }
 }

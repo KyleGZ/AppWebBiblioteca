@@ -28,18 +28,66 @@ namespace AppWebBiblioteca.Controllers
             _imageService = imageService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Index()
+        //[HttpGet]
+        //public async Task<IActionResult> Index(int pagina = 1, int resultadosPorPagina = 20)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+
+        //        var resultado = await _libroService.BuscarLibrosRapidaAsync("", pagina, resultadosPorPagina);
+        //        await RecargarViewBagsAsync();
+
+        //        ViewBag.TerminoBusqueda = "";
+        //        ViewBag.BuscarPorDescripcion = false;
+
+
+        //        return View(resultado);
+        //    }
+        //    catch
+        //    {
+        //        ViewBag.Error = "Error al cargar la lista de libros";
+        //        await RecargarViewBagsAsync();
+
+        //        return View(new PaginacionResponse<LibroListaView>
+        //        {
+        //            Success = false,
+        //            Message = "Error al cargar los libros"
+        //        });
+
+        //    }
+
+        //}
+
+        [HttpGet] // Cambiar a GET
+        public async Task<IActionResult> Index(string termino = "", bool buscarPorDescripcion = false, int pagina = 1, int resultadosPorPagina = 20)
         {
             try
             {
                 if (!_authService.IsAuthenticated())
                     return RedirectToAction("Login", "Usuario");
 
+                PaginacionResponse<LibroListaView> resultado;
 
-                var resultado = await _libroService.BuscarLibrosRapidaAsync("", 1, 20);
+                if (buscarPorDescripcion && !string.IsNullOrEmpty(termino))
+                {
+                    resultado = await _libroService.BuscarLibrosDescripcionAsync(termino, pagina, resultadosPorPagina);
+                }
+                else if (!string.IsNullOrEmpty(termino))
+                {
+                    resultado = await _libroService.BuscarLibrosRapidaAsync(termino, pagina, resultadosPorPagina);
+                }
+                else
+                {
+                    resultado = await _libroService.BuscarLibrosRapidaAsync("", pagina, resultadosPorPagina);
+                }
+
                 await RecargarViewBagsAsync();
 
+                ViewBag.TerminoBusqueda = termino;
+                ViewBag.BuscarPorDescripcion = buscarPorDescripcion;
 
                 return View(resultado);
             }
@@ -53,10 +101,10 @@ namespace AppWebBiblioteca.Controllers
                     Success = false,
                     Message = "Error al cargar los libros"
                 });
-
             }
-
         }
+
+        // Puedes eliminar el método [HttpPost] Buscar ya que ahora todo se maneja en el Index
 
         [HttpPost]
         public async Task<IActionResult> Buscar(string termino, bool buscarPorDescripcion = false, int pagina = 1)
@@ -184,6 +232,158 @@ namespace AppWebBiblioteca.Controllers
                 return View("Index");
             }
         }
+
+
+
+
+
+        /*
+         * Metodo para cargar datos del libro a editar
+         */
+        
+        [HttpGet]
+        public async Task<IActionResult> ObtenerLibroParaEditar(int id)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return Json(new { success = false, message = "No autenticado" });
+
+                var libro = await _libroService.ObtenerLibroParaEditarAsync(id);
+                if (libro == null)
+                {
+                    return Json(new { success = false, message = "No se encontró el libro solicitado." });
+                }
+
+                return Json(new { success = true, data = libro });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error al cargar el libro para editar." });
+            }
+        }
+
+        // Acción para procesar la edición
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int idLibro, CrearLibroFrontDto model)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return RedirectToAction("Login", "Usuario");
+
+                // Validaciones básicas
+                if (!ModelState.IsValid)
+                {
+                    await RecargarViewBagsAsync();
+                    return View("Index");
+                }
+
+                // Validar que se hayan seleccionado autores y géneros
+                if (string.IsNullOrEmpty(model.AutoresSeleccionados))
+                {
+                    ModelState.AddModelError("", "Debe seleccionar al menos un autor");
+                    await RecargarViewBagsAsync();
+                    return View("Index");
+                }
+
+                if (string.IsNullOrEmpty(model.GenerosSeleccionados))
+                {
+                    ModelState.AddModelError("", "Debe seleccionar al menos un género");
+                    await RecargarViewBagsAsync();
+                    return View("Index");
+                }
+
+                // Procesar la imagen si se subió una nueva
+                string nombrePortada = null;
+                if (model.ImagenArchivo != null && model.ImagenArchivo.Length > 0)
+                {
+                    if (_imageService.ValidarImagen(model.ImagenArchivo))
+                    {
+                        nombrePortada = await _imageService.GuardarPortadaAsync(model.ImagenArchivo, model.ISBN);
+                        nombrePortada = "/imagenes/portadas/" + nombrePortada;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("ImagenArchivo", "La imagen no es válida. Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB");
+                        await RecargarViewBagsAsync();
+                        return View("Index");
+                    }
+                }
+
+                // Preparar el DTO para la API
+                var libroDto = new CrearLibroDto
+                {
+                    Titulo = model.Titulo,
+                    Isbn = model.ISBN,
+                    IdEditorial = model.EditorialId,
+                    IdSeccion = model.SeccionId,
+                    Estado = model.Estado,
+                    Descripcion = model.Descripcion ?? "",
+                    PortadaUrl = nombrePortada, // Si es null, la API mantendrá la imagen actual
+                    IdAutores = model.AutoresSeleccionados.Split(',').Select(int.Parse).ToList(),
+                    IdGeneros = model.GenerosSeleccionados.Split(',').Select(int.Parse).ToList()
+                };
+
+                // Llamar al servicio para editar el libro
+                var resultado = await _libroService.EditarLibroAsync(idLibro, libroDto);
+
+                if (resultado.Success)
+                {
+                    TempData["SuccessMessage"] = "Libro actualizado exitosamente";
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    ModelState.AddModelError("", resultado.Message);
+                    await RecargarViewBagsAsync();
+                    return View("Index");
+                }
+            }
+            catch (Exception ex)
+            {
+                await RecargarViewBagsAsync();
+                ViewBag.Error = "Error al actualizar el libro: " + ex.Message;
+                return View("Index");
+            }
+        }
+
+
+
+
+
+
+
+
+
+
+        /*
+         * Metodo para ver el detalle de un libro
+         */
+
+        [HttpGet]
+        public async Task<IActionResult> ObtenerDetalleLibro(int id)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return Json(new { success = false, message = "No autenticado" });
+
+                var libro = await _libroService.ObtenerDetalleLibroAsync(id);
+                if (libro == null)
+                {
+                    return Json(new { success = false, message = "No se encontró el libro solicitado." });
+                }
+
+                return Json(new { success = true, data = libro });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = "Error al cargar el detalle del libro." });
+            }
+        }
+
 
 
 
