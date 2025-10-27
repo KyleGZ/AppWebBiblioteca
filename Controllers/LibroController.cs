@@ -159,6 +159,7 @@ namespace AppWebBiblioteca.Controllers
                 if (!ModelState.IsValid)
                 {
                     await RecargarViewBagsAsync();
+                    ModelState.AddModelError("", "El modelo del libro no es válido.");
                     return View("Index");
                 }
 

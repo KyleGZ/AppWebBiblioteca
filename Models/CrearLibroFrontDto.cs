@@ -1,9 +1,14 @@
 ﻿
+using System.ComponentModel.DataAnnotations;
+
 namespace AppWebBiblioteca.Models
 {
     public class CrearLibroFrontDto
     {
+        [Required(ErrorMessage = "El título es obligatorio.")]
         public string Titulo { get; set; }
+
+        [Required(ErrorMessage = "El ISBN es obligatorio.")]
         public string ISBN { get; set; }
         public int EditorialId { get; set; }
         public int SeccionId { get; set; }
