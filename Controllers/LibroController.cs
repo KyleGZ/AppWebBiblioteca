@@ -147,6 +147,98 @@ namespace AppWebBiblioteca.Controllers
         /*
          * Metodo para registar un nuevo libro
          */
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> RegistroLibro(CrearLibroFrontDto model)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        // Validaciones básicas
+        //        if (!ModelState.IsValid)
+        //        {
+        //            await RecargarViewBagsAsync();
+        //            ModelState.AddModelError("", "El modelo del libro no es válido.");
+
+        //            return View("Index");
+        //        }
+
+        //        // 1. Validar que se hayan seleccionado autores y géneros
+        //        if (string.IsNullOrEmpty(model.AutoresSeleccionados))
+        //        {
+        //            ModelState.AddModelError("", "Debe seleccionar al menos un autor");
+        //            await RecargarViewBagsAsync();
+        //            return View("Index");
+        //        }
+
+        //        if (string.IsNullOrEmpty(model.GenerosSeleccionados))
+        //        {
+        //            ModelState.AddModelError("", "Debe seleccionar al menos un género");
+        //            await RecargarViewBagsAsync();
+        //            return View("Index");
+        //        }
+
+        //        // 2. Procesar la imagen si existe
+        //        string nombrePortada = "/imagenes/portadas/default-book-cover.jpg"; // Valor por defecto
+
+        //        if (model.ImagenArchivo != null && model.ImagenArchivo.Length > 0)
+        //        {
+        //            if (_imageService.ValidarImagen(model.ImagenArchivo))
+        //            {
+        //                nombrePortada = await _imageService.GuardarPortadaAsync(model.ImagenArchivo, model.ISBN);
+        //                // Asegurarnos de que tenga el formato de ruta correcto
+        //                nombrePortada = "/imagenes/portadas/" + nombrePortada;
+        //            }
+        //            else
+        //            {
+        //                ModelState.AddModelError("ImagenArchivo", "La imagen no es válida. Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB");
+        //                await RecargarViewBagsAsync();
+        //                return View("Index");
+        //            }
+        //        }
+
+        //        // 3. Preparar el DTO para la API
+        //        var libroDto = new CrearLibroDto
+        //        {
+        //            Titulo = model.Titulo,
+        //            Isbn = model.ISBN,
+        //            IdEditorial = model.EditorialId,
+        //            IdSeccion = model.SeccionId,
+        //            Estado = model.Estado,
+        //            Descripcion = model.Descripcion ?? "",
+        //            PortadaUrl = nombrePortada,
+        //            IdAutores = model.AutoresSeleccionados.Split(',').Select(int.Parse).ToList(),
+        //            IdGeneros = model.GenerosSeleccionados.Split(',').Select(int.Parse).ToList()
+        //        };
+
+        //        // 4. Llamar al servicio para crear el libro
+        //        var resultado = await _libroService.RegistrarLibroAsync(libroDto);
+
+        //        if (resultado.Success)
+        //        {
+        //            TempData["SuccessMessage"] = "Libro creado exitosamente";
+        //            return RedirectToAction("Index");
+        //        }
+        //        else
+        //        {
+        //            ModelState.AddModelError("", resultado.Message);
+        //            await RecargarViewBagsAsync();
+        //            return View("Index");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await RecargarViewBagsAsync();
+        //        ViewBag.Error = "Error al crear el libro: " + ex.Message;
+        //        return View("Index");
+        //    }
+        //}
+        /*
+ /*
+ * Metodo para registar un nuevo libro
+ */
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistroLibro(CrearLibroFrontDto model)
@@ -156,45 +248,55 @@ namespace AppWebBiblioteca.Controllers
                 if (!_authService.IsAuthenticated())
                     return RedirectToAction("Login", "Usuario");
 
+                // Limpiar TempData antes de usar
+                TempData["Error"] = null;
+
                 // Validaciones básicas
                 if (!ModelState.IsValid)
                 {
                     await RecargarViewBagsAsync();
-                    ModelState.AddModelError("", "El modelo del libro no es válido.");
+                    TempData["Error"] = "El modelo del libro no es válido.";
                     return RedirectToAction("Index");
                 }
 
                 // 1. Validar que se hayan seleccionado autores y géneros
                 if (string.IsNullOrEmpty(model.AutoresSeleccionados))
                 {
-                    ModelState.AddModelError("", "Debe seleccionar al menos un autor");
                     await RecargarViewBagsAsync();
-                    return View("Index");
+                    TempData["Error"] = "Debe seleccionar al menos un autor";
+                    return RedirectToAction("Index");
                 }
 
                 if (string.IsNullOrEmpty(model.GenerosSeleccionados))
                 {
-                    ModelState.AddModelError("", "Debe seleccionar al menos un género");
                     await RecargarViewBagsAsync();
-                    return View("Index");
+                    TempData["Error"] = "Debe seleccionar al menos un género";
+                    return RedirectToAction("Index");
                 }
 
                 // 2. Procesar la imagen si existe
-                string nombrePortada = "/imagenes/portadas/default-book-cover.jpg"; // Valor por defecto
+                string nombrePortada = "/imagenes/portadas/default-book-cover.jpg";
 
                 if (model.ImagenArchivo != null && model.ImagenArchivo.Length > 0)
                 {
-                    if (_imageService.ValidarImagen(model.ImagenArchivo))
+                    try
                     {
+                        if (!_imageService.ValidarImagen(model.ImagenArchivo))
+                        {
+                            await RecargarViewBagsAsync();
+                            TempData["Error"] = "La imagen no es válida. Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB";
+                            return RedirectToAction("Index");
+                        }
+
+                        // Procesar imagen
                         nombrePortada = await _imageService.GuardarPortadaAsync(model.ImagenArchivo, model.ISBN);
-                        // Asegurarnos de que tenga el formato de ruta correcto
                         nombrePortada = "/imagenes/portadas/" + nombrePortada;
                     }
-                    else
+                    catch (Exception exImagen)
                     {
-                        ModelState.AddModelError("ImagenArchivo", "La imagen no es válida. Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB");
                         await RecargarViewBagsAsync();
-                        return View("Index");
+                        TempData["Error"] = $"Error al procesar la imagen: {exImagen.Message}";
+                        return RedirectToAction("Index");
                     }
                 }
 
@@ -222,27 +324,25 @@ namespace AppWebBiblioteca.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError("", resultado.Message);
                     await RecargarViewBagsAsync();
-                    return View("Index");
+                    TempData["Error"] = resultado.Message;
+                    return RedirectToAction("Index");
                 }
             }
             catch (Exception ex)
             {
                 await RecargarViewBagsAsync();
-                ViewBag.Error = "Error al crear el libro: " + ex.Message;
-                return View("Index");
+                TempData["Error"] = "Error al crear el libro: " + ex.Message;
+                return RedirectToAction("Index");
             }
         }
-
-
 
 
 
         /*
          * Metodo para cargar datos del libro a editar
          */
-        
+
         [HttpGet]
         public async Task<IActionResult> ObtenerLibroParaEditar(int id)
         {
@@ -265,6 +365,100 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+        //// Acción para procesar la edición
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Edit(int idLibro, CrearLibroFrontDto model)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        // Validaciones básicas
+        //        if (!ModelState.IsValid)
+        //        {
+        //            await RecargarViewBagsAsync();
+        //            return View("Index");
+        //        }
+
+        //        // Validar que se hayan seleccionado autores y géneros
+        //        if (string.IsNullOrEmpty(model.AutoresSeleccionados))
+        //        {
+        //            ModelState.AddModelError("", "Debe seleccionar al menos un autor");
+        //            await RecargarViewBagsAsync();
+        //            return View("Index");
+        //        }
+
+        //        if (string.IsNullOrEmpty(model.GenerosSeleccionados))
+        //        {
+        //            ModelState.AddModelError("", "Debe seleccionar al menos un género");
+        //            await RecargarViewBagsAsync();
+        //            return View("Index");
+        //        }
+
+        //        // Procesar la imagen si se subió una nueva
+        //        string nombrePortada = null;
+        //        if (model.ImagenArchivo != null && model.ImagenArchivo.Length > 0)
+        //        {
+        //            if (_imageService.ValidarImagen(model.ImagenArchivo))
+        //            {
+        //                nombrePortada = await _imageService.GuardarPortadaAsync(model.ImagenArchivo, model.ISBN);
+        //                nombrePortada = "/imagenes/portadas/" + nombrePortada;
+        //            }
+        //            else
+        //            {
+        //                ModelState.AddModelError("ImagenArchivo", "La imagen no es válida. Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB");
+        //                await RecargarViewBagsAsync();
+        //                return View("Index");
+        //            }
+        //        }
+
+        //        // Preparar el DTO para la API
+        //        var libroDto = new CrearLibroDto
+        //        {
+        //            Titulo = model.Titulo,
+        //            Isbn = model.ISBN,
+        //            IdEditorial = model.EditorialId,
+        //            IdSeccion = model.SeccionId,
+        //            Estado = model.Estado,
+        //            Descripcion = model.Descripcion ?? "",
+        //            PortadaUrl = nombrePortada, // Si es null, la API mantendrá la imagen actual
+        //            IdAutores = model.AutoresSeleccionados.Split(',').Select(int.Parse).ToList(),
+        //            IdGeneros = model.GenerosSeleccionados.Split(',').Select(int.Parse).ToList()
+        //        };
+
+        //        // Llamar al servicio para editar el libro
+        //        var resultado = await _libroService.EditarLibroAsync(idLibro, libroDto);
+
+        //        if (resultado.Success)
+        //        {
+        //            TempData["SuccessMessage"] = "Libro actualizado exitosamente";
+        //            return RedirectToAction("Index");
+        //        }
+        //        else
+        //        {
+        //            ModelState.AddModelError("", resultado.Message);
+        //            await RecargarViewBagsAsync();
+        //            return View("Index");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await RecargarViewBagsAsync();
+        //        ViewBag.Error = "Error al actualizar el libro: " + ex.Message;
+        //        return View("Index");
+        //    }
+        //}
+
+
+
+
+
+
+
+
+
         // Acción para procesar la edición
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -275,42 +469,53 @@ namespace AppWebBiblioteca.Controllers
                 if (!_authService.IsAuthenticated())
                     return RedirectToAction("Login", "Usuario");
 
+                // Limpiar TempData antes de usar
+                TempData["Error"] = null;
+
                 // Validaciones básicas
                 if (!ModelState.IsValid)
                 {
                     await RecargarViewBagsAsync();
-                    return View("Index");
+                    TempData["Error"] = "El modelo del libro no es válido.";
+                    return RedirectToAction("Index");
                 }
 
                 // Validar que se hayan seleccionado autores y géneros
                 if (string.IsNullOrEmpty(model.AutoresSeleccionados))
                 {
-                    ModelState.AddModelError("", "Debe seleccionar al menos un autor");
                     await RecargarViewBagsAsync();
-                    return View("Index");
+                    TempData["Error"] = "Debe seleccionar al menos un autor";
+                    return RedirectToAction("Index");
                 }
 
                 if (string.IsNullOrEmpty(model.GenerosSeleccionados))
                 {
-                    ModelState.AddModelError("", "Debe seleccionar al menos un género");
                     await RecargarViewBagsAsync();
-                    return View("Index");
+                    TempData["Error"] = "Debe seleccionar al menos un género";
+                    return RedirectToAction("Index");
                 }
 
                 // Procesar la imagen si se subió una nueva
                 string nombrePortada = null;
                 if (model.ImagenArchivo != null && model.ImagenArchivo.Length > 0)
                 {
-                    if (_imageService.ValidarImagen(model.ImagenArchivo))
+                    try
                     {
+                        if (!_imageService.ValidarImagen(model.ImagenArchivo))
+                        {
+                            await RecargarViewBagsAsync();
+                            TempData["Error"] = "La imagen no es válida. Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB";
+                            return RedirectToAction("Index");
+                        }
+
                         nombrePortada = await _imageService.GuardarPortadaAsync(model.ImagenArchivo, model.ISBN);
                         nombrePortada = "/imagenes/portadas/" + nombrePortada;
                     }
-                    else
+                    catch (Exception exImagen)
                     {
-                        ModelState.AddModelError("ImagenArchivo", "La imagen no es válida. Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 5MB");
                         await RecargarViewBagsAsync();
-                        return View("Index");
+                        TempData["Error"] = $"Error al procesar la imagen: {exImagen.Message}";
+                        return RedirectToAction("Index");
                     }
                 }
 
@@ -338,27 +543,18 @@ namespace AppWebBiblioteca.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError("", resultado.Message);
                     await RecargarViewBagsAsync();
-                    return View("Index");
+                    TempData["Error"] = resultado.Message;
+                    return RedirectToAction("Index");
                 }
             }
             catch (Exception ex)
             {
                 await RecargarViewBagsAsync();
-                ViewBag.Error = "Error al actualizar el libro: " + ex.Message;
-                return View("Index");
+                TempData["Error"] = "Error al actualizar el libro: " + ex.Message;
+                return RedirectToAction("Index");
             }
         }
-
-
-
-
-
-
-
-
-
 
         /*
          * Metodo para ver el detalle de un libro

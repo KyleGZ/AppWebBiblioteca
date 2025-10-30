@@ -122,6 +122,14 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
 
                     @if (ViewBag.Error != null)
                     {
@@ -131,15 +139,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
-                    @if (!Model.Success && !string.IsNullOrEmpty(Model.Message))
-                    {
-                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-circle me-2"></i>
-                            @Model.Message
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    }
-                    
+              
 
                     <!-- Grid de Libros -->
                     @if (libros.Any())
@@ -715,7 +715,7 @@
                         btnImportar.innerHTML = '<i class="fas fa-upload me-2"></i> Iniciar Importación';
                         btnImportar.disabled = false;
                     }
-                    window.location.reload();
+                    
                 });
             }
 
