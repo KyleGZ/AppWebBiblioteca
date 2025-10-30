@@ -17,7 +17,7 @@
         <div class="col-12">
             <div class="card libros-card">
                 <div class="card-body p-4">
-                    <!-- Header con Título y Botón -->
+                    <!-- Header con Título y Botones REORGANIZADOS -->
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <div>
                             <h2 class="mb-1">
@@ -26,9 +26,17 @@
                             </h2>
                             <p class="text-muted mb-0">Gestiona el inventario de libros de la biblioteca</p>
                         </div>
-                        <button class="btn btn-libros-primary" data-bs-toggle="modal" data-bs-target="#agregarLibroModal">
-                            <i class="fas fa-plus-circle"></i> Nuevo Libro
-                        </button>
+                        <div class="d-flex gap-2">
+                            <!-- Botón Importar desde Excel - MOVIDO ARRIBA -->
+                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importarLibrosModal">
+                                <i class="fas fa-file-import"></i> Importar Excel
+                            </button>
+
+                            <!-- Botón Nuevo Libro - MOVIDO ABAJO -->
+                            <button class="btn btn-libros-primary" data-bs-toggle="modal" data-bs-target="#agregarLibroModal">
+                                <i class="fas fa-plus-circle"></i> Nuevo Libro
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Formulario de Búsqueda CORREGIDO -->
@@ -303,7 +311,7 @@
         </div>
     </div>
 
-    <!-- MODAL AGREGAR LIBRO (sin cambios) -->
+    <!-- MODAL AGREGAR LIBRO -->
     <div class="modal fade modal-libros" id="agregarLibroModal" tabindex="-1" aria-labelledby="agregarLibroModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content zoom-in">
@@ -541,7 +549,7 @@
         </div>
     </div>
 
-    <!-- MODAL DETALLE LIBRO (sin cambios) -->
+    <!-- MODAL DETALLE LIBRO -->
     <div class="modal fade modal-libros" id="detalleLibroModal" tabindex="-1" aria-labelledby="detalleLibroModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content zoom-in">
@@ -568,14 +576,338 @@
             </div>
         </div>
     </div>
-</div>
 
+    <!-- MODAL IMPORTAR LIBROS DESDE EXCEL - CORREGIDO -->
+    <div class="modal fade modal-libros" id="importarLibrosModal" tabindex="-1" aria-labelledby="importarLibrosModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content zoom-in">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importarLibrosModalLabel">
+                        <i class="fas fa-file-import me-2 text-success"></i> Importar Libros desde Excel
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+
+                <form id="formImportarLibros" asp-action="ImportarLibrosExcel" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+
+                    <div class="modal-body">
+                        <!-- Instrucciones - CORREGIDO: No se oculta automáticamente -->
+                        <div class="alert alert-info mb-4" id="instruccionesImportacion">
+                            <div class="d-flex">
+                                <i class="fas fa-info-circle me-3 mt-1"></i>
+                                <div>
+                                    <h6 class="alert-heading mb-2">Instrucciones de Importación</h6>
+                                    <ol class="mb-0 small">
+                                        @if (ViewBag.Info != null)
+                                        {
+                                            @Html.Raw(ViewBag.Info)
+                                        }
+                                        else
+                                        {
+                                            <li>Descarga la plantilla usando el enlace inferior</li>
+                                            <li>Llena la plantilla con los datos de los libros</li>
+                                            <li>Mantén el formato de columnas y no modifiques los encabezados</li>
+                                            <li>Para autores y géneros múltiples, sepáralos por comas</li>
+                                            <li>Sube el archivo completado</li>
+                                        }
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campo de archivo -->
+                        <div class="form-group-libros mb-4">
+                            <label for="archivoExcel" class="form-label-libros">
+                                <i class="fas fa-file-excel text-success me-2"></i> Archivo Excel
+                            </label>
+                            <input type="file"
+                                   id="archivoExcel"
+                                   name="archivoExcel"
+                                   class="form-control form-control-libros"
+                                   accept=".xlsx,.xls"
+                                   required>
+                            <div class="form-text">
+                                Formatos aceptados: .xlsx, .xls | Tamaño máximo: 10MB
+                            </div>
+                        </div>
+
+                        <!-- Enlace para descargar plantilla -->
+                        <div class="text-center border-top pt-3">
+                            <a href="@Url.Action("DescargarPlantillaImportacion", "Libro")"
+                               class="btn btn-outline-success btn-sm"
+                               id="btnDescargarPlantilla">
+                                <i class="fas fa-download me-2"></i>Descargar Plantilla Excel
+                            </a>
+                            <div class="form-text mt-2">
+                                ¿No tienes la plantilla? Descárgala aquí
+                            </div>
+                        </div>
+
+                        <!-- Área para mostrar resultados -->
+                        <div id="resultadoImportacion" class="mt-3" style="display: none;">
+                            <!-- Los resultados se mostrarán aquí dinámicamente -->
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-libros-secondary" data-bs-dismiss="modal">
+                            <i class="fas fa-times me-2"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-success" id="btnImportar">
+                            <i class="fas fa-upload me-2"></i> Iniciar Importación
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
 @section Scripts {
     <script>
         // Declara los managers globalmente
         let generosManager, autoresManager;
 
         document.addEventListener('DOMContentLoaded', function() {
+            // =============================================
+            // CORRECCIÓN PARA EL MODAL DE IMPORTACIÓN
+            // =============================================
+
+            // Prevenir que las instrucciones se oculten automáticamente
+            const instruccionesImportacion = document.getElementById('instruccionesImportacion');
+            if (instruccionesImportacion) {
+                // Remover cualquier timeout que pueda estar ocultando las instrucciones
+                const alertElement = new bootstrap.Alert(instruccionesImportacion);
+                // No llamamos a close() para que permanezca visible
+            }
+
+            // Configurar el modal de importación para que no cierre automáticamente
+            const importarLibrosModal = document.getElementById('importarLibrosModal');
+            if (importarLibrosModal) {
+                importarLibrosModal.addEventListener('show.bs.modal', function() {
+                    // Asegurar que las instrucciones sean visibles
+                    const instrucciones = document.getElementById('instruccionesImportacion');
+                    if (instrucciones) {
+                        instrucciones.style.display = 'block';
+                    }
+                });
+
+                importarLibrosModal.addEventListener('hidden.bs.modal', function() {
+                    // Limpiar resultados cuando se cierra el modal
+                    const resultadoImportacion = document.getElementById('resultadoImportacion');
+                    if (resultadoImportacion) {
+                        resultadoImportacion.innerHTML = '';
+                        resultadoImportacion.style.display = 'none';
+                    }
+
+                    // Resetear el formulario
+                    const formImportarLibros = document.getElementById('formImportarLibros');
+                    if (formImportarLibros) {
+                        formImportarLibros.reset();
+                    }
+                });
+            }
+
+            // =============================================
+            // FUNCIONALIDAD DE IMPORTACIÓN DESDE EXCEL MEJORADA
+            // =============================================
+
+            const formImportarLibros = document.getElementById('formImportarLibros');
+            const archivoExcel = document.getElementById('archivoExcel');
+            const btnImportar = document.getElementById('btnImportar');
+            const resultadoImportacion = document.getElementById('resultadoImportacion');
+
+            if (formImportarLibros) {
+                formImportarLibros.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    // Validaciones básicas
+                    if (!archivoExcel.files.length) {
+                        showAlert('Por favor seleccione un archivo Excel', 'error');
+                        return;
+                    }
+
+                    const file = archivoExcel.files[0];
+                    const extension = file.name.split('.').pop().toLowerCase();
+
+                    if (extension !== 'xlsx' && extension !== 'xls') {
+                        showAlert('Solo se permiten archivos Excel (.xlsx, .xls)', 'error');
+                        return;
+                    }
+
+                    // Validar tamaño del archivo (10MB máximo)
+                    if (file.size > 10 * 1024 * 1024) {
+                        showAlert('El archivo es demasiado grande. Tamaño máximo: 10MB', 'error');
+                        return;
+                    }
+
+                    // Mostrar loading
+                    const originalText = btnImportar.innerHTML;
+                    btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Importando...';
+                    btnImportar.disabled = true;
+
+                    try {
+                        // Crear FormData para enviar el archivo
+                        const formData = new FormData();
+                        formData.append('archivoExcel', file);
+
+                        // Realizar la petición AJAX
+                        const response = await fetch('/Libro/ImportarLibrosExcel', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        });
+
+                        // Verificar si la respuesta es JSON
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            // Si no es JSON, probablemente es un error HTML
+                            const textResponse = await response.text();
+                            console.error('Respuesta no JSON recibida:', textResponse.substring(0, 500));
+
+                            // Verificar si es un error de autenticación
+                            if (response.status === 401 || response.status === 403) {
+                                throw new Error('Error de autenticación. Por favor, inicie sesión nuevamente.');
+                            } else if (response.status === 500) {
+                                throw new Error('Error interno del servidor. Por favor, contacte al administrador.');
+                            } else {
+                                throw new Error('Error del servidor: ' + response.status + ' - ' + response.statusText);
+                            }
+                        }
+
+                        const result = await response.json();
+
+                        // Mostrar resultados
+                        mostrarResultadoImportacion(result);
+
+                    } catch (error) {
+                        console.error('Error en la importación:', error);
+                        mostrarResultadoImportacion({
+                            success: false,
+                            message: 'Error al procesar la importación: ' + error.message
+                        });
+                    } finally {
+                        // Restaurar botón
+                        btnImportar.innerHTML = originalText;
+                        btnImportar.disabled = false;
+                    }
+                });
+            }
+
+            // Función para mostrar resultados de importación
+            function mostrarResultadoImportacion(result) {
+                let html = '';
+
+                if (result.success) {
+                    html = `
+                        <div class="alert alert-success">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-check-circle fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">¡Importación completada!</h6>
+                                    <p class="mb-0">${result.mensaje || result.message || 'Libros importados correctamente'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Si hay datos detallados, mostrarlos
+                    if (result.datos || result.data) {
+                        const data = result.datos || result.data;
+                        html += `
+                            <div class="row text-center mt-3">
+                                <div class="col-4">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="h4 mb-0 text-primary">${data.total || data.totalRegistros || 0}</div>
+                                        <small class="text-muted">Total</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="h4 mb-0 text-success">${data.insertados || data.registrosExitosos || 0}</div>
+                                        <small class="text-muted">Insertados</small>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="h4 mb-0 text-danger">${data.errores || data.registrosFallidos || 0}</div>
+                                        <small class="text-muted">Errores</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+                        // Mostrar errores detallados si existen
+                        if ((data.detallesErrores && data.detallesErrores.length > 0) ||
+                            (data.errores && data.errores.length > 0)) {
+                            const errores = data.detallesErrores || data.errores;
+                            html += `
+                                <div class="mt-3">
+                                    <h6 class="text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Errores detallados:
+                                    </h6>
+                                    <div class="error-scroll small" style="max-height: 150px; overflow-y: auto;">
+                                        <ul class="mb-0">
+                                            ${errores.map(error => `<li class="text-danger">${error}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+
+                } else {
+                    html = `
+                        <div class="alert alert-danger">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Error en la importación</h6>
+                                    <p class="mb-0">${result.mensaje || result.message || 'Ocurrió un error durante la importación'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    // Mostrar detalles del error si existen
+                    if (result.datos || result.data) {
+                        const data = result.datos || result.data;
+                        if ((data.detallesErrores && data.detallesErrores.length > 0) ||
+                            (data.errores && data.errores.length > 0)) {
+                            const errores = data.detallesErrores || data.errores;
+                            html += `
+                                <div class="mt-2">
+                                    <div class="error-scroll small" style="max-height: 150px; overflow-y: auto;">
+                                        <ul class="mb-0">
+                                            ${errores.map(error => `<li class="text-danger">${error}</li>`).join('')}
+                                        </ul>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                }
+
+                resultadoImportacion.innerHTML = html;
+                resultadoImportacion.style.display = 'block';
+
+                // Auto-scroll hacia los resultados
+                resultadoImportacion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+
+            // Mostrar nombre del archivo seleccionado
+            if (archivoExcel) {
+                archivoExcel.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        // Ocultar resultados anteriores cuando se selecciona nuevo archivo
+                        resultadoImportacion.style.display = 'none';
+                    }
+                });
+            }
+
             // =============================================
             // FUNCIONALIDAD DE BÚSQUEDA Y PAGINACIÓN CORREGIDA
             // =============================================
@@ -653,7 +985,7 @@
             buscarPorDescripcion.addEventListener('change', actualizarTextoBotonLimpiar);
 
             // =============================================
-            // FUNCIONALIDAD DEL MODAL (sin cambios)
+            // FUNCIONALIDAD DEL MODAL
             // =============================================
             console.log('Inicializando modal de libros...');
 
@@ -815,28 +1147,6 @@
                 });
             }
 
-            // Función para mostrar alertas (simplificada)
-            function showAlert(message, type = 'success') {
-                const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-                const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-
-                const alertHtml = `
-                    <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;" role="alert">
-                        <i class="fas ${iconClass} me-2"></i>${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-
-                document.body.insertAdjacentHTML('beforeend', alertHtml);
-
-                setTimeout(() => {
-                    const alertElement = document.querySelector('.alert.position-fixed');
-                    if (alertElement) {
-                        new bootstrap.Alert(alertElement).close();
-                    }
-                }, 5000);
-            }
-
             // Cerrar dropdown cuando se hace click fuera
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('.dropdown-chip-container')) {
@@ -880,7 +1190,7 @@
         }
 
         /*
-         * Funciones para editar libro (sin cambios)
+         * Funciones para editar libro
          */
         async function editarLibro(idLibro) {
             try {
@@ -1024,7 +1334,7 @@
             document.getElementById('ImagenArchivo').value = '';
         }
 
-        // Funciones globales (sin cambios)
+        // Funciones globales
         async function verDetalle(idLibro) {
             try {
                 // Mostrar el modal con spinner
@@ -1172,6 +1482,28 @@
             `;
 
             document.getElementById('detalleLibroContent').innerHTML = contenido;
+        }
+
+        // Función para mostrar alertas
+        function showAlert(message, type = 'success') {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;" role="alert">
+                    <i class="fas ${iconClass} me-2"></i>${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', alertHtml);
+
+            setTimeout(() => {
+                const alertElement = document.querySelector('.alert.position-fixed');
+                if (alertElement) {
+                    new bootstrap.Alert(alertElement).close();
+                }
+            }, 5000);
         }
     </script>
 }

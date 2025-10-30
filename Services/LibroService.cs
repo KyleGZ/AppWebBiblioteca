@@ -281,6 +281,161 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        /*
+         * 
+         */
+
+        public async Task<byte[]> DescargarPlantillaImportacionAsync()
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Libro/Plantilla-Importacion";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    return await response.Content.ReadAsByteArrayAsync();
+                }
+
+                throw new Exception($"Error al descargar plantilla: {response.StatusCode}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al descargar plantilla: {ex.Message}");
+                throw;
+            }
+        }
+
+        /*
+         * Importar libros desde archivo Excel
+        // */
+        //public async Task<ApiResponse> ImportarLibrosDesdeExcelAsync(IFormFile archivo)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Libro/Importar-Libro";
+
+        //        using var content = new MultipartFormDataContent();
+        //        using var fileStream = archivo.OpenReadStream();
+        //        var fileContent = new StreamContent(fileStream);
+        //        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(archivo.ContentType);
+
+        //        content.Add(fileContent, "archivo", archivo.FileName);
+
+        //        var response = await _httpClient.PostAsync(apiUrl, content);
+        //        var responseContent = await response.Content.ReadAsStringAsync();
+
+        //        var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+        //            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        //        return apiResponse ?? new ApiResponse
+        //        {
+        //            Success = false,
+        //            Message = "No se pudo procesar la respuesta del servidor"
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new ApiResponse
+        //        {
+        //            Success = false,
+        //            Message = $"Error al importar libros: {ex.Message}"
+        //        };
+        //    }
+        //}
+
+        public async Task<ApiResponse> ImportarLibrosDesdeExcelAsync(IFormFile archivo)
+        {
+            try
+            {
+                var apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/Importar-Libro";
+
+                using var content = new MultipartFormDataContent();
+                using var fileStream = archivo.OpenReadStream();
+                var fileContent = new StreamContent(fileStream);
+                fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(archivo.ContentType);
+
+                content.Add(fileContent, "archivo", archivo.FileName);
+
+                var response = await _httpClient.PostAsync(apiUrl, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                // Validar si el servidor respondió con éxito HTTP (200-299)
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"El servidor devolvió un error ({(int)response.StatusCode}): {response.ReasonPhrase}",
+                        Data = new
+                        {
+                            codigo = (int)response.StatusCode,
+                            detalle = responseContent
+                        }
+                    };
+                }
+
+                // Intentar deserializar el contenido
+                ApiResponse? apiResponse = null;
+                try
+                {
+                    apiResponse = JsonSerializer.Deserialize<ApiResponse>(
+                        responseContent,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+                catch (JsonException jex)
+                {
+                    // Error al interpretar la respuesta JSON del backend
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Error al procesar la respuesta del servidor: {jex.Message}",
+                        Data = new
+                        {
+                            rawResponse = responseContent
+                        }
+                    };
+                }
+
+                // Validar si la API devolvió algo útil
+                if (apiResponse == null)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = "No se pudo interpretar la respuesta del servidor.",
+                        Data = new { rawResponse = responseContent }
+                    };
+                }
+
+                // Si la API devuelve Success = false, aseguramos coherencia en el mensaje
+                if (!apiResponse.Success)
+                {
+                    // Verificar si la respuesta indica que se deshicieron cambios
+                    apiResponse.Message ??= "Error durante la importación. No se registraron libros.";
+                    return apiResponse;
+                }
+
+                return apiResponse;
+            }
+            catch (Exception ex)
+            {
+                // Error de red, excepción no controlada, etc.
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error durante la importación: {ex.Message}. Se deshicieron todos los cambios.",
+                    Data = new
+                    {
+                        innerException = ex.InnerException?.Message,
+                        stackTrace = ex.StackTrace,
+                        insertados = 0
+                    }
+                };
+            }
+        }
+
+
     }
 
 
@@ -294,6 +449,9 @@ namespace AppWebBiblioteca.Services
         Task<ApiResponse> RegistrarLibroAsync(CrearLibroDto crearLibroDto);
         Task<ObtenerLibroEditar> ObtenerLibroParaEditarAsync(int idLibro);
         Task<ApiResponse> EditarLibroAsync(int idLibro, CrearLibroDto libroDto);
+
+        Task<byte[]> DescargarPlantillaImportacionAsync();
+        Task<ApiResponse> ImportarLibrosDesdeExcelAsync(IFormFile archivo);
 
     }
 }

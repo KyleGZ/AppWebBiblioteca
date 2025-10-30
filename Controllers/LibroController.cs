@@ -2,6 +2,7 @@
 using AppWebBiblioteca.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Text.Json;
 
 namespace AppWebBiblioteca.Controllers
 {
@@ -447,6 +448,118 @@ namespace AppWebBiblioteca.Controllers
             };
             editorialDefecto.AddRange(editoriales);
             ViewBag.Editoriales = new SelectList(editorialDefecto, "IdEditorial", "Nombre");
+        }
+
+
+        /*
+         * 
+         */
+        [HttpGet]
+        public async Task<IActionResult> DescargarPlantillaImportacion()
+        {
+            try
+            {
+                var contenido = await _libroService.DescargarPlantillaImportacionAsync();
+
+                return File(
+                    contenido,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "Plantilla_Importacion_Libros.xlsx"
+                );
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Error al descargar plantilla: {ex.Message}";
+                return RedirectToAction("Index");
+            }
+        }
+
+
+
+        [HttpPost]
+        public async Task<IActionResult> ImportarLibrosExcel(IFormFile archivo)
+        {
+            if (!_authService.IsAuthenticated())
+                return RedirectToAction("Login", "Usuario");
+
+            var esAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
+
+            // Validar archivo
+            if (archivo == null || archivo.Length == 0)
+            {
+                var mensaje = "Debe adjuntar un archivo Excel válido.";
+
+                if (esAjax)
+                    return BadRequest(new { success = false, message = mensaje });
+
+                TempData["Error"] = mensaje;
+                return RedirectToAction("Index");
+            }
+
+            try
+            {
+                var resultado = await _libroService.ImportarLibrosDesdeExcelAsync(archivo);
+
+                if (esAjax)
+                {
+                    // Sanitizar los datos de respuesta para evitar exponer trazas o información sensible
+                    var datos = resultado.Data is JsonElement element && element.TryGetProperty("stackTrace", out _)
+                        ? null
+                        : resultado.Data;
+
+                    if (resultado.Success)
+                    {
+                        return Ok(new
+                        {
+                            success = true,
+                            message = resultado.Message,
+                            datos
+                        });
+                    }
+
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = resultado.Message,
+                        datos
+                    });
+                }
+
+                // Para peticiones normales (no-AJAX)
+                TempData.Remove("ImportacionData");
+                TempData.Remove("ImportacionErrores");
+
+                if (resultado.Success)
+                {
+                    TempData["Success"] = resultado.Message;
+                    TempData["ImportacionData"] = JsonSerializer.Serialize(resultado.Data);
+                }
+                else
+                {
+                    TempData["Error"] = resultado.Message;
+                    TempData["ImportacionErrores"] = JsonSerializer.Serialize(resultado.Data);
+                }
+
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                // Aquí sería ideal registrar el error en logs
+                //_logger.LogError(ex, "Error al importar libros desde Excel.");
+
+                if (esAjax)
+                {
+                    return StatusCode(500, new
+                    {
+                        success = false,
+                        message = "Ocurrió un error inesperado durante la importación.",
+                        error = ex.Message
+                    });
+                }
+
+                TempData["Error"] = $"Ocurrió un error durante la importación: {ex.Message}";
+                return RedirectToAction("Index");
+            }
         }
 
     }
