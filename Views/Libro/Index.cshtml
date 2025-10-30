@@ -131,7 +131,6 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
-
                     @if (!Model.Success && !string.IsNullOrEmpty(Model.Message))
                     {
                         <div class="alert alert-warning alert-dismissible fade show" role="alert">
@@ -140,6 +139,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
+                    
 
                     <!-- Grid de Libros -->
                     @if (libros.Any())
@@ -344,7 +344,7 @@
                                     <label for="ISBN" class="form-label-libros">
                                         <i class="fas fa-barcode"></i> ISBN
                                     </label>
-                                    <input type="text" id="ISBN" name="ISBN" class="form-control form-control-libros" placeholder="Ingrese el ISBN" required>
+                                    <input type="text" id="ISBN" name="ISBN" class="form-control form-control-libros" required placeholder="Ingrese el ISBN" >
                                 </div>
                             </div>
 
@@ -588,17 +588,17 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
 
-                <form id="formImportarLibros" asp-action="ImportarLibrosExcel" method="post" enctype="multipart/form-data">
+                <form id="formImportarLibros" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
 
                     <div class="modal-body">
-                        <!-- Instrucciones - CORREGIDO: No se oculta automáticamente -->
-                        <div class="alert alert-info mb-4" id="instruccionesImportacion">
+                        <!-- Instrucciones - CORREGIDO: Sin clase "alert" de Bootstrap -->
+                        <div class="instruction-card mb-4" id="instruccionesImportacion">
                             <div class="d-flex">
-                                <i class="fas fa-info-circle me-3 mt-1"></i>
+                                <i class="fas fa-info-circle me-3 mt-1 text-info"></i>
                                 <div>
-                                    <h6 class="alert-heading mb-2">Instrucciones de Importación</h6>
-                                    <ol class="mb-0 small">
+                                    <h6 class="instruction-title mb-2">Instrucciones de Importación</h6>
+                                    <ol class="instruction-list mb-0">
                                         @if (ViewBag.Info != null)
                                         {
                                             @Html.Raw(ViewBag.Info)
@@ -623,7 +623,7 @@
                             </label>
                             <input type="file"
                                    id="archivoExcel"
-                                   name="archivoExcel"
+                                   name="archivo"
                                    class="form-control form-control-libros"
                                    accept=".xlsx,.xls"
                                    required>
@@ -662,8 +662,9 @@
             </div>
         </div>
     </div>
-
 </div>
+
+
 @section Scripts {
     <script>
         // Declara los managers globalmente
@@ -671,25 +672,26 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             // =============================================
-            // CORRECCIÓN PARA EL MODAL DE IMPORTACIÓN
+            // CONFIGURACIÓN DEL MODAL DE IMPORTACIÓN
             // =============================================
 
-            // Prevenir que las instrucciones se oculten automáticamente
-            const instruccionesImportacion = document.getElementById('instruccionesImportacion');
-            if (instruccionesImportacion) {
-                // Remover cualquier timeout que pueda estar ocultando las instrucciones
-                const alertElement = new bootstrap.Alert(instruccionesImportacion);
-                // No llamamos a close() para que permanezca visible
-            }
-
-            // Configurar el modal de importación para que no cierre automáticamente
+            // Configurar el modal de importación
             const importarLibrosModal = document.getElementById('importarLibrosModal');
             if (importarLibrosModal) {
+                const modalInstance = new bootstrap.Modal(importarLibrosModal);
+
                 importarLibrosModal.addEventListener('show.bs.modal', function() {
                     // Asegurar que las instrucciones sean visibles
                     const instrucciones = document.getElementById('instruccionesImportacion');
                     if (instrucciones) {
                         instrucciones.style.display = 'block';
+                    }
+
+                    // Ocultar resultados anteriores
+                    const resultadoImportacion = document.getElementById('resultadoImportacion');
+                    if (resultadoImportacion) {
+                        resultadoImportacion.style.display = 'none';
+                        resultadoImportacion.innerHTML = '';
                     }
                 });
 
@@ -706,6 +708,14 @@
                     if (formImportarLibros) {
                         formImportarLibros.reset();
                     }
+
+                    // Resetear el botón de importar
+                    const btnImportar = document.getElementById('btnImportar');
+                    if (btnImportar) {
+                        btnImportar.innerHTML = '<i class="fas fa-upload me-2"></i> Iniciar Importación';
+                        btnImportar.disabled = false;
+                    }
+                    window.location.reload();
                 });
             }
 
@@ -724,7 +734,7 @@
 
                     // Validaciones básicas
                     if (!archivoExcel.files.length) {
-                        showAlert('Por favor seleccione un archivo Excel', 'error');
+                        mostrarAlertaTemporal('Por favor seleccione un archivo Excel', 'error');
                         return;
                     }
 
@@ -732,13 +742,13 @@
                     const extension = file.name.split('.').pop().toLowerCase();
 
                     if (extension !== 'xlsx' && extension !== 'xls') {
-                        showAlert('Solo se permiten archivos Excel (.xlsx, .xls)', 'error');
+                        mostrarAlertaTemporal('Solo se permiten archivos Excel (.xlsx, .xls)', 'error');
                         return;
                     }
 
                     // Validar tamaño del archivo (10MB máximo)
                     if (file.size > 10 * 1024 * 1024) {
-                        showAlert('El archivo es demasiado grande. Tamaño máximo: 10MB', 'error');
+                        mostrarAlertaTemporal('El archivo es demasiado grande. Tamaño máximo: 10MB', 'error');
                         return;
                     }
 
@@ -750,13 +760,14 @@
                     try {
                         // Crear FormData para enviar el archivo
                         const formData = new FormData();
-                        formData.append('archivoExcel', file);
+                        formData.append('archivo', file);
 
                         // Realizar la petición AJAX
                         const response = await fetch('/Libro/ImportarLibrosExcel', {
                             method: 'POST',
                             body: formData,
                             headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
                                 'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
                             }
                         });
@@ -764,11 +775,9 @@
                         // Verificar si la respuesta es JSON
                         const contentType = response.headers.get('content-type');
                         if (!contentType || !contentType.includes('application/json')) {
-                            // Si no es JSON, probablemente es un error HTML
                             const textResponse = await response.text();
                             console.error('Respuesta no JSON recibida:', textResponse.substring(0, 500));
 
-                            // Verificar si es un error de autenticación
                             if (response.status === 401 || response.status === 403) {
                                 throw new Error('Error de autenticación. Por favor, inicie sesión nuevamente.');
                             } else if (response.status === 500) {
@@ -790,120 +799,22 @@
                             message: 'Error al procesar la importación: ' + error.message
                         });
                     } finally {
-                        // Restaurar botón
-                        btnImportar.innerHTML = originalText;
-                        btnImportar.disabled = false;
+                        if (btnImportar) {
+                            btnImportar.innerHTML = originalText;
+                            btnImportar.disabled = false;
+                        }
                     }
                 });
-            }
-
-            // Función para mostrar resultados de importación
-            function mostrarResultadoImportacion(result) {
-                let html = '';
-
-                if (result.success) {
-                    html = `
-                        <div class="alert alert-success">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-check-circle fa-2x me-3"></i>
-                                <div>
-                                    <h6 class="mb-1">¡Importación completada!</h6>
-                                    <p class="mb-0">${result.mensaje || result.message || 'Libros importados correctamente'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    // Si hay datos detallados, mostrarlos
-                    if (result.datos || result.data) {
-                        const data = result.datos || result.data;
-                        html += `
-                            <div class="row text-center mt-3">
-                                <div class="col-4">
-                                    <div class="border rounded p-2 bg-light">
-                                        <div class="h4 mb-0 text-primary">${data.total || data.totalRegistros || 0}</div>
-                                        <small class="text-muted">Total</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="border rounded p-2 bg-light">
-                                        <div class="h4 mb-0 text-success">${data.insertados || data.registrosExitosos || 0}</div>
-                                        <small class="text-muted">Insertados</small>
-                                    </div>
-                                </div>
-                                <div class="col-4">
-                                    <div class="border rounded p-2 bg-light">
-                                        <div class="h4 mb-0 text-danger">${data.errores || data.registrosFallidos || 0}</div>
-                                        <small class="text-muted">Errores</small>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-
-                        // Mostrar errores detallados si existen
-                        if ((data.detallesErrores && data.detallesErrores.length > 0) ||
-                            (data.errores && data.errores.length > 0)) {
-                            const errores = data.detallesErrores || data.errores;
-                            html += `
-                                <div class="mt-3">
-                                    <h6 class="text-warning">
-                                        <i class="fas fa-exclamation-triangle me-1"></i>Errores detallados:
-                                    </h6>
-                                    <div class="error-scroll small" style="max-height: 150px; overflow-y: auto;">
-                                        <ul class="mb-0">
-                                            ${errores.map(error => `<li class="text-danger">${error}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-
-                } else {
-                    html = `
-                        <div class="alert alert-danger">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
-                                <div>
-                                    <h6 class="mb-1">Error en la importación</h6>
-                                    <p class="mb-0">${result.mensaje || result.message || 'Ocurrió un error durante la importación'}</p>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-
-                    // Mostrar detalles del error si existen
-                    if (result.datos || result.data) {
-                        const data = result.datos || result.data;
-                        if ((data.detallesErrores && data.detallesErrores.length > 0) ||
-                            (data.errores && data.errores.length > 0)) {
-                            const errores = data.detallesErrores || data.errores;
-                            html += `
-                                <div class="mt-2">
-                                    <div class="error-scroll small" style="max-height: 150px; overflow-y: auto;">
-                                        <ul class="mb-0">
-                                            ${errores.map(error => `<li class="text-danger">${error}</li>`).join('')}
-                                        </ul>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-                }
-
-                resultadoImportacion.innerHTML = html;
-                resultadoImportacion.style.display = 'block';
-
-                // Auto-scroll hacia los resultados
-                resultadoImportacion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
 
             // Mostrar nombre del archivo seleccionado
             if (archivoExcel) {
                 archivoExcel.addEventListener('change', function() {
                     if (this.files.length > 0) {
-                        // Ocultar resultados anteriores cuando se selecciona nuevo archivo
-                        resultadoImportacion.style.display = 'none';
+                        if (resultadoImportacion) {
+                            resultadoImportacion.style.display = 'none';
+                            resultadoImportacion.innerHTML = '';
+                        }
                     }
                 });
             }
@@ -911,6 +822,7 @@
             // =============================================
             // FUNCIONALIDAD DE BÚSQUEDA Y PAGINACIÓN CORREGIDA
             // =============================================
+            // ... (todo tu código existente de búsqueda y paginación se mantiene igual)
             const searchInput = document.getElementById('searchInput');
             const buscarPorDescripcion = document.getElementById('buscarPorDescripcion');
             const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
@@ -927,7 +839,6 @@
             function limpiarFiltros() {
                 if (buscarPorDescripcion.checked) {
                     buscarPorDescripcion.checked = false;
-                    // Al limpiar filtros, volver a la página 1
                     paginaHidden.value = 1;
                     searchForm.submit();
                 }
@@ -935,7 +846,6 @@
 
             // Enviar formulario automáticamente al cambiar el checkbox
             buscarPorDescripcion.addEventListener('change', function() {
-                // Al cambiar el filtro, volver a la página 1
                 paginaHidden.value = 1;
                 searchForm.submit();
             });
@@ -945,7 +855,6 @@
 
             // Al realizar una búsqueda nueva, volver a página 1
             searchForm.addEventListener('submit', function(e) {
-                // Solo resetear a página 1 si es una nueva búsqueda (no navegación por páginas)
                 const activeElement = document.activeElement;
                 if (!activeElement || activeElement.name !== 'pagina') {
                     paginaHidden.value = 1;
@@ -1079,7 +988,6 @@
                     this.container.appendChild(chip);
                     this.hideEmptyMessage();
 
-                    // Event listener para eliminar chip
                     chip.querySelector('.chip-remove').addEventListener('click', (e) => {
                         e.preventDefault();
                         this.removeChip(value);
@@ -1091,11 +999,9 @@
                 removeChip(value) {
                     this.selectedItems.delete(value);
 
-                    // Remover chip visual
                     const chip = this.container.querySelector(`.chip-remove[data-value="${value}"]`)?.closest('.chip');
                     if (chip) chip.remove();
 
-                    // Remover selección del dropdown
                     const dropdownItem = this.dropdown.querySelector(`.dropdown-item[data-value="${value}"]`);
                     if (dropdownItem) dropdownItem.classList.remove('selected');
 
@@ -1159,12 +1065,233 @@
 
             // Event listener para cuando se cierra el modal de edición
             document.getElementById('agregarLibroModal').addEventListener('hidden.bs.modal', function () {
-                // Pequeño delay para asegurar que el modal se cerró completamente
                 setTimeout(() => {
                     resetearModalACreacion();
                 }, 300);
             });
         });
+
+        // =============================================
+        // FUNCIONES MEJORADAS PARA IMPORTACIÓN
+        // =============================================
+
+        // Función para mostrar resultados de importación MEJORADA
+        function mostrarResultadoImportacion(result) {
+            if (!resultadoImportacion) return;
+
+            let html = '';
+
+            if (result.success) {
+                // ÉXITO TOTAL - Todo salió perfectamente
+                html = `
+                    <div class="alert alert-success">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="mb-1">¡Importación completada exitosamente!</h6>
+                                <p class="mb-0">${result.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Mostrar estadísticas incluso en éxito
+                if (result.data) {
+                    html += crearEstadisticasImportacion(result.data);
+                }
+
+            } else {
+                // ERROR - Puede ser parcial o total
+                const esErrorParcial = result.data && result.data.insertados > 0;
+
+                html = `
+                    <div class="alert ${esErrorParcial ? 'alert-warning' : 'alert-danger'}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas ${esErrorParcial ? 'fa-exclamation-triangle' : 'fa-times-circle'} fa-2x me-3"></i>
+                            <div>
+                                <h6 class="mb-1">${esErrorParcial ? 'Importación parcial' : 'Importación fallida'}</h6>
+                                <p class="mb-0">${result.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Mostrar estadísticas
+                if (result.data) {
+                    html += crearEstadisticasImportacion(result.data);
+
+                    // Mostrar errores detallados si existen
+                    if (result.data.detallesErrores && result.data.detallesErrores.length > 0) {
+                        html += crearListaErrores(result.data.detallesErrores);
+                    }
+                }
+            }
+
+            resultadoImportacion.innerHTML = html;
+            resultadoImportacion.style.display = 'block';
+            resultadoImportacion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Función auxiliar para estadísticas
+        function crearEstadisticasImportacion(data) {
+            return `
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <div class="border rounded p-2 bg-light">
+                            <div class="h4 mb-0 text-primary">${data.total || 0}</div>
+                            <small class="text-muted">Total procesados</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2 bg-light">
+                            <div class="h4 mb-0 text-success">${data.insertados || 0}</div>
+                            <small class="text-muted">Insertados</small>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="border rounded p-2 bg-light">
+                            <div class="h4 mb-0 text-danger">${data.errores || 0}</div>
+                            <small class="text-muted">Errores</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Función auxiliar para lista de errores con mejoras
+        function crearListaErrores(detallesErrores) {
+            const totalErrores = detallesErrores.length;
+            const mostrarTodos = totalErrores <= 10;
+            const erroresVisibles = mostrarTodos ? detallesErrores : detallesErrores.slice(0, 10);
+            const erroresId = 'errores-' + Date.now();
+
+            return `
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-warning mb-0">
+                            <i class="fas fa-exclamation-triangle me-1"></i>Detalles de errores (${totalErrores})
+                        </h6>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-2"
+                                    onclick="copiarErrores('${erroresId}')"
+                                    title="Copiar todos los errores al portapapeles">
+                                <i class="fas fa-copy me-1"></i>Copiar Log
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info"
+                                    onclick="descargarLogErrores('${erroresId}')"
+                                    title="Descargar archivo con todos los errores">
+                                <i class="fas fa-download me-1"></i>Descargar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="error-scroll small" id="${erroresId}" data-errores-completos='${JSON.stringify(detallesErrores)}'>
+                        <ul class="mb-0">
+                            ${erroresVisibles.map(error => `<li class="text-danger">${error}</li>`).join('')}
+                        </ul>
+
+                        ${!mostrarTodos ? `
+                            <div class="text-center mt-2">
+                                <div class="mb-1">
+                                    <small class="text-muted">Mostrando 10 de ${totalErrores} errores</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-warning"
+                                        onclick="mostrarTodosLosErrores('${erroresId}')">
+                                    <i class="fas fa-expand me-1"></i>Mostrar todos los errores
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Función para copiar errores al portapapeles
+        function copiarErrores(erroresId) {
+            const contenedorErrores = document.getElementById(erroresId);
+            if (!contenedorErrores) return;
+
+            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
+            const textoErrores = erroresCompletos.join('\n');
+
+            navigator.clipboard.writeText(textoErrores)
+                .then(() => {
+                    const btn = event.target;
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-success');
+
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Error al copiar: ', err);
+                    alert('No se pudo copiar al portapapeles. Use la opción de descargar.');
+                });
+        }
+
+        // Función para descargar log de errores
+        function descargarLogErrores(erroresId) {
+            const contenedorErrores = document.getElementById(erroresId);
+            if (!contenedorErrores) return;
+
+            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
+            const textoErrores = erroresCompletos.join('\r\n');
+
+            const blob = new Blob([textoErrores], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `errores-importacion-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Función para expandir y mostrar todos los errores
+        function mostrarTodosLosErrores(erroresId) {
+            const contenedorErrores = document.getElementById(erroresId);
+            if (!contenedorErrores) return;
+
+            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
+            const listaHTML = erroresCompletos.map(error => `<li class="text-danger">${error}</li>`).join('');
+            contenedorErrores.querySelector('ul').innerHTML = listaHTML;
+
+            const botonContainer = contenedorErrores.querySelector('.text-center');
+            if (botonContainer) {
+                botonContainer.style.display = 'none';
+            }
+        }
+
+        // Función para mostrar alertas temporales
+        function mostrarAlertaTemporal(mensaje, tipo) {
+            const alerta = document.createElement('div');
+            alerta.className = `alert alert-${tipo === 'error' ? 'danger' : 'warning'} alert-dismissible fade show`;
+            alerta.innerHTML = `
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            const campoArchivo = document.querySelector('.form-group-libros');
+            if (campoArchivo) {
+                campoArchivo.parentNode.insertBefore(alerta, campoArchivo.nextSibling);
+            }
+
+            setTimeout(() => {
+                if (alerta.parentNode) {
+                    alerta.remove();
+                }
+            }, 5000);
+        }
+
+        // =============================================
+        // FUNCIONES EXISTENTES (se mantienen igual)
+        // =============================================
 
         // Función auxiliar para limpiar chips
         function limpiarChipsExistentes() {
@@ -1178,7 +1305,6 @@
             document.getElementById('generosChipsContainer').innerHTML = '';
             generosManager.showEmptyMessage();
 
-            // También limpiar los dropdowns visualmente
             document.querySelectorAll('#autoresDropdown .dropdown-item.selected').forEach(item => {
                 item.classList.remove('selected');
             });
@@ -1196,14 +1322,11 @@
             try {
                 console.log('Editando libro ID:', idLibro);
 
-                // Cambiar título del modal
                 document.getElementById('agregarLibroModalLabel').innerHTML =
                     '<i class="fas fa-edit me-2"></i> Editar Libro';
 
-                // Cargar datos ANTES de mostrar el modal
                 await cargarDatosLibroParaEditar(idLibro);
 
-                // Mostrar modal después de cargar datos
                 const modal = new bootstrap.Modal(document.getElementById('agregarLibroModal'));
                 modal.show();
 
@@ -1337,11 +1460,9 @@
         // Funciones globales
         async function verDetalle(idLibro) {
             try {
-                // Mostrar el modal con spinner
                 const modal = new bootstrap.Modal(document.getElementById('detalleLibroModal'));
                 modal.show();
 
-                // Mostrar spinner
                 document.getElementById('detalleLibroContent').innerHTML = `
                     <div class="text-center py-4">
                         <div class="spinner-border text-primary" role="status">
@@ -1351,7 +1472,6 @@
                     </div>
                 `;
 
-                // Cargar los detalles del libro via AJAX
                 await cargarDetalleLibro(idLibro);
             } catch (error) {
                 console.error('Error al abrir modal de detalles:', error);
@@ -1507,7 +1627,6 @@
         }
     </script>
 }
-
 @functions {
     // Función para obtener la clase CSS del badge según el estado
     public string GetEstadoBadgeClass(string estado)

@@ -10,7 +10,9 @@ namespace AppWebBiblioteca.Models
 
         [Required(ErrorMessage = "El ISBN es obligatorio.")]
         public string ISBN { get; set; }
+        [Required(ErrorMessage = "La editorial es obligatoria.")]
         public int EditorialId { get; set; }
+        [Required(ErrorMessage = "La sección es obligatoria.")]
         public int SeccionId { get; set; }
         public string Estado { get; set; }
         public string? Descripcion { get; set; }

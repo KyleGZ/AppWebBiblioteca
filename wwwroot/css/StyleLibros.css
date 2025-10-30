@@ -813,3 +813,65 @@
     .row.g-4 > [class*="col-"] {
         padding: 0 0.75rem;
     }
+
+/*
+        Temporal: Ajuste para evitar que los botones se desborden en pantallas muy pequeñas
+    */
+
+/* Estilos personalizados para las instrucciones */
+.instruction-card {
+    background-color: #f8f9fa;
+    border: 1px solid #bee5eb;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    color: #055160;
+}
+
+.instruction-title {
+    color: #055160;
+    font-weight: 600;
+}
+
+.instruction-list {
+    padding-left: 1rem;
+}
+
+    .instruction-list li {
+        margin-bottom: 0.25rem;
+    }
+
+/* Estilos para el área de errores */
+.error-scroll {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #f5c6cb;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+}
+
+
+.error-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #f5c6cb;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85em;
+}
+
+    .error-scroll ul {
+        margin-bottom: 0;
+        padding-left: 1rem;
+    }
+
+    .error-scroll li {
+        margin-bottom: 0.25rem;
+        word-break: break-word;
+    }
+
+.btn-sm {
+    font-size: 0.75rem;
+}

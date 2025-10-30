@@ -161,7 +161,7 @@ namespace AppWebBiblioteca.Controllers
                 {
                     await RecargarViewBagsAsync();
                     ModelState.AddModelError("", "El modelo del libro no es válido.");
-                    return View("Index");
+                    return RedirectToAction("Index");
                 }
 
                 // 1. Validar que se hayan seleccionado autores y géneros
@@ -484,17 +484,16 @@ namespace AppWebBiblioteca.Controllers
 
             var esAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
 
-            // Validar archivo
+            // Validaciones
             if (archivo == null || archivo.Length == 0)
-            {
-                var mensaje = "Debe adjuntar un archivo Excel válido.";
+                return ResponderConMensaje("Debe adjuntar un archivo Excel válido.", false, esAjax);
 
-                if (esAjax)
-                    return BadRequest(new { success = false, message = mensaje });
+            var extension = Path.GetExtension(archivo.FileName).ToLowerInvariant();
+            if (!new[] { ".xlsx", ".xls" }.Contains(extension))
+                return ResponderConMensaje("Solo se permiten archivos Excel (.xlsx, .xls).", false, esAjax);
 
-                TempData["Error"] = mensaje;
-                return RedirectToAction("Index");
-            }
+            if (archivo.Length > 5 * 1024 * 1024) // 5MB
+                return ResponderConMensaje("El archivo no puede ser mayor a 5MB.", false, esAjax);
 
             try
             {
@@ -502,65 +501,82 @@ namespace AppWebBiblioteca.Controllers
 
                 if (esAjax)
                 {
-                    // Sanitizar los datos de respuesta para evitar exponer trazas o información sensible
-                    var datos = resultado.Data is JsonElement element && element.TryGetProperty("stackTrace", out _)
-                        ? null
-                        : resultado.Data;
-
-                    if (resultado.Success)
-                    {
-                        return Ok(new
-                        {
-                            success = true,
-                            message = resultado.Message,
-                            datos
-                        });
-                    }
-
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = resultado.Message,
-                        datos
-                    });
+                    return resultado.Success
+                        ? Ok(new { success = true, message = resultado.Message, datos = SanitizarDatos(resultado.Data) })
+                        : BadRequest(new { success = false, message = resultado.Message, datos = SanitizarDatos(resultado.Data) });
                 }
 
-                // Para peticiones normales (no-AJAX)
-                TempData.Remove("ImportacionData");
-                TempData.Remove("ImportacionErrores");
+                // Para requests normales
+                TempData[resultado.Success ? "Success" : "Error"] = resultado.Message;
 
                 if (resultado.Success)
-                {
-                    TempData["Success"] = resultado.Message;
                     TempData["ImportacionData"] = JsonSerializer.Serialize(resultado.Data);
-                }
                 else
-                {
-                    TempData["Error"] = resultado.Message;
                     TempData["ImportacionErrores"] = JsonSerializer.Serialize(resultado.Data);
-                }
 
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                // Aquí sería ideal registrar el error en logs
-                //_logger.LogError(ex, "Error al importar libros desde Excel.");
-
-                if (esAjax)
-                {
-                    return StatusCode(500, new
-                    {
-                        success = false,
-                        message = "Ocurrió un error inesperado durante la importación.",
-                        error = ex.Message
-                    });
-                }
-
-                TempData["Error"] = $"Ocurrió un error durante la importación: {ex.Message}";
-                return RedirectToAction("Index");
+                var mensaje = $"Ocurrió un error inesperado: {ex.Message}";
+                return ResponderConMensaje(mensaje, false, esAjax);
             }
         }
 
+        private object SanitizarDatos(object datos)
+        {
+            // Sanitizar datos para no exponer información sensible en respuestas AJAX
+            if (datos is JsonElement element)
+            {
+                try
+                {
+                    var jsonString = element.GetRawText();
+                    var document = JsonDocument.Parse(jsonString);
+                    var root = document.RootElement;
+
+                    // Remover propiedades sensibles
+                    if (root.ValueKind == JsonValueKind.Object)
+                    {
+                        using var stream = new MemoryStream();
+                        using var writer = new Utf8JsonWriter(stream);
+                        writer.WriteStartObject();
+
+                        foreach (var prop in root.EnumerateObject())
+                        {
+                            if (!prop.Name.ToLowerInvariant().Contains("stacktrace") &&
+                                !prop.Name.ToLowerInvariant().Contains("innerexception"))
+                            {
+                                prop.WriteTo(writer);
+                            }
+                        }
+
+                        writer.WriteEndObject();
+                        writer.Flush();
+
+                        return JsonSerializer.Deserialize<object>(stream.ToArray());
+                    }
+                }
+                catch
+                {
+                    // Si falla la sanitización, retornar null
+                    return null;
+                }
+            }
+
+            return datos;
+        }
+
+        private IActionResult ResponderConMensaje(string mensaje, bool esExito, bool esAjax)
+        {
+            if (esAjax)
+            {
+                return esExito
+                    ? Ok(new { success = true, message = mensaje })
+                    : BadRequest(new { success = false, message = mensaje });
+            }
+
+            TempData[esExito ? "Success" : "Error"] = mensaje;
+            return RedirectToAction("Index");
+        }
     }
 }
