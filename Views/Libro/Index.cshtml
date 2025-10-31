@@ -319,8 +319,14 @@
                     <h5 class="modal-title" id="agregarLibroModalLabel">
                         <i class="fas fa-book-medical me-2"></i> Agregar Nuevo Libro
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
+
+                    <!--   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button> -->
+                    <a  asp-controller="Libro"
+                        asp-action="Index"
+                        class="btn-close"
+                        arial-label="Cerrar"></a>
+                
+                    </div>
 
                 <form id="formAgregarLibro" asp-action="RegistroLibro" method="post" enctype="multipart/form-data">
                     @Html.AntiForgeryToken()
@@ -557,7 +563,11 @@
                     <h5 class="modal-title" id="detalleLibroModalLabel">
                         <i class="fas fa-info-circle me-2"></i> Detalles del Libro
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <!--    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button> -->
+                    <a asp-controller="Libro"
+                       asp-action="Index"
+                       class="btn-close"
+                       arial-label="Cerrar"></a>
                 </div>
                 <div class="modal-body" id="detalleLibroContent">
                     <!-- El contenido se cargará dinámicamente aquí -->
@@ -677,10 +687,14 @@
 
             // Configurar el modal de importación
             const importarLibrosModal = document.getElementById('importarLibrosModal');
+            let debeRecargarAlCerrar = false;
+
             if (importarLibrosModal) {
                 const modalInstance = new bootstrap.Modal(importarLibrosModal);
 
                 importarLibrosModal.addEventListener('show.bs.modal', function() {
+
+                    debeRecargarAlCerrar = false;
                     // Asegurar que las instrucciones sean visibles
                     const instrucciones = document.getElementById('instruccionesImportacion');
                     if (instrucciones) {
@@ -696,6 +710,15 @@
                 });
 
                 importarLibrosModal.addEventListener('hidden.bs.modal', function() {
+
+                    if (debeRecargarAlCerrar) {
+                    console.log('Recargando página después de importación exitosa...');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 300);
+                    return; // No ejecutar el resto del código si va a recargar
+                }
+
                     // Limpiar resultados cuando se cierra el modal
                     const resultadoImportacion = document.getElementById('resultadoImportacion');
                     if (resultadoImportacion) {
@@ -791,6 +814,19 @@
 
                         // Mostrar resultados
                         mostrarResultadoImportacion(result);
+
+                        //fue exitoso, recargar al cerrar
+                    if (result.success) {
+                        debeRecargarAlCerrar = true;
+                        console.log('Importación exitosa - Se recargará la página al cerrar el modal');
+
+                        // Opcional: Cambiar el texto del botón cancelar para indicar que recargará
+                        const btnCancelar = document.querySelector('#importarLibrosModal .btn-libros-secondary');
+                        if (btnCancelar) {
+                            btnCancelar.innerHTML = '<i class="fas fa-sync me-2"></i> Cerrar y Actualizar';
+                        }
+                    }
+
 
                     } catch (error) {
                         console.error('Error en la importación:', error);
@@ -1628,28 +1664,30 @@
     </script>
 }
 @functions {
-    // Función para obtener la clase CSS del badge según el estado
+    // Función para obtener la clase CSS del badge según el estado - CORREGIDA
     public string GetEstadoBadgeClass(string estado)
     {
         return estado?.ToLower() switch
         {
             "disponible" => "bg-success",
-            "prestado" => "bg-warning",
+            "no disponible" => "bg-danger",
+            "en préstamo" or "prestado" => "bg-warning",
+            "en reparación" or "en reparacion" => "bg-secondary",
             "reservado" => "bg-info",
-            "reparacion" => "bg-secondary",
             _ => "bg-secondary"
         };
     }
 
-    // Función para obtener el icono según el estado
+    // Función para obtener el icono según el estado - CORREGIDA
     public string GetEstadoIcon(string estado)
     {
         return estado?.ToLower() switch
         {
             "disponible" => "fa-check",
-            "prestado" => "fa-exchange-alt",
+            "no disponible" => "fa-times",
+            "en préstamo" or "prestado" => "fa-exchange-alt",
+            "en reparación" or "en reparacion" => "fa-tools",
             "reservado" => "fa-clock",
-            "reparacion" => "fa-tools",
             _ => "fa-question"
         };
     }

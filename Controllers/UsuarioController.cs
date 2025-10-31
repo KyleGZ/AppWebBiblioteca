@@ -24,24 +24,67 @@ namespace AppWebBiblioteca.Controllers
             _rolService = rolService;
         }
 
+        //[Authorize(Policy = "AdminOnly")]
+        //[HttpGet]
+        //public async Task<IActionResult> Index()
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        var usuarios = await _usuarioService.ObtenerUsuariosAsync();
+        //        await CargarRolesAsync();
+        //        return View(usuarios);
+        //    }
+        //    catch
+        //    {
+        //        ViewBag.Error = "Error al cargar la lista de usuarios";
+        //        await CargarRolesAsync();
+        //        return View(new List<UsuarioListaViewModel>());
+        //    }
+        //}
+
         [Authorize(Policy = "AdminOnly")]
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 4)
         {
             try
             {
                 if (!_authService.IsAuthenticated())
                     return RedirectToAction("Login", "Usuario");
 
-                var usuarios = await _usuarioService.ObtenerUsuariosAsync();
+                PaginacionResponse<UsuarioListaViewModel> resultado;
+
+                if (!string.IsNullOrEmpty(termino))
+                {
+                    // Buscar usuarios por término (nombre o cédula)
+                    resultado = await _usuarioService.BuscarUsuariosRapidaAsync(termino, pagina, resultadosPorPagina);
+                }
+                else
+                {
+                    // Listar todos los usuarios paginados
+                    resultado = await _usuarioService.BuscarUsuariosRapidaAsync("", pagina, resultadosPorPagina);
+                }
+
                 await CargarRolesAsync();
-                return View(usuarios);
+
+                ViewBag.TerminoBusqueda = termino;
+                ViewBag.PaginaActual = pagina;
+                ViewBag.ResultadosPorPagina = resultadosPorPagina;
+
+                return View(resultado);
             }
             catch
             {
                 ViewBag.Error = "Error al cargar la lista de usuarios";
                 await CargarRolesAsync();
-                return View(new List<UsuarioListaViewModel>());
+
+                return View(new PaginacionResponse<UsuarioListaViewModel>
+                {
+                    Success = false,
+                    Message = "Error al cargar los usuarios"
+                });
             }
         }
 

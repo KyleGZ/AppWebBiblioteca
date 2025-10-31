@@ -8,6 +8,7 @@ namespace AppWebBiblioteca.Services
     public interface IUsuarioService
     {
         Task<List<UsuarioListaViewModel>> ObtenerUsuariosAsync();
+        Task<PaginacionResponse<UsuarioListaViewModel>> BuscarUsuariosRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
         Task<List<string>> ObtenerRolesDeUsuarioAsync(int idUsuario);
         Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id);
         Task<PerfilUsuarioDto> PerfilUsuarioViewAsync(int id);
@@ -49,6 +50,83 @@ namespace AppWebBiblioteca.Services
             catch (Exception)
             {
                 return new List<UsuarioListaViewModel>();
+            }
+        }
+
+
+        /*
+         * Metodo para mostrar la lista de usuario con paginacion y busqueda por nombre/cedula
+         */
+
+        public async Task<PaginacionResponse<UsuarioListaViewModel>> BuscarUsuariosRapidaAsync(
+    string termino,
+    int pagina = 1,
+    int resultadosPorPagina = 20)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(termino))
+                {
+                    // Listar todos los usuarios con paginación
+                    var apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Usuario/ListarViewUsuario?pagina={pagina}&resultadoPorPagina={resultadosPorPagina}";
+                    var response = await _httpClient.GetAsync(apiUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var resultadoPaginado = await response.Content.ReadFromJsonAsync<PaginacionResponse<UsuarioListaViewModel>>();
+
+                        if (resultadoPaginado != null && resultadoPaginado.Success)
+                        {
+                            return resultadoPaginado;
+                        }
+                        else
+                        {
+                            return new PaginacionResponse<UsuarioListaViewModel>
+                            {
+                                Success = false,
+                                Message = "No se pudieron obtener los usuarios"
+                            };
+                        }
+                    }
+                    else
+                    {
+                        return new PaginacionResponse<UsuarioListaViewModel>
+                        {
+                            Success = false,
+                            Message = $"Error al obtener los usuarios: {response.StatusCode}"
+                        };
+                    }
+                }
+
+                // Buscar usuarios por término (nombre o cédula)
+                var buscarUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Usuario/Busqueda-Usuario?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadoPorPagina={resultadosPorPagina}";
+                var buscarResponse = await _httpClient.GetAsync(buscarUrl);
+
+                if (buscarResponse.IsSuccessStatusCode)
+                {
+                    var result = await buscarResponse.Content.ReadFromJsonAsync<PaginacionResponse<UsuarioListaViewModel>>();
+                    return result ?? new PaginacionResponse<UsuarioListaViewModel>
+                    {
+                        Success = false,
+                        Message = "No se pudieron procesar los resultados"
+                    };
+                }
+                else
+                {
+                    return new PaginacionResponse<UsuarioListaViewModel>
+                    {
+                        Success = false,
+                        Message = $"Error en la búsqueda: {buscarResponse.StatusCode}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new PaginacionResponse<UsuarioListaViewModel>
+                {
+                    Success = false,
+                    Message = $"Error de conexión: {ex.Message}"
+                };
             }
         }
 

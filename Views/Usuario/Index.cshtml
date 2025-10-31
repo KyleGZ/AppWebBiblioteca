@@ -1,8 +1,12 @@
-﻿@model List<UsuarioListaViewModel>
+﻿@model PaginacionResponse<UsuarioListaViewModel>
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Gestión de Usuarios - Biblioteca Esparza";
     ViewData["PageTitle"] = "Gestión de Usuarios del Sistema";
+
+    var usuarios = Model?.Data ?? new List<UsuarioListaViewModel>();
+    var paginacion = Model?.Pagination ?? new PaginationInfo();
+    var terminoBusqueda = ViewBag.TerminoBusqueda as string ?? "";
 }
 
 <!-- Contenido específico de Usuarios -->
@@ -26,6 +30,56 @@
                         </button>
                     </div>
 
+                    <!-- Formulario de Búsqueda -->
+                    <form asp-action="Index" method="get" class="search-filter-section mb-4" id="searchForm">
+                        <div class="row g-3">
+                            <!-- Búsqueda -->
+                            <div class="col-12 col-xl-8">
+                                <div class="search-container">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light">
+                                            <i class="fas fa-search text-muted"></i>
+                                        </span>
+                                        <input type="text" class="form-control" name="termino" id="searchInput"
+                                               placeholder="Buscar por nombre o cédula..."
+                                               value="@terminoBusqueda">
+                                        <button class="btn btn-esparza-primary" type="submit" id="btnBuscar">
+                                            <i class="fas fa-search me-1"></i>Buscar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Campos ocultos para paginación -->
+                        <input type="hidden" name="pagina" id="paginaHidden" value="@paginacion.PaginaActual" />
+                        <input type="hidden" name="resultadosPorPagina" id="resultadosPorPaginaHidden" value="@paginacion.ResultadosPorPagina" />
+                    </form>
+
+                    <!-- Información de resultados -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-muted small">
+                            @if (!string.IsNullOrEmpty(terminoBusqueda))
+                            {
+                                <span id="resultCount">@paginacion.TotalResultados</span>
+                                <span>usuarios encontrados para "@terminoBusqueda"</span>
+                            }
+                            else
+                            {
+                                <span id="resultCount">@paginacion.TotalResultados</span>
+                                <span>usuarios en el sistema</span>
+                            }
+                        </div>
+                        <div class="d-flex gap-2">
+                            @if (!string.IsNullOrEmpty(terminoBusqueda))
+                            {
+                                <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-times me-1"></i>Limpiar búsqueda
+                                </a>
+                            }
+                        </div>
+                    </div>
+
                     <!-- Alertas -->
                     @if (TempData["SuccessMessage"] != null)
                     {
@@ -45,8 +99,17 @@
                         </div>
                     }
 
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger-usuarios alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            @ViewBag.Error
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
                     <!-- Tabla de Usuarios -->
-                    @if (Model.Any())
+                    @if (usuarios.Any())
                     {
                         <div class="table-responsive">
                             <table class="table table-usuarios">
@@ -62,7 +125,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var usuario in Model)
+                                    @foreach (var usuario in usuarios)
                                     {
                                         <tr class="zoom-in">
                                             <td class="fw-bold">#@usuario.IdUsuario</td>
@@ -148,6 +211,142 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Paginación -->
+                        @if (paginacion.TotalPaginas > 1)
+                        {
+                            <nav aria-label="Paginación de resultados" class="mt-5">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                    <!-- Información de página -->
+                                    <div class="pagination-info">
+                                        <small class="text-muted">
+                                            Mostrando <strong>@usuarios.Count</strong> de 
+                                            <strong>@paginacion.TotalResultados.ToString("N0")</strong> usuarios
+                                            - Página <strong>@paginacion.PaginaActual</strong> de 
+                                            <strong>@paginacion.TotalPaginas</strong>
+                                        </small>
+                                    </div>
+
+                                    <!-- Controles de paginación -->
+                                    <ul class="pagination justify-content-center mb-0">
+                                        <!-- Botón Primera Página -->
+                                        <li class="page-item @(paginacion.PaginaActual == 1 ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual > 1)
+                                            {
+                                                <button type="button" onclick="cambiarPagina(1)" class="page-link" title="Primera página">
+                                                    <i class="fas fa-angle-double-left"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                                            }
+                                        </li>
+
+                                        <!-- Botón Anterior -->
+                                        <li class="page-item @(paginacion.PaginaActual == 1 ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual > 1)
+                                            {
+                                                <button type="button" onclick="cambiarPagina(@(paginacion.PaginaActual - 1))"
+                                                        class="page-link" title="Página anterior">
+                                                    <i class="fas fa-chevron-left"></i> Anterior
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
+                                            }
+                                        </li>
+
+                                        <!-- Números de página -->
+                                        @{
+                                            int inicio = Math.Max(1, paginacion.PaginaActual - 2);
+                                            int fin = Math.Min(paginacion.TotalPaginas, paginacion.PaginaActual + 2);
+                                            
+                                            if (inicio > 1)
+                                            {
+                                                <li class="page-item disabled">
+                                                    <span class="page-link">...</span>
+                                                </li>
+                                            }
+                                        }
+
+                                        @for (int i = inicio; i <= fin; i++)
+                                        {
+                                            <li class="page-item @(i == paginacion.PaginaActual ? "active" : "")">
+                                                <button type="button" onclick="cambiarPagina(@i)"
+                                                        class="page-link @(i == paginacion.PaginaActual ? "fw-bold" : "")">
+                                                    @i
+                                                </button>
+                                            </li>
+                                        }
+
+                                        @if (fin < paginacion.TotalPaginas)
+                                        {
+                                            <li class="page-item disabled">
+                                                <span class="page-link">...</span>
+                                            </li>
+                                        }
+
+                                        <!-- Botón Siguiente -->
+                                        <li class="page-item @(paginacion.PaginaActual >= paginacion.TotalPaginas ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual < paginacion.TotalPaginas)
+                                            {
+                                                <button type="button" onclick="cambiarPagina(@(paginacion.PaginaActual + 1))"
+                                                        class="page-link" title="Página siguiente">
+                                                    Siguiente <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link">Siguiente <i class="fas fa-chevron-right"></i></span>
+                                            }
+                                        </li>
+
+                                        <!-- Botón Última Página -->
+                                        <li class="page-item @(paginacion.PaginaActual >= paginacion.TotalPaginas ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual < paginacion.TotalPaginas)
+                                            {
+                                                <button type="button" onclick="cambiarPagina(@paginacion.TotalPaginas)" 
+                                                        class="page-link" title="Última página">
+                                                    <i class="fas fa-angle-double-right"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                                            }
+                                        </li>
+                                    </ul>
+
+                                    <!-- Selector de resultados por página -->
+                                    <!-- Selector de resultados por página - CORREGIDO -->
+                                    <div class="pagination-size">
+                                        <small class="text-muted me-2">Mostrar:</small>
+                                        <select class="form-select form-select-sm d-inline-block w-auto"
+                                                onchange="cambiarResultadosPorPagina(this.value)">
+                                            @{
+                                                var resultadosPorPagina = paginacion.ResultadosPorPagina;
+                                            }
+                                            <option value="20" selected="@(resultadosPorPagina == 20)">20</option>
+                                            <option value="50" selected="@(resultadosPorPagina == 50)">50</option>
+                                            <option value="100" selected="@(resultadosPorPagina == 100)">100</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </nav>
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(terminoBusqueda))
+                    {
+                        <div class="empty-state text-center py-5">
+                            <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                            <h4>No se encontraron resultados</h4>
+                            <p class="text-muted">No hay usuarios que coincidan con "@terminoBusqueda"</p>
+                            <a href="@Url.Action("Index")" class="btn btn-esparza-primary mt-3">
+                                <i class="fas fa-users me-2"></i>Ver todos los usuarios
+                            </a>
+                        </div>
                     }
                     else
                     {
@@ -165,7 +364,6 @@
         </div>
     </div>
 </div>
-
 <!-- Modal Agregar Usuario -->
 <div class="modal fade modal-usuarios" id="modalAgregarUsuario" tabindex="-1">
     <div class="modal-dialog modal-lg">
@@ -459,12 +657,177 @@
     </div>
 </div>
 
-
 @section Scripts {
     <script>
-        // Script para manejar los modales
+        // Script completo corregido para manejar búsqueda, paginación y modales
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM cargado - inicializando modales');
+            console.log('DOM cargado - inicializando funcionalidades');
+
+            // =============================================
+            // FUNCIONALIDAD DE BÚSQUEDA Y PAGINACIÓN
+            // =============================================
+            const searchInput = document.getElementById('searchInput');
+            const btnBuscar = document.getElementById('btnBuscar');
+            const paginaHidden = document.getElementById('paginaHidden');
+            const searchForm = document.getElementById('searchForm');
+            const resultCount = document.getElementById('resultCount');
+
+            // Función para cambiar página - MEJORADA CON VALIDACIONES
+            window.cambiarPagina = function(pagina) {
+                console.log('Cambiando a página:', pagina);
+
+                if (paginaHidden && searchForm) {
+                    paginaHidden.value = pagina;
+                    console.log('Enviando formulario con página:', pagina);
+                    searchForm.submit();
+                } else {
+                    console.error('Elementos de paginación no encontrados');
+                }
+            }
+
+            // Función para cambiar resultados por página - MEJORADA
+            window.cambiarResultadosPorPagina = function(resultados) {
+                console.log('Cambiando resultados por página:', resultados);
+                const form = document.getElementById('searchForm');
+                if (form) {
+                    // Crear o actualizar el input de resultadosPorPagina
+                    let resultadosInput = document.getElementById('resultadosPorPaginaHidden');
+                    if (!resultadosInput) {
+                        resultadosInput = document.createElement('input');
+                        resultadosInput.type = 'hidden';
+                        resultadosInput.name = 'resultadosPorPagina';
+                        resultadosInput.id = 'resultadosPorPaginaHidden';
+                        form.appendChild(resultadosInput);
+                    }
+                    resultadosInput.value = resultados;
+
+                    // Resetear a página 1 cuando cambia el tamaño
+                    if (paginaHidden) {
+                        paginaHidden.value = 1;
+                    }
+
+                    form.submit();
+                }
+            }
+
+            // Búsqueda rápida con Enter
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        console.log('Búsqueda por Enter');
+                        realizarBusqueda();
+                    }
+                });
+            }
+
+            // Función centralizada para realizar búsqueda
+            function realizarBusqueda() {
+                if (paginaHidden) {
+                    paginaHidden.value = 1;
+                }
+                if (searchForm) {
+                    console.log('Realizando búsqueda...');
+                    searchForm.submit();
+                }
+            }
+
+            // Event listener para el botón de búsqueda
+            if (btnBuscar) {
+                btnBuscar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Búsqueda por botón');
+                    realizarBusqueda();
+                });
+            }
+
+            // Prevenir envío duplicado del formulario
+            if (searchForm) {
+                let isSubmitting = false;
+
+                searchForm.addEventListener('submit', function(e) {
+                    if (isSubmitting) {
+                        e.preventDefault();
+                        return;
+                    }
+
+                    isSubmitting = true;
+
+                    // Mostrar loading en el botón de búsqueda
+                    if (btnBuscar) {
+                        const originalHtml = btnBuscar.innerHTML;
+                        btnBuscar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Buscando...';
+                        btnBuscar.disabled = true;
+
+                        // Restaurar después de 2 segundos máximo
+                        setTimeout(() => {
+                            btnBuscar.innerHTML = originalHtml;
+                            btnBuscar.disabled = false;
+                            isSubmitting = false;
+                        }, 2000);
+                    }
+
+                    const activeElement = document.activeElement;
+                    if (!activeElement || activeElement.name !== 'pagina') {
+                        if (paginaHidden) {
+                            paginaHidden.value = 1;
+                        }
+                    }
+                });
+            }
+
+            // Auto-ocultar alertas
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    if (!alert.closest('.modal')) { // No cerrar alertas dentro de modales
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                });
+            }, 5000);
+
+            // Focus en el input de búsqueda si hay término
+            @if (!string.IsNullOrEmpty(terminoBusqueda))
+            {
+                    <text>
+                    setTimeout(function() {
+                        if (searchInput) {
+                            searchInput.focus();
+                            searchInput.select();
+                        }
+                    }, 100);
+                    </text>
+            }
+
+            // Contador de resultados con formato
+            if (resultCount && @paginacion.TotalResultados > 0) {
+                const totalResultados = @paginacion.TotalResultados;
+                resultCount.textContent = totalResultados.toLocaleString();
+            }
+
+            // Efectos visuales para la paginación
+            const paginationButtons = document.querySelectorAll('.pagination button, .pagination a');
+            paginationButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Agregar efecto de loading a la página completa
+                    document.body.style.opacity = '0.7';
+                    document.body.style.cursor = 'wait';
+
+                    setTimeout(() => {
+                        document.body.style.opacity = '1';
+                        document.body.style.cursor = 'default';
+                    }, 1000);
+                });
+            });
+
+            // Debug: Verificar que los botones de paginación estén configurados
+            const botonesPagina = document.querySelectorAll('.pagination button[onclick*="cambiarPagina"]');
+            console.log('Botones de paginación encontrados:', botonesPagina.length);
+
+            // =============================================
+            // FUNCIONALIDAD DE MODALES
+            // =============================================
 
             // Función para mostrar alertas en el modal
             function showModalAlert(message, type = 'success') {
@@ -565,45 +928,45 @@
                 return true;
             }
 
-        // Función para enviar datos como objeto DTO
-        async function enviarRolAccion(action, userId, rolId) {
-            try {
-                const dto = {
-                    IdUsuario: parseInt(userId),
-                    IdRol: parseInt(rolId)
-                };
+            // Función para enviar datos como objeto DTO
+            async function enviarRolAccion(action, userId, rolId) {
+                try {
+                    const dto = {
+                        IdUsuario: parseInt(userId),
+                        IdRol: parseInt(rolId)
+                    };
 
-                const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-                const response = await fetch(action, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': token
-                    },
-                    body: JSON.stringify(dto)
-                });
+                    const response = await fetch(action, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': token
+                        },
+                        body: JSON.stringify(dto)
+                    });
 
-                // Verificar si la respuesta es JSON
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    const result = await response.json();
+                    // Verificar si la respuesta es JSON
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const result = await response.json();
 
-                    if (result.success) {
-                        showModalAlert(result.message, 'success');
+                        if (result.success) {
+                            showModalAlert(result.message, 'success');
+                        } else {
+                            showModalAlert(result.message, 'error');
+                        }
                     } else {
-                        showModalAlert(result.message, 'error');
+                        // Si no es JSON, probablemente es una redirección
+                        console.warn('Respuesta no es JSON, recargando página...');
+                        window.location.reload();
                     }
-                } else {
-                    // Si no es JSON, probablemente es una redirección
-                    console.warn('Respuesta no es JSON, recargando página...');
-                    window.location.reload();
+                } catch (error) {
+                    console.error('Error en la solicitud:', error);
+                    showModalAlert('Error de conexión al procesar la solicitud', 'error');
                 }
-            } catch (error) {
-                console.error('Error en la solicitud:', error);
-                showModalAlert('Error de conexión al procesar la solicitud', 'error');
             }
-        }
 
             // Manejar envío de formularios de roles
             document.getElementById('btnAsignarRol')?.addEventListener('click', async function(e) {
@@ -664,24 +1027,14 @@
                 });
             }
 
-            // Auto-ocultar alertas después de 5 segundos (para alertas fuera del modal)
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    // Solo cerrar alertas que no están dentro del modal
-                    if (!alert.closest('.modal')) {
-                        const bsAlert = new bootstrap.Alert(alert);
-                        bsAlert.close();
-                    }
-                });
-            }, 5000);
-
             // Debug: Verificar que Bootstrap esté cargado
             if (typeof bootstrap !== 'undefined') {
                 console.log('Bootstrap cargado correctamente');
             } else {
                 console.error('Bootstrap no está cargado');
             }
+
+            console.log('Todas las funcionalidades inicializadas correctamente');
         });
     </script>
 }
