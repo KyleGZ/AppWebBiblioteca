@@ -659,7 +659,7 @@
 
 @section Scripts {
     <script>
-        // Script completo corregido para manejar búsqueda, paginación y modales
+        // Script para manejar búsqueda, paginación y modales
         document.addEventListener('DOMContentLoaded', function() {
             console.log('DOM cargado - inicializando funcionalidades');
 
@@ -672,25 +672,20 @@
             const searchForm = document.getElementById('searchForm');
             const resultCount = document.getElementById('resultCount');
 
-            // Función para cambiar página - MEJORADA CON VALIDACIONES
+            // Función para cambiar página
             window.cambiarPagina = function(pagina) {
                 console.log('Cambiando a página:', pagina);
-
                 if (paginaHidden && searchForm) {
                     paginaHidden.value = pagina;
-                    console.log('Enviando formulario con página:', pagina);
                     searchForm.submit();
-                } else {
-                    console.error('Elementos de paginación no encontrados');
                 }
             }
 
-            // Función para cambiar resultados por página - MEJORADA
+            // Función para cambiar resultados por página
             window.cambiarResultadosPorPagina = function(resultados) {
                 console.log('Cambiando resultados por página:', resultados);
                 const form = document.getElementById('searchForm');
                 if (form) {
-                    // Crear o actualizar el input de resultadosPorPagina
                     let resultadosInput = document.getElementById('resultadosPorPaginaHidden');
                     if (!resultadosInput) {
                         resultadosInput = document.createElement('input');
@@ -701,11 +696,9 @@
                     }
                     resultadosInput.value = resultados;
 
-                    // Resetear a página 1 cuando cambia el tamaño
                     if (paginaHidden) {
                         paginaHidden.value = 1;
                     }
-
                     form.submit();
                 }
             }
@@ -715,19 +708,17 @@
                 searchInput.addEventListener('keypress', function(e) {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        console.log('Búsqueda por Enter');
                         realizarBusqueda();
                     }
                 });
             }
 
-            // Función centralizada para realizar búsqueda
+            // Función para realizar búsqueda
             function realizarBusqueda() {
                 if (paginaHidden) {
                     paginaHidden.value = 1;
                 }
                 if (searchForm) {
-                    console.log('Realizando búsqueda...');
                     searchForm.submit();
                 }
             }
@@ -736,97 +727,182 @@
             if (btnBuscar) {
                 btnBuscar.addEventListener('click', function(e) {
                     e.preventDefault();
-                    console.log('Búsqueda por botón');
                     realizarBusqueda();
                 });
             }
 
-            // Prevenir envío duplicado del formulario
-            if (searchForm) {
-                let isSubmitting = false;
-
-                searchForm.addEventListener('submit', function(e) {
-                    if (isSubmitting) {
-                        e.preventDefault();
-                        return;
-                    }
-
-                    isSubmitting = true;
-
-                    // Mostrar loading en el botón de búsqueda
-                    if (btnBuscar) {
-                        const originalHtml = btnBuscar.innerHTML;
-                        btnBuscar.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Buscando...';
-                        btnBuscar.disabled = true;
-
-                        // Restaurar después de 2 segundos máximo
-                        setTimeout(() => {
-                            btnBuscar.innerHTML = originalHtml;
-                            btnBuscar.disabled = false;
-                            isSubmitting = false;
-                        }, 2000);
-                    }
-
-                    const activeElement = document.activeElement;
-                    if (!activeElement || activeElement.name !== 'pagina') {
-                        if (paginaHidden) {
-                            paginaHidden.value = 1;
-                        }
-                    }
-                });
-            }
-
-            // Auto-ocultar alertas
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    if (!alert.closest('.modal')) { // No cerrar alertas dentro de modales
-                        const bsAlert = new bootstrap.Alert(alert);
-                        bsAlert.close();
-                    }
-                });
-            }, 5000);
-
-            // Focus en el input de búsqueda si hay término
-            @if (!string.IsNullOrEmpty(terminoBusqueda))
-            {
-                    <text>
-                    setTimeout(function() {
-                        if (searchInput) {
-                            searchInput.focus();
-                            searchInput.select();
-                        }
-                    }, 100);
-                    </text>
-            }
-
-            // Contador de resultados con formato
-            if (resultCount && @paginacion.TotalResultados > 0) {
-                const totalResultados = @paginacion.TotalResultados;
-                resultCount.textContent = totalResultados.toLocaleString();
-            }
-
-            // Efectos visuales para la paginación
-            const paginationButtons = document.querySelectorAll('.pagination button, .pagination a');
-            paginationButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    // Agregar efecto de loading a la página completa
-                    document.body.style.opacity = '0.7';
-                    document.body.style.cursor = 'wait';
-
-                    setTimeout(() => {
-                        document.body.style.opacity = '1';
-                        document.body.style.cursor = 'default';
-                    }, 1000);
-                });
-            });
-
-            // Debug: Verificar que los botones de paginación estén configurados
-            const botonesPagina = document.querySelectorAll('.pagination button[onclick*="cambiarPagina"]');
-            console.log('Botones de paginación encontrados:', botonesPagina.length);
-
             // =============================================
-            // FUNCIONALIDAD DE MODALES
+            // FUNCIONALIDAD DEL MODAL AGREGAR USUARIO
+            // =============================================
+            const formAgregarUsuario = document.getElementById('formAgregarUsuario');
+            const modalAgregarUsuario = document.getElementById('modalAgregarUsuario');
+
+            if (formAgregarUsuario) {
+                formAgregarUsuario.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+
+                    // Mostrar estado de carga
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Creando...';
+
+                    try {
+                        const formData = new FormData(this);
+
+                        const response = await fetch('@Url.Action("CrearUsuario")', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        });
+
+                        const resultado = await response.json();
+
+                        if (resultado.success) {
+                            // Cerrar el modal de agregar usuario
+                            const modalInstance = bootstrap.Modal.getInstance(modalAgregarUsuario);
+                            modalInstance.hide();
+
+                            // Limpiar el formulario
+                            formAgregarUsuario.reset();
+
+                            // Mostrar mensaje de éxito en el modal global
+                            if (resultado.type === 'success') {
+                                showSuccess(resultado.message);
+                            } else if (resultado.type === 'warning') {
+                                showWarning(resultado.message);
+                            }
+
+                            // Recargar la página después de 2 segundos para mostrar el nuevo usuario
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
+
+                        } else {
+                            // Mostrar error en el modal global sin cerrar el modal de agregar
+                            showError(resultado.message);
+
+                            // Restaurar botón
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
+                        }
+                    } catch (error) {
+                        // Mostrar error de conexión
+                        showError('Error de conexión: ' + error.message);
+
+                        // Restaurar botón
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                });
+            }
+
+            // Limpiar formulario cuando se cierre el modal
+            if (modalAgregarUsuario) {
+                modalAgregarUsuario.addEventListener('hidden.bs.modal', function() {
+                    if (formAgregarUsuario) {
+                        formAgregarUsuario.reset();
+                    }
+                });
+            }
+
+        // =============================================
+        // FUNCIONALIDAD DEL MODAL EDITAR USUARIO (CORREGIDO)
+        // =============================================
+        const formEditarUsuario = document.getElementById('formEditarUsuario');
+        const modalEditarUsuario = document.getElementById('modalEditarUsuario');
+
+        if (formEditarUsuario) {
+            formEditarUsuario.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                console.log('Formulario editar enviado - iniciando AJAX');
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+
+                // Mostrar estado de carga
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Actualizando...';
+
+                try {
+                    const formData = new FormData(this);
+                    console.log('Datos del formulario editar:', Object.fromEntries(formData));
+
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    const response = await fetch('@Url.Action("EditarUsuario")', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'RequestVerificationToken': token
+                        }
+                    });
+
+                    console.log('Respuesta editar recibida, status:', response.status);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const resultado = await response.json();
+                    console.log('Resultado editar JSON:', resultado);
+
+                    if (resultado.success) {
+                        console.log('✅ Edición exitosa');
+
+                        // Cerrar el modal de editar usuario
+                        if (modalEditarUsuario) {
+                            const modalInstance = bootstrap.Modal.getInstance(modalEditarUsuario);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                                console.log('Modal editar cerrado');
+                            }
+                        }
+
+                        // Mostrar mensaje de éxito en el modal global
+                        if (resultado.type === 'success') {
+                            showSuccess(resultado.message);
+                        } else if (resultado.type === 'warning') {
+                            showWarning(resultado.message);
+                        }
+
+                        // Recargar la página después de 2 segundos
+                        setTimeout(() => {
+                            console.log('Recargando página...');
+                            window.location.reload();
+                        }, 2000);
+
+                    } else {
+                        console.log('❌ Error en edición');
+                        // Mostrar error en el MODAL GLOBAL (no en el modal de alertas interno)
+                        if (resultado.type === 'error') {
+                            showError(resultado.message);
+                        } else {
+                            showWarning(resultado.message);
+                        }
+
+                        // Restaurar botón
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                } catch (error) {
+                    console.error('Error en fetch editar:', error);
+                    // Mostrar error de conexión en el MODAL GLOBAL
+                    showError('Error de conexión: ' + error.message);
+
+                    // Restaurar botón
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            });
+        } else {
+            console.error('❌ Formulario editar usuario NO encontrado');
+        }
+            // =============================================
+            // FUNCIONALIDAD DE MODALES EXISTENTES
             // =============================================
 
             // Función para mostrar alertas en el modal
@@ -846,7 +922,6 @@
                 if (modalAlerts) {
                     modalAlerts.innerHTML = alertHtml;
 
-                    // Auto-ocultar después de 5 segundos
                     setTimeout(() => {
                         const alertElement = modalAlerts.querySelector('.alert');
                         if (alertElement) {
@@ -857,7 +932,7 @@
                 }
             }
 
-            // Modal Editar Usuario
+            // Modal Editar Usuario - Configuración de datos
             const modalEditar = document.getElementById('modalEditarUsuario');
             if (modalEditar) {
                 modalEditar.addEventListener('show.bs.modal', function(event) {
@@ -868,8 +943,6 @@
                     const cedula = button.getAttribute('data-cedula');
                     const estado = button.getAttribute('data-estado');
                     const rolId = button.getAttribute('data-rol-id');
-
-                    console.log('Editando usuario:', { id, nombre, email, cedula, estado, rolId });
 
                     // Limpiar alertas al abrir el modal
                     const modalAlerts = document.getElementById('modalAlerts');
@@ -884,12 +957,12 @@
                     document.getElementById('editarCedula').value = cedula;
                     document.getElementById('editarEstado').value = estado;
 
-                    // Gestión de roles - preseleccionar si existe
+                    // Gestión de roles
                     const selectRolEditar = document.getElementById('rolEditar');
                     if (selectRolEditar && rolId && rolId !== '0') {
                         selectRolEditar.value = rolId;
                     } else if (selectRolEditar) {
-                        selectRolEditar.value = ''; // reset
+                        selectRolEditar.value = '';
                     }
 
                     // Sincronizar IDs para los forms de roles
@@ -947,7 +1020,6 @@
                         body: JSON.stringify(dto)
                     });
 
-                    // Verificar si la respuesta es JSON
                     const contentType = response.headers.get('content-type');
                     if (contentType && contentType.includes('application/json')) {
                         const result = await response.json();
@@ -958,7 +1030,6 @@
                             showModalAlert(result.message, 'error');
                         }
                     } else {
-                        // Si no es JSON, probablemente es una redirección
                         console.warn('Respuesta no es JSON, recargando página...');
                         window.location.reload();
                     }
@@ -1005,8 +1076,6 @@
                     const id = button.getAttribute('data-id');
                     const nombre = button.getAttribute('data-nombre');
 
-                    console.log('Desactivando usuario:', { id, nombre });
-
                     document.getElementById('desactivarIdUsuario').value = id;
                     document.getElementById('nombreUsuarioDesactivar').textContent = nombre;
                 });
@@ -1020,18 +1089,41 @@
                     const id = button.getAttribute('data-id');
                     const nombre = button.getAttribute('data-nombre');
 
-                    console.log('Activando usuario:', { id, nombre });
-
                     document.getElementById('activarIdUsuario').value = id;
                     document.getElementById('nombreUsuarioActivar').textContent = nombre;
                 });
             }
 
-            // Debug: Verificar que Bootstrap esté cargado
-            if (typeof bootstrap !== 'undefined') {
-                console.log('Bootstrap cargado correctamente');
-            } else {
-                console.error('Bootstrap no está cargado');
+            // Auto-ocultar alertas de la página principal
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    if (!alert.closest('.modal')) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                });
+            }, 5000);
+
+            // Mostrar mensajes del modal global cuando se redirige desde otras acciones
+            @if (TempData["ToastType"] != null)
+            {
+                    <text>
+                    $(document).ready(function() {
+                        setTimeout(function() {
+                            const message = '@Html.Raw(TempData["ToastMessage"])';
+                            const type = '@TempData["ToastType"]';
+
+                            if (type === 'success') {
+                                showSuccess(message);
+                            } else if (type === 'error') {
+                                showError(message);
+                            } else if (type === 'warning') {
+                                showWarning(message);
+                            }
+                        }, 300);
+                    });
+                    </text>
             }
 
             console.log('Todas las funcionalidades inicializadas correctamente');

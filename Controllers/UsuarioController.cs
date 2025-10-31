@@ -47,7 +47,7 @@ namespace AppWebBiblioteca.Controllers
 
         [Authorize(Policy = "AdminOnly")]
         [HttpGet]
-        public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 4)
+        public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 20)
         {
             try
             {
@@ -143,6 +143,7 @@ namespace AppWebBiblioteca.Controllers
 
 
 
+
         // ======== CREAR ========
 
         [HttpGet]
@@ -154,39 +155,38 @@ namespace AppWebBiblioteca.Controllers
             await CargarRolesAsync();
             return View(new RegistroUsuarioDto());
         }
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CrearUsuario(RegistroUsuarioDto usuario, int? idRol) // <-- idRol separado
+        public async Task<IActionResult> CrearUsuario(RegistroUsuarioDto usuario, int? idRol)
         {
             try
             {
                 if (!_authService.IsAuthenticated())
                 {
-                    TempData["ErrorMessage"] = "Debe iniciar sesión para realizar esta acción";
-                    return RedirectToAction("Login");
+                    return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción", type = "error" });
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    TempData["ErrorMessage"] = "Datos del usuario inválidos";
-                    await CargarRolesAsync(); // sin preselección
-                    return View("Crear", usuario);
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return Json(new { success = false, message = "Datos del usuario inválidos: " + string.Join(", ", errors), type = "error" });
                 }
 
                 var creado = await _usuarioService.CrearUsuarioAsync(usuario);
                 if (!creado)
                 {
-                    TempData["ErrorMessage"] = "Error al crear el usuario";
-                    await CargarRolesAsync();
-                    return View("Crear", usuario);
+                    return Json(new { success = false, message = "Error al crear el usuario. El email ya podría estar en uso", type = "error" });
                 }
 
-                // Si viene un rol seleccionado, asignarlo usando el DTO nuevo
+                string message = "✅ Usuario creado exitosamente";
+                string type = "success";
+
+                // Si viene un rol seleccionado, asignarlo
                 if (idRol.HasValue && idRol.Value > 0)
                 {
-                    // localizar el IdUsuario recién creado (asume email único)
                     var usuarios = await _usuarioService.ObtenerUsuariosAsync();
                     var creadoVm = usuarios.FirstOrDefault(u =>
                         string.Equals(u.Email?.Trim(), usuario.Email?.Trim(), StringComparison.OrdinalIgnoreCase));
@@ -201,29 +201,113 @@ namespace AppWebBiblioteca.Controllers
 
                         var (okRol, msgRol) = await _rolService.AsignarRolAUsuarioAsync(dto);
                         if (okRol)
-                            TempData["SuccessMessage"] = msgRol ?? "Usuario creado y rol asignado correctamente.";
+                        {
+                            message = msgRol ?? "✅ Usuario creado y rol asignado correctamente";
+                        }
                         else
-                            TempData["ErrorMessage"] = msgRol ?? "Usuario creado, pero no se pudo asignar el rol.";
+                        {
+                            message = msgRol ?? "⚠️ Usuario creado, pero no se pudo asignar el rol";
+                            type = "warning";
+                        }
                     }
                     else
                     {
-                        TempData["SuccessMessage"] = "Usuario creado. No se pudo localizar su Id para asignar el rol.";
+                        message = "⚠️ Usuario creado. No se pudo localizar para asignar el rol";
+                        type = "warning";
                     }
                 }
-                else
-                {
-                    TempData["SuccessMessage"] = "Usuario creado exitosamente.";
-                }
 
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = true, message = message, type = type });
             }
-            catch
+            catch (Exception ex)
             {
-                TempData["ErrorMessage"] = "Error interno del sistema al crear usuario";
-                await CargarRolesAsync();
-                return View("Crear", usuario);
+                return Json(new { success = false, message = $"❌ Error interno del sistema: {ex.Message}", type = "error" });
             }
         }
+
+
+
+
+
+        //[HttpGet]
+        //public async Task<IActionResult> Crear()
+        //{
+        //    if (!_authService.IsAuthenticated())
+        //        return RedirectToAction("Login", "Usuario");
+
+        //    await CargarRolesAsync();
+        //    return View(new RegistroUsuarioDto());
+        //}
+
+
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> CrearUsuario(RegistroUsuarioDto usuario, int? idRol) // <-- idRol separado
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //        {
+        //            TempData["ErrorMessage"] = "Debe iniciar sesión para realizar esta acción";
+        //            return RedirectToAction("Login");
+        //        }
+
+        //        if (!ModelState.IsValid)
+        //        {
+        //            TempData["ErrorMessage"] = "Datos del usuario inválidos";
+        //            await CargarRolesAsync(); // sin preselección
+        //            return View("Crear", usuario);
+        //        }
+
+        //        var creado = await _usuarioService.CrearUsuarioAsync(usuario);
+        //        if (!creado)
+        //        {
+        //            TempData["ErrorMessage"] = "Error al crear el usuario";
+        //            await CargarRolesAsync();
+        //            return View("Crear", usuario);
+        //        }
+
+        //        // Si viene un rol seleccionado, asignarlo usando el DTO nuevo
+        //        if (idRol.HasValue && idRol.Value > 0)
+        //        {
+        //            // localizar el IdUsuario recién creado (asume email único)
+        //            var usuarios = await _usuarioService.ObtenerUsuariosAsync();
+        //            var creadoVm = usuarios.FirstOrDefault(u =>
+        //                string.Equals(u.Email?.Trim(), usuario.Email?.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        //            if (creadoVm != null)
+        //            {
+        //                var dto = new AsignacionRolDto
+        //                {
+        //                    IdUsuario = creadoVm.IdUsuario,
+        //                    IdRol = idRol.Value
+        //                };
+
+        //                var (okRol, msgRol) = await _rolService.AsignarRolAUsuarioAsync(dto);
+        //                if (okRol)
+        //                    TempData["SuccessMessage"] = msgRol ?? "Usuario creado y rol asignado correctamente.";
+        //                else
+        //                    TempData["ErrorMessage"] = msgRol ?? "Usuario creado, pero no se pudo asignar el rol.";
+        //            }
+        //            else
+        //            {
+        //                TempData["SuccessMessage"] = "Usuario creado. No se pudo localizar su Id para asignar el rol.";
+        //            }
+        //        }
+        //        else
+        //        {
+        //            TempData["SuccessMessage"] = "Usuario creado exitosamente.";
+        //        }
+
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    catch
+        //    {
+        //        TempData["ErrorMessage"] = "Error interno del sistema al crear usuario";
+        //        await CargarRolesAsync();
+        //        return View("Crear", usuario);
+        //    }
+        //}
 
 
         [HttpGet]
@@ -247,6 +331,43 @@ namespace AppWebBiblioteca.Controllers
             return View(dto);
         }
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> EditarUsuario(EditarUsuarioDto usuario)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        if (!ModelState.IsValid)
+        //        {
+        //            TempData["ErrorMessage"] = "Datos del usuario inválidos";
+        //            await CargarRolesAsync();
+        //            return View("Editar", usuario);
+        //        }
+
+        //        var actualizado = await _usuarioService.ActualizarUsuarioAsync(usuario);
+
+        //        if (actualizado)
+        //        {
+        //            TempData["SuccessMessage"] = "Usuario actualizado exitosamente";
+        //            return RedirectToAction(nameof(Index));
+        //        }
+
+        //        TempData["ErrorMessage"] = "Error al actualizar el usuario";
+        //        await CargarRolesAsync();
+        //        return View("Editar", usuario);
+        //    }
+        //    catch
+        //    {
+        //        TempData["ErrorMessage"] = "Error interno del sistema al actualizar usuario";
+        //        await CargarRolesAsync();
+        //        return View("Editar", usuario);
+        //    }
+        //}
+
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditarUsuario(EditarUsuarioDto usuario)
@@ -254,36 +375,38 @@ namespace AppWebBiblioteca.Controllers
             try
             {
                 if (!_authService.IsAuthenticated())
-                    return RedirectToAction("Login", "Usuario");
+                {
+                    return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción", type = "error" });
+                }
 
                 if (!ModelState.IsValid)
                 {
-                    TempData["ErrorMessage"] = "Datos del usuario inválidos";
-                    await CargarRolesAsync();
-                    return View("Editar", usuario);
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return Json(new { success = false, message = "Datos del usuario inválidos: " + string.Join(", ", errors), type = "error" });
                 }
 
                 var actualizado = await _usuarioService.ActualizarUsuarioAsync(usuario);
 
                 if (actualizado)
                 {
-                    TempData["SuccessMessage"] = "Usuario actualizado exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    return Json(new { success = true, message = "✅ Usuario actualizado exitosamente", type = "success" });
                 }
 
-                TempData["ErrorMessage"] = "Error al actualizar el usuario";
-                await CargarRolesAsync();
-                return View("Editar", usuario);
+                return Json(new { success = false, message = "❌ Error al actualizar el usuario", type = "error" });
             }
-            catch
+            catch (InvalidOperationException ex) when (ex.Message.Contains("ya existe") || ex.Message.Contains("duplicado"))
             {
-                TempData["ErrorMessage"] = "Error interno del sistema al actualizar usuario";
-                await CargarRolesAsync();
-                return View("Editar", usuario);
+                // Captura errores específicos de duplicados
+                return Json(new { success = false, message = $"❌ {ex.Message}", type = "error" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"❌ Error interno del sistema: {ex.Message}", type = "error" });
             }
         }
-
-
         // ======== ESTADO ========
 
         [HttpPost]
