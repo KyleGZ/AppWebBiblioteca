@@ -12,8 +12,8 @@ namespace AppWebBiblioteca.Services
         Task<List<string>> ObtenerRolesDeUsuarioAsync(int idUsuario);
         Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id);
         Task<PerfilUsuarioDto> PerfilUsuarioViewAsync(int id);
-        Task<bool> CrearUsuarioAsync(RegistroUsuarioDto usuario);
-        Task<bool> ActualizarUsuarioAsync(EditarUsuarioDto usuario);
+        Task<ApiResponse> CrearUsuarioAsync(RegistroUsuarioDto usuario);
+        Task<ApiResponse> ActualizarUsuarioAsync(EditarUsuarioDto usuario);
         Task<bool> ActualizarPerfilsync(PerfilUsuarioDto perfilUsuario);
         Task<bool> EliminarUsuarioAsync(int id);
         Task<bool> DesactivarUsuarioAsync(int id);
@@ -198,7 +198,25 @@ namespace AppWebBiblioteca.Services
             }
         }
 
-        public async Task<bool> CrearUsuarioAsync(RegistroUsuarioDto usuario)
+        //public async Task<bool> CrearUsuarioAsync(RegistroUsuarioDto usuario)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Registro";
+
+        //        var json = JsonSerializer.Serialize(usuario);
+        //        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        //        var response = await _httpClient.PostAsync(apiUrl, content);
+        //        return response.IsSuccessStatusCode;
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return false;
+        //    }
+        //}
+
+        public async Task<ApiResponse> CrearUsuarioAsync(RegistroUsuarioDto usuario)
         {
             try
             {
@@ -208,15 +226,117 @@ namespace AppWebBiblioteca.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(apiUrl, content);
-                return response.IsSuccessStatusCode;
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"Código: {response.StatusCode}");
+                Console.WriteLine($"Contenido recibido: {responseContent}");
+
+                // ✅ Caso 1: Respuesta exitosa
+                if (response.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        using var document = JsonDocument.Parse(responseContent);
+                        if (document.RootElement.TryGetProperty("mensaje", out var mensajeProp))
+                        {
+                            return new ApiResponse
+                            {
+                                Success = true,
+                                Message = mensajeProp.GetString() ?? "Usuario creado exitosamente"
+                            };
+                        }
+                    }
+                    catch
+                    {
+                        // Si no se puede deserializar, usar mensaje genérico
+                        return new ApiResponse
+                        {
+                            Success = true,
+                            Message = "Usuario creado exitosamente"
+                        };
+                    }
+                }
+
+                // ✅ Caso 2: Respuesta con error (código 4xx o 5xx)
+                string mensajeError = $"Error: {response.StatusCode}";
+                string contenido = responseContent?.Trim();
+
+                try
+                {
+                    // Verifica si el contenido parece ser JSON válido
+                    if (!string.IsNullOrEmpty(contenido) &&
+                        (contenido.StartsWith("{") || contenido.StartsWith("[")))
+                    {
+                        using var document = JsonDocument.Parse(contenido);
+
+                        // Buscar propiedades comunes sin importar mayúsculas
+                        if (document.RootElement.TryGetProperty("mensaje", out var mensajeProp))
+                        {
+                            mensajeError = mensajeProp.GetString() ?? mensajeError;
+                        }
+                        else if (document.RootElement.TryGetProperty("message", out var messageProp))
+                        {
+                            mensajeError = messageProp.GetString() ?? mensajeError;
+                        }
+                        else if (document.RootElement.TryGetProperty("error", out var errorProp))
+                        {
+                            mensajeError = errorProp.GetString() ?? mensajeError;
+                        }
+                        else if (document.RootElement.TryGetProperty("title", out var titleProp))
+                        {
+                            mensajeError = titleProp.GetString() ?? mensajeError;
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(contenido))
+                    {
+                        // No es JSON, usar texto plano
+                        mensajeError = contenido;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Error al parsear JSON del error: {ex.Message}");
+                    if (!string.IsNullOrEmpty(contenido))
+                        mensajeError = contenido;
+                }
+
+                // Retornar la respuesta con el mensaje real de la API
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = mensajeError,
+                    Data = responseContent // Para debugging
+                };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error de conexión: " + ex.Message,
+                    Data = ex.ToString()
+                };
             }
         }
 
-        public async Task<bool> ActualizarUsuarioAsync(EditarUsuarioDto usuario)
+        //public async Task<bool> ActualizarUsuarioAsync(EditarUsuarioDto usuario)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Editar";
+
+        //        var json = JsonSerializer.Serialize(usuario);
+        //        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        //        var response = await _httpClient.PutAsync(apiUrl, content);
+        //        return response.IsSuccessStatusCode;
+        //    }
+        //    catch (Exception)
+        //    {
+        //        return false;
+        //    }
+        //}
+        public async Task<ApiResponse> ActualizarUsuarioAsync(EditarUsuarioDto usuario)
         {
             try
             {
@@ -226,15 +346,100 @@ namespace AppWebBiblioteca.Services
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PutAsync(apiUrl, content);
-                return response.IsSuccessStatusCode;
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"Código: {response.StatusCode}");
+                Console.WriteLine($"Contenido recibido: {responseContent}");
+
+                // ✅ Caso 1: Respuesta exitosa
+                if (response.IsSuccessStatusCode)
+                {
+                    try
+                    {
+                        using var document = JsonDocument.Parse(responseContent);
+                        if (document.RootElement.TryGetProperty("mensaje", out var mensajeProp))
+                        {
+                            return new ApiResponse
+                            {
+                                Success = true,
+                                Message = mensajeProp.GetString() ?? "Usuario actualizado exitosamente"
+                            };
+                        }
+                    }
+                    catch
+                    {
+                        // Si no se puede deserializar, usar mensaje genérico
+                        return new ApiResponse
+                        {
+                            Success = true,
+                            Message = "Usuario actualizado exitosamente"
+                        };
+                    }
+                }
+
+                // ✅ Caso 2: Respuesta con error (código 4xx o 5xx)
+                string mensajeError = $"Error: {response.StatusCode}";
+                string contenido = responseContent?.Trim();
+
+                try
+                {
+                    // Verifica si el contenido parece ser JSON válido
+                    if (!string.IsNullOrEmpty(contenido) &&
+                        (contenido.StartsWith("{") || contenido.StartsWith("[")))
+                    {
+                        using var document = JsonDocument.Parse(contenido);
+
+                        // Buscar propiedades comunes sin importar mayúsculas
+                        if (document.RootElement.TryGetProperty("mensaje", out var mensajeProp))
+                        {
+                            mensajeError = mensajeProp.GetString() ?? mensajeError;
+                        }
+                        else if (document.RootElement.TryGetProperty("message", out var messageProp))
+                        {
+                            mensajeError = messageProp.GetString() ?? mensajeError;
+                        }
+                        else if (document.RootElement.TryGetProperty("error", out var errorProp))
+                        {
+                            mensajeError = errorProp.GetString() ?? mensajeError;
+                        }
+                        else if (document.RootElement.TryGetProperty("title", out var titleProp))
+                        {
+                            mensajeError = titleProp.GetString() ?? mensajeError;
+                        }
+                    }
+                    else if (!string.IsNullOrEmpty(contenido))
+                    {
+                        // No es JSON, usar texto plano
+                        mensajeError = contenido;
+                    }
+                }
+                catch (JsonException ex)
+                {
+                    Console.WriteLine($"Error al parsear JSON del error: {ex.Message}");
+                    if (!string.IsNullOrEmpty(contenido))
+                        mensajeError = contenido;
+                }
+
+                // Retornar la respuesta con el mensaje real de la API
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = mensajeError,
+                    Data = responseContent // Para debugging
+                };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error de conexión: " + ex.Message,
+                    Data = ex.ToString()
+                };
             }
         }
 
-      
+
         public async Task<bool> EliminarUsuarioAsync(int id)
         {
             try

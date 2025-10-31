@@ -657,6 +657,7 @@
     </div>
 </div>
 
+
 @section Scripts {
     <script>
         // Script para manejar búsqueda, paginación y modales
@@ -770,11 +771,14 @@
                             formAgregarUsuario.reset();
 
                             // Mostrar mensaje de éxito en el modal global
-                            if (resultado.type === 'success') {
-                                showSuccess(resultado.message);
-                            } else if (resultado.type === 'warning') {
-                                showWarning(resultado.message);
-                            }
+                                    if (resultado.type === 'success') {
+            showSuccess(resultado.message);
+        } else if (resultado.type === 'warning') {
+            showWarning(resultado.message);
+        } else {
+            // 🔹 Mostrar éxito por defecto si no se define un tipo
+            showSuccess(resultado.message || 'Usuario creado correctamente.');
+        }
 
                             // Recargar la página después de 2 segundos para mostrar el nuevo usuario
                             setTimeout(() => {
@@ -809,103 +813,105 @@
                 });
             }
 
-        // =============================================
-        // FUNCIONALIDAD DEL MODAL EDITAR USUARIO (CORREGIDO)
-        // =============================================
-        const formEditarUsuario = document.getElementById('formEditarUsuario');
-        const modalEditarUsuario = document.getElementById('modalEditarUsuario');
+            // =============================================
+            // FUNCIONALIDAD DEL MODAL EDITAR USUARIO (MODIFICADO PARA MODAL GLOBAL)
+            // =============================================
+            const formEditarUsuario = document.getElementById('formEditarUsuario');
+            const modalEditarUsuario = document.getElementById('modalEditarUsuario');
 
-        if (formEditarUsuario) {
-            formEditarUsuario.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                console.log('Formulario editar enviado - iniciando AJAX');
+            if (formEditarUsuario) {
+                formEditarUsuario.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    console.log('Formulario editar enviado - iniciando AJAX');
 
-                const submitBtn = this.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
 
-                // Mostrar estado de carga
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Actualizando...';
+                    // Mostrar estado de carga
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Actualizando...';
 
-                try {
-                    const formData = new FormData(this);
-                    console.log('Datos del formulario editar:', Object.fromEntries(formData));
+                    try {
+                        const formData = new FormData(this);
+                        console.log('Datos del formulario editar:', Object.fromEntries(formData));
 
-                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+                        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-                    const response = await fetch('@Url.Action("EditarUsuario")', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'RequestVerificationToken': token
+                        // const response = await fetch('@Url.Action("EditarUsuario")', {
+                        //     method: 'POST',
+                        //     body: formData,
+                        //     headers: {
+                        //         'RequestVerificationToken': token
+                        //     }
+                        // });
+                                const response = await fetch('@Url.Action("EditarUsuario")', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'RequestVerificationToken': token,
+                'X-Requested-With': 'XMLHttpRequest' // 👈 Importante para que el backend devuelva JSON
+            }
+        });
+
+
+                        console.log('Respuesta editar recibida, status:', response.status);
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
                         }
-                    });
 
-                    console.log('Respuesta editar recibida, status:', response.status);
+                        const resultado = await response.json();
+                        console.log('Resultado editar JSON:', resultado);
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
+                        if (resultado.success) {
+                            console.log('✅ Edición exitosa');
 
-                    const resultado = await response.json();
-                    console.log('Resultado editar JSON:', resultado);
-
-                    if (resultado.success) {
-                        console.log('✅ Edición exitosa');
-
-                        // Cerrar el modal de editar usuario
-                        if (modalEditarUsuario) {
-                            const modalInstance = bootstrap.Modal.getInstance(modalEditarUsuario);
-                            if (modalInstance) {
-                                modalInstance.hide();
-                                console.log('Modal editar cerrado');
+                            // Cerrar el modal de editar usuario
+                            if (modalEditarUsuario) {
+                                const modalInstance = bootstrap.Modal.getInstance(modalEditarUsuario);
+                                if (modalInstance) {
+                                    modalInstance.hide();
+                                    console.log('Modal editar cerrado');
+                                }
                             }
-                        }
 
-                        // Mostrar mensaje de éxito en el modal global
-                        if (resultado.type === 'success') {
+                            // Mostrar mensaje de éxito en el modal global
                             showSuccess(resultado.message);
-                        } else if (resultado.type === 'warning') {
-                            showWarning(resultado.message);
-                        }
 
-                        // Recargar la página después de 2 segundos
-                        setTimeout(() => {
-                            console.log('Recargando página...');
-                            window.location.reload();
-                        }, 2000);
+                            // Recargar la página después de 2 segundos
+                            setTimeout(() => {
+                                console.log('Recargando página...');
+                                window.location.reload();
+                            }, 2000);
 
-                    } else {
-                        console.log('❌ Error en edición');
-                        // Mostrar error en el MODAL GLOBAL (no en el modal de alertas interno)
-                        if (resultado.type === 'error') {
-                            showError(resultado.message);
                         } else {
-                            showWarning(resultado.message);
+                            console.log('❌ Error en edición');
+                            // Mostrar error en el MODAL GLOBAL
+                            showError(resultado.message);
+
+                            // Restaurar botón
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = originalText;
                         }
+                    } catch (error) {
+                        console.error('Error en fetch editar:', error);
+                        // Mostrar error de conexión en el MODAL GLOBAL
+                        showError('Error de conexión: ' + error.message);
 
                         // Restaurar botón
                         submitBtn.disabled = false;
                         submitBtn.innerHTML = originalText;
                     }
-                } catch (error) {
-                    console.error('Error en fetch editar:', error);
-                    // Mostrar error de conexión en el MODAL GLOBAL
-                    showError('Error de conexión: ' + error.message);
+                });
+            } else {
+                console.error('❌ Formulario editar usuario NO encontrado');
+            }
 
-                    // Restaurar botón
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }
-            });
-        } else {
-            console.error('❌ Formulario editar usuario NO encontrado');
-        }
             // =============================================
             // FUNCIONALIDAD DE MODALES EXISTENTES
             // =============================================
 
-            // Función para mostrar alertas en el modal
+            // Función para mostrar alertas en el modal (se mantiene para compatibilidad)
             function showModalAlert(message, type = 'success') {
                 const alertClass = type === 'success' ? 'alert-success-usuarios' : 'alert-danger-usuarios';
                 const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
@@ -977,7 +983,8 @@
                 const rolValue = rolSelect.value;
 
                 if (!rolValue) {
-                    showModalAlert('Por favor seleccione un rol antes de continuar', 'error');
+                    // Usar modal global para mostrar error de validación
+                    showError('Por favor seleccione un rol antes de continuar');
                     return false;
                 }
                 return true;
@@ -1001,7 +1008,7 @@
                 return true;
             }
 
-            // Función para enviar datos como objeto DTO
+            // Función para enviar datos como objeto DTO (MODIFICADA PARA USAR MODAL GLOBAL)
             async function enviarRolAccion(action, userId, rolId) {
                 try {
                     const dto = {
@@ -1025,9 +1032,16 @@
                         const result = await response.json();
 
                         if (result.success) {
-                            showModalAlert(result.message, 'success');
+                            // Usar modal global para éxito
+                            showSuccess(result.message);
+
+                            // Recargar después de éxito
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 2000);
                         } else {
-                            showModalAlert(result.message, 'error');
+                            // Usar modal global para error
+                            showError(result.message);
                         }
                     } else {
                         console.warn('Respuesta no es JSON, recargando página...');
@@ -1035,7 +1049,8 @@
                     }
                 } catch (error) {
                     console.error('Error en la solicitud:', error);
-                    showModalAlert('Error de conexión al procesar la solicitud', 'error');
+                    // Usar modal global para error de conexión
+                    showError('Error de conexión al procesar la solicitud');
                 }
             }
 
@@ -1105,7 +1120,36 @@
                 });
             }, 5000);
 
-            // Mostrar mensajes del modal global cuando se redirige desde otras acciones
+            // =============================================
+            // MANEJO DE MENSAJES DEL CONTROLADOR PARA MODAL GLOBAL
+            // =============================================
+
+            // Mostrar mensajes del ViewData cuando se carga la página
+            @if (ViewData["ModalSuccess"] != null)
+            {
+                    <text>
+                    console.log('Mostrando mensaje de éxito desde ViewData');
+                    showSuccess('@Html.Raw(ViewData["ModalSuccess"])');
+                    </text>
+            }
+
+            @if (ViewData["ModalError"] != null)
+            {
+                    var errorMessage = ViewData["ModalError"].ToString();
+                    var detailMessage = ViewData["ModalDetail"]?.ToString();
+
+                    if (!string.IsNullOrEmpty(detailMessage))
+                    {
+                            errorMessage += "\\n\\nDetalle: " + detailMessage;
+                    }
+
+                    <text>
+                    console.log('Mostrando mensaje de error desde ViewData');
+                    showError('@Html.Raw(errorMessage)');
+                    </text>
+            }
+
+            // Mostrar mensajes del TempData (para compatibilidad con redirecciones)
             @if (TempData["ToastType"] != null)
             {
                     <text>

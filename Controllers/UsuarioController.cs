@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Net.Http;
 using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 
 namespace AppWebBiblioteca.Controllers
 {
@@ -162,29 +165,24 @@ namespace AppWebBiblioteca.Controllers
             try
             {
                 if (!_authService.IsAuthenticated())
-                {
-                    return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción", type = "error" });
-                }
+                    return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
 
                 if (!ModelState.IsValid)
+                    return Json(new { success = false, message = "Datos del usuario inválidos" });
+
+                var apiResponse = await _usuarioService.CrearUsuarioAsync(usuario);
+
+                if (!apiResponse.Success)
                 {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)
-                        .ToList();
-                    return Json(new { success = false, message = "Datos del usuario inválidos: " + string.Join(", ", errors), type = "error" });
+                    return Json(new
+                    {
+                        success = false,
+                        message = apiResponse.Message,
+                        detail = apiResponse.Data
+                    });
                 }
 
-                var creado = await _usuarioService.CrearUsuarioAsync(usuario);
-                if (!creado)
-                {
-                    return Json(new { success = false, message = "Error al crear el usuario. El email ya podría estar en uso", type = "error" });
-                }
-
-                string message = "✅ Usuario creado exitosamente";
-                string type = "success";
-
-                // Si viene un rol seleccionado, asignarlo
+                // Asignación de rol (igual que antes)
                 if (idRol.HasValue && idRol.Value > 0)
                 {
                     var usuarios = await _usuarioService.ObtenerUsuariosAsync();
@@ -201,29 +199,42 @@ namespace AppWebBiblioteca.Controllers
 
                         var (okRol, msgRol) = await _rolService.AsignarRolAUsuarioAsync(dto);
                         if (okRol)
-                        {
-                            message = msgRol ?? "✅ Usuario creado y rol asignado correctamente";
-                        }
+                            apiResponse.Message += $" {msgRol ?? "Rol asignado correctamente."}";
                         else
-                        {
-                            message = msgRol ?? "⚠️ Usuario creado, pero no se pudo asignar el rol";
-                            type = "warning";
-                        }
+                            apiResponse.Message += $" {msgRol ?? "Usuario creado, pero no se pudo asignar el rol."}";
                     }
                     else
                     {
-                        message = "⚠️ Usuario creado. No se pudo localizar para asignar el rol";
-                        type = "warning";
+                        apiResponse.Message += " No se pudo localizar su Id para asignar el rol.";
                     }
                 }
 
-                return Json(new { success = true, message = message, type = type });
+                return Json(new
+                {
+                    success = true,
+                    message = apiResponse.Message
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"❌ Error interno del sistema: {ex.Message}", type = "error" });
+                return Json(new
+                {
+                    success = false,
+                    message = "Error interno del sistema al crear usuario",
+                    detail = ex.Message
+                });
             }
         }
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -368,6 +379,46 @@ namespace AppWebBiblioteca.Controllers
         //}
 
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> EditarUsuario(EditarUsuarioDto usuario)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //        {
+        //            return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción", type = "error" });
+        //        }
+
+        //        if (!ModelState.IsValid)
+        //        {
+        //            var errors = ModelState.Values
+        //                .SelectMany(v => v.Errors)
+        //                .Select(e => e.ErrorMessage)
+        //                .ToList();
+        //            return Json(new { success = false, message = "Datos del usuario inválidos: " + string.Join(", ", errors), type = "error" });
+        //        }
+
+        //        var actualizado = await _usuarioService.ActualizarUsuarioAsync(usuario);
+
+        //        if (actualizado)
+        //        {
+        //            return Json(new { success = true, message = "✅ Usuario actualizado exitosamente", type = "success" });
+        //        }
+
+        //        return Json(new { success = false, message = "❌ Error al actualizar el usuario", type = "error" });
+        //    }
+        //    catch (InvalidOperationException ex) when (ex.Message.Contains("ya existe") || ex.Message.Contains("duplicado"))
+        //    {
+        //        // Captura errores específicos de duplicados
+        //        return Json(new { success = false, message = $"❌ {ex.Message}", type = "error" });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new { success = false, message = $"❌ Error interno del sistema: {ex.Message}", type = "error" });
+        //    }
+        //}
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditarUsuario(EditarUsuarioDto usuario)
@@ -376,37 +427,73 @@ namespace AppWebBiblioteca.Controllers
             {
                 if (!_authService.IsAuthenticated())
                 {
-                    return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción", type = "error" });
+                    // Si es AJAX → devolver JSON
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = "Sesión no válida. Inicie sesión nuevamente." });
+
+                    return RedirectToAction("Login", "Usuario");
                 }
 
                 if (!ModelState.IsValid)
                 {
-                    var errors = ModelState.Values
-                        .SelectMany(v => v.Errors)
-                        .Select(e => e.ErrorMessage)
-                        .ToList();
-                    return Json(new { success = false, message = "Datos del usuario inválidos: " + string.Join(", ", errors), type = "error" });
+                    var mensaje = "Datos del usuario inválidos. Por favor, verifique la información.";
+
+                    if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                        return Json(new { success = false, message = mensaje });
+
+                    ViewData["ModalError"] = mensaje;
+                    await CargarRolesAsync();
+                    return View("Editar", usuario);
                 }
 
-                var actualizado = await _usuarioService.ActualizarUsuarioAsync(usuario);
+                var apiResponse = await _usuarioService.ActualizarUsuarioAsync(usuario);
 
-                if (actualizado)
+                // ✅ Si la solicitud viene de AJAX → devolver JSON directamente
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(new { success = true, message = "✅ Usuario actualizado exitosamente", type = "success" });
+                    return Json(new
+                    {
+                        success = apiResponse.Success,
+                        message = apiResponse.Message,
+                        detail = apiResponse.Data
+                    });
                 }
 
-                return Json(new { success = false, message = "❌ Error al actualizar el usuario", type = "error" });
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("ya existe") || ex.Message.Contains("duplicado"))
-            {
-                // Captura errores específicos de duplicados
-                return Json(new { success = false, message = $"❌ {ex.Message}", type = "error" });
+                // ✅ Si es un submit normal → usar ViewData y mostrar modal
+                if (apiResponse.Success)
+                {
+                    ViewData["ModalSuccess"] = apiResponse.Message;
+                }
+                else
+                {
+                    ViewData["ModalError"] = apiResponse.Message;
+                    if (apiResponse.Data != null)
+                        ViewData["ModalDetail"] = apiResponse.Data.ToString();
+                }
+
+                await CargarRolesAsync();
+                return View("Editar", usuario);
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = $"❌ Error interno del sistema: {ex.Message}", type = "error" });
+                var mensajeError = "Error interno del sistema al actualizar usuario";
+
+                // AJAX → JSON
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = mensajeError, detail = ex.Message });
+
+                // No AJAX → View
+                ViewData["ModalError"] = mensajeError;
+                ViewData["ModalDetail"] = ex.Message;
+                await CargarRolesAsync();
+                return View("Editar", usuario);
             }
         }
+
+
+
+
+
         // ======== ESTADO ========
 
         [HttpPost]
