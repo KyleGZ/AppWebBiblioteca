@@ -319,23 +319,7 @@ namespace AppWebBiblioteca.Services
             }
         }
 
-        //public async Task<bool> ActualizarUsuarioAsync(EditarUsuarioDto usuario)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Editar";
-
-        //        var json = JsonSerializer.Serialize(usuario);
-        //        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        //        var response = await _httpClient.PutAsync(apiUrl, content);
-        //        return response.IsSuccessStatusCode;
-        //    }
-        //    catch (Exception)
-        //    {
-        //        return false;
-        //    }
-        //}
+        
         public async Task<ApiResponse> ActualizarUsuarioAsync(EditarUsuarioDto usuario)
         {
             try

@@ -1084,91 +1084,152 @@
             });
 
             // Modal Desactivar Usuario
-            const modalDesactivar = document.getElementById('modalDesactivarUsuario');
-            if (modalDesactivar) {
-                modalDesactivar.addEventListener('show.bs.modal', function(event) {
-                    const button = event.relatedTarget;
-                    const id = button.getAttribute('data-id');
-                    const nombre = button.getAttribute('data-nombre');
+        const modalDesactivar = document.getElementById('modalDesactivarUsuario');
+        if (!modalDesactivar) return;
 
-                    document.getElementById('desactivarIdUsuario').value = id;
-                    document.getElementById('nombreUsuarioDesactivar').textContent = nombre;
-                });
-            }
+        // Abrir modal
+        modalDesactivar.addEventListener('show.bs.modal', e => {
+            const { id, nombre } = e.relatedTarget.dataset;
+            document.getElementById('desactivarIdUsuario').value = id;
+            document.getElementById('nombreUsuarioDesactivar').textContent = nombre;
+        });
 
-            // Modal Activar Usuario
-            const modalActivar = document.getElementById('modalActivarUsuario');
-            if (modalActivar) {
-                modalActivar.addEventListener('show.bs.modal', function(event) {
-                    const button = event.relatedTarget;
-                    const id = button.getAttribute('data-id');
-                    const nombre = button.getAttribute('data-nombre');
+        // Envío del formulario
+        document.getElementById('formDesactivarUsuario').addEventListener('submit', async e => {
+            e.preventDefault();
 
-                    document.getElementById('activarIdUsuario').value = id;
-                    document.getElementById('nombreUsuarioActivar').textContent = nombre;
-                });
-            }
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalHtml = submitBtn.innerHTML;
 
-            // Auto-ocultar alertas de la página principal
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    if (!alert.closest('.modal')) {
-                        const bsAlert = new bootstrap.Alert(alert);
-                        bsAlert.close();
+            // Loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
                     }
                 });
-            }, 5000);
 
-            // =============================================
-            // MANEJO DE MENSAJES DEL CONTROLADOR PARA MODAL GLOBAL
-            // =============================================
+                const data = await response.json();
 
-            // Mostrar mensajes del ViewData cuando se carga la página
-            @if (ViewData["ModalSuccess"] != null)
-            {
-                    <text>
-                    console.log('Mostrando mensaje de éxito desde ViewData');
-                    showSuccess('@Html.Raw(ViewData["ModalSuccess"])');
-                    </text>
+                bootstrap.Modal.getInstance(modalDesactivar).hide();
+
+                data.success ? showSuccess(data.message) : showError(data.message);
+
+                if (data.success) setTimeout(() => window.location.reload(), 2000);
+
+            } catch (error) {
+                showError('Error de conexión al procesar la solicitud');
+            } finally {
+                submitBtn.innerHTML = originalHtml;
+                submitBtn.disabled = false;
             }
+        });
 
-            @if (ViewData["ModalError"] != null)
-            {
-                    var errorMessage = ViewData["ModalError"].ToString();
-                    var detailMessage = ViewData["ModalDetail"]?.ToString();
+            //Modal modalActivar usuario
+                    // Modal Activar Usuario
+        const modalActivar = document.getElementById('modalActivarUsuario');
+        if (!modalActivar) return;
 
-                    if (!string.IsNullOrEmpty(detailMessage))
-                    {
-                            errorMessage += "\\n\\nDetalle: " + detailMessage;
+        // Abrir modal
+        modalActivar.addEventListener('show.bs.modal', e => {
+            const { id, nombre } = e.relatedTarget.dataset;
+            document.getElementById('activarIdUsuario').value = id;
+            document.getElementById('nombreUsuarioActivar').textContent = nombre; // Corregí el ID
+        });
+
+        // Envío del formulario
+        document.getElementById('formActivarUsuario').addEventListener('submit', async e => {
+            e.preventDefault();
+
+            const form = e.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalHtml = submitBtn.innerHTML;
+
+            // Loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Procesando...';
+            submitBtn.disabled = true;
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
                     }
+                });
 
-                    <text>
-                    console.log('Mostrando mensaje de error desde ViewData');
-                    showError('@Html.Raw(errorMessage)');
-                    </text>
+                const data = await response.json();
+
+                bootstrap.Modal.getInstance(modalActivar).hide();
+
+                data.success ? showSuccess(data.message) : showError(data.message);
+
+                if (data.success) setTimeout(() => window.location.reload(), 2000);
+
+            } catch (error) {
+                showError('Error de conexión al procesar la solicitud');
+            } finally {
+                submitBtn.innerHTML = originalHtml;
+                submitBtn.disabled = false;
             }
+        });
 
-            // Mostrar mensajes del TempData (para compatibilidad con redirecciones)
-            @if (TempData["ToastType"] != null)
-            {
-                    <text>
-                    $(document).ready(function() {
-                        setTimeout(function() {
-                            const message = '@Html.Raw(TempData["ToastMessage"])';
-                            const type = '@TempData["ToastType"]';
 
-                            if (type === 'success') {
-                                showSuccess(message);
-                            } else if (type === 'error') {
-                                showError(message);
-                            } else if (type === 'warning') {
-                                showWarning(message);
-                            }
-                        }, 300);
-                    });
-                    </text>
-            }
+                // =============================================
+                // MANEJO DE MENSAJES DEL CONTROLADOR PARA MODAL GLOBAL
+                // =============================================
+
+                // Mostrar mensajes del ViewData cuando se carga la página
+                @if (ViewData["ModalSuccess"] != null)
+                {
+                        <text>
+                        console.log('Mostrando mensaje de éxito desde ViewData');
+                        showSuccess('@Html.Raw(ViewData["ModalSuccess"])');
+                        </text>
+                }
+
+                @if (ViewData["ModalError"] != null)
+                {
+                        var errorMessage = ViewData["ModalError"].ToString();
+                        var detailMessage = ViewData["ModalDetail"]?.ToString();
+
+                        if (!string.IsNullOrEmpty(detailMessage))
+                        {
+                                errorMessage += "\\n\\nDetalle: " + detailMessage;
+                        }
+
+                        <text>
+                        console.log('Mostrando mensaje de error desde ViewData');
+                        showError('@Html.Raw(errorMessage)');
+                        </text>
+                }
+
+                // Mostrar mensajes del TempData (para compatibilidad con redirecciones)
+                @if (TempData["ToastType"] != null)
+                {
+                        <text>
+                        $(document).ready(function() {
+                            setTimeout(function() {
+                                const message = '@Html.Raw(TempData["ToastMessage"])';
+                                const type = '@TempData["ToastType"]';
+
+                                if (type === 'success') {
+                                    showSuccess(message);
+                                } else if (type === 'error') {
+                                    showError(message);
+                                } else if (type === 'warning') {
+                                    showWarning(message);
+                                }
+                            }, 300);
+                        });
+                        </text>
+                }
 
             console.log('Todas las funcionalidades inicializadas correctamente');
         });

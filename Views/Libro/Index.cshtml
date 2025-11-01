@@ -674,267 +674,203 @@
     </div>
 </div>
 
-
 @section Scripts {
     <script>
-        // Declara los managers globalmente
+        // =============================================
+        // DECLARACIONES GLOBALES
+        // =============================================
         let generosManager, autoresManager;
+        let debeRecargarAlCerrar = false;
+
+        // =============================================
+        // CLASE CHIP MANAGER (MEJORADA)
+        // =============================================
+        class ChipManager {
+            constructor(containerId, dropdownId, searchId, hiddenInputId) {
+                this.containerId = containerId;
+                this.dropdownId = dropdownId;
+                this.searchId = searchId;
+                this.hiddenInputId = hiddenInputId;
+                this.selectedItems = new Map();
+            }
+
+            init() {
+                this.container = document.getElementById(this.containerId);
+                this.dropdown = document.getElementById(this.dropdownId);
+                this.searchInput = document.getElementById(this.searchId);
+                this.hiddenInput = document.getElementById(this.hiddenInputId);
+
+                console.log(`Inicializando ChipManager ${this.containerId}:`, {
+                    container: !!this.container,
+                    dropdown: !!this.dropdown,
+                    searchInput: !!this.searchInput,
+                    hiddenInput: !!this.hiddenInput
+                });
+
+                if (!this.container || !this.dropdown || !this.searchInput || !this.hiddenInput) {
+                    console.error('Elementos no encontrados para ChipManager:', this.containerId);
+                    return false;
+                }
+
+                this.setupSearch();
+                this.setupDropdown();
+                this.updateHiddenInput();
+                this.showEmptyMessage();
+                console.log(`ChipManager ${this.containerId} inicializado correctamente`);
+                return true;
+            }
+
+            setupSearch() {
+                this.searchInput.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const items = this.dropdown.querySelectorAll('.dropdown-item');
+
+                    items.forEach(item => {
+                        if (item.classList.contains('disabled')) {
+                            item.style.display = 'none';
+                            return;
+                        }
+
+                        const text = item.textContent.toLowerCase();
+                        const textMatch = text.includes(searchTerm);
+                        item.style.display = textMatch ? 'block' : 'none';
+                    });
+                });
+
+                this.searchInput.addEventListener('focus', () => {
+                    const items = this.dropdown.querySelectorAll('.dropdown-item');
+                    items.forEach(item => {
+                        item.style.display = item.classList.contains('disabled') ? 'none' : 'block';
+                    });
+
+                    new bootstrap.Dropdown(this.searchInput).show();
+                });
+            }
+
+            setupDropdown() {
+                this.dropdown.addEventListener('click', (e) => {
+                    const target = e.target.closest('.dropdown-item');
+                    if (target && !target.classList.contains('disabled')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        const value = target.getAttribute('data-value');
+                        const text = target.getAttribute('data-text');
+
+                        if (!this.selectedItems.has(value)) {
+                            this.addChip(value, text);
+                        }
+
+                        this.searchInput.value = '';
+                        this.searchInput.focus();
+                        bootstrap.Dropdown.getInstance(this.searchInput)?.hide();
+                    }
+                });
+            }
+
+            addChip(value, text) {
+                this.selectedItems.set(value, text);
+
+                const chip = document.createElement('div');
+                chip.className = 'chip';
+                chip.innerHTML = `
+                    <span>${text}</span>
+                    <button type="button" class="chip-remove" data-value="${value}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+
+                this.container.appendChild(chip);
+                this.hideEmptyMessage();
+
+                chip.querySelector('.chip-remove').addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.removeChip(value);
+                });
+
+                const dropdownItem = this.dropdown.querySelector(`.dropdown-item[data-value="${value}"]`);
+                if (dropdownItem) {
+                    dropdownItem.classList.add('selected', 'disabled');
+                    dropdownItem.style.display = 'none';
+                }
+
+                this.updateHiddenInput();
+            }
+
+            removeChip(value) {
+                this.selectedItems.delete(value);
+
+                const chip = this.container.querySelector(`.chip-remove[data-value="${value}"]`)?.closest('.chip');
+                if (chip) chip.remove();
+
+                const dropdownItem = this.dropdown.querySelector(`.dropdown-item[data-value="${value}"]`);
+                if (dropdownItem) {
+                    dropdownItem.classList.remove('selected', 'disabled');
+                    dropdownItem.style.display = 'block';
+                }
+
+                if (this.selectedItems.size === 0) this.showEmptyMessage();
+                this.updateHiddenInput();
+            }
+
+            updateHiddenInput() {
+                const values = Array.from(this.selectedItems.keys());
+                this.hiddenInput.value = values.join(',');
+            }
+
+            showEmptyMessage() {
+                if (!this.container.querySelector('.empty-chips-message')) {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'empty-chips-message text-muted';
+                    emptyMessage.textContent = 'No hay elementos seleccionados';
+                    this.container.appendChild(emptyMessage);
+                }
+            }
+
+            hideEmptyMessage() {
+                const emptyMessage = this.container.querySelector('.empty-chips-message');
+                if (emptyMessage) emptyMessage.remove();
+            }
+
+            clearAll() {
+                this.selectedItems.clear();
+                this.container.innerHTML = '';
+                this.showEmptyMessage();
+
+                const dropdownItems = this.dropdown.querySelectorAll('.dropdown-item');
+                dropdownItems.forEach(item => {
+                    item.classList.remove('selected', 'disabled');
+                    item.style.display = 'block';
+                });
+
+                this.updateHiddenInput();
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             // =============================================
-            // CONFIGURACIÓN DEL MODAL DE IMPORTACIÓN
+            // INICIALIZACIÓN DE COMPONENTES
             // =============================================
+            console.log('Inicializando módulo de libros...');
 
-            // Configurar el modal de importación
-            const importarLibrosModal = document.getElementById('importarLibrosModal');
-            let debeRecargarAlCerrar = false;
+            // Inicializar managers de chips con retraso
+            setTimeout(() => {
+                generosManager = new ChipManager('generosChipsContainer', 'generosDropdown', 'generosSearch', 'GenerosSeleccionados');
+                autoresManager = new ChipManager('autoresChipsContainer', 'autoresDropdown', 'autoresSearch', 'AutoresSeleccionados');
 
-            if (importarLibrosModal) {
-                const modalInstance = new bootstrap.Modal(importarLibrosModal);
+                const generosInicializado = generosManager.init();
+                const autoresInicializado = autoresManager.init();
 
-                importarLibrosModal.addEventListener('show.bs.modal', function() {
-
-                    debeRecargarAlCerrar = false;
-                    // Asegurar que las instrucciones sean visibles
-                    const instrucciones = document.getElementById('instruccionesImportacion');
-                    if (instrucciones) {
-                        instrucciones.style.display = 'block';
-                    }
-
-                    // Ocultar resultados anteriores
-                    const resultadoImportacion = document.getElementById('resultadoImportacion');
-                    if (resultadoImportacion) {
-                        resultadoImportacion.style.display = 'none';
-                        resultadoImportacion.innerHTML = '';
-                    }
+                console.log('Resultado inicialización ChipManagers:', {
+                    generos: generosInicializado,
+                    autores: autoresInicializado
                 });
-
-                importarLibrosModal.addEventListener('hidden.bs.modal', function() {
-
-                    if (debeRecargarAlCerrar) {
-                    console.log('Recargando página después de importación exitosa...');
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 300);
-                    return; // No ejecutar el resto del código si va a recargar
-                }
-
-                    // Limpiar resultados cuando se cierra el modal
-                    const resultadoImportacion = document.getElementById('resultadoImportacion');
-                    if (resultadoImportacion) {
-                        resultadoImportacion.innerHTML = '';
-                        resultadoImportacion.style.display = 'none';
-                    }
-
-                    // Resetear el formulario
-                    const formImportarLibros = document.getElementById('formImportarLibros');
-                    if (formImportarLibros) {
-                        formImportarLibros.reset();
-                    }
-
-                    // Resetear el botón de importar
-                    const btnImportar = document.getElementById('btnImportar');
-                    if (btnImportar) {
-                        btnImportar.innerHTML = '<i class="fas fa-upload me-2"></i> Iniciar Importación';
-                        btnImportar.disabled = false;
-                    }
-                    
-                });
-            }
+            }, 100);
 
             // =============================================
-            // FUNCIONALIDAD DE IMPORTACIÓN DESDE EXCEL MEJORADA
+            // VISTA PREVIA DE IMAGEN
             // =============================================
-
-            const formImportarLibros = document.getElementById('formImportarLibros');
-            const archivoExcel = document.getElementById('archivoExcel');
-            const btnImportar = document.getElementById('btnImportar');
-            const resultadoImportacion = document.getElementById('resultadoImportacion');
-
-            if (formImportarLibros) {
-                formImportarLibros.addEventListener('submit', async function(e) {
-                    e.preventDefault();
-
-                    // Validaciones básicas
-                    if (!archivoExcel.files.length) {
-                        mostrarAlertaTemporal('Por favor seleccione un archivo Excel', 'error');
-                        return;
-                    }
-
-                    const file = archivoExcel.files[0];
-                    const extension = file.name.split('.').pop().toLowerCase();
-
-                    if (extension !== 'xlsx' && extension !== 'xls') {
-                        mostrarAlertaTemporal('Solo se permiten archivos Excel (.xlsx, .xls)', 'error');
-                        return;
-                    }
-
-                    // Validar tamaño del archivo (10MB máximo)
-                    if (file.size > 10 * 1024 * 1024) {
-                        mostrarAlertaTemporal('El archivo es demasiado grande. Tamaño máximo: 10MB', 'error');
-                        return;
-                    }
-
-                    // Mostrar loading
-                    const originalText = btnImportar.innerHTML;
-                    btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Importando...';
-                    btnImportar.disabled = true;
-
-                    try {
-                        // Crear FormData para enviar el archivo
-                        const formData = new FormData();
-                        formData.append('archivo', file);
-
-                        // Realizar la petición AJAX
-                        const response = await fetch('/Libro/ImportarLibrosExcel', {
-                            method: 'POST',
-                            body: formData,
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                            }
-                        });
-
-                        // Verificar si la respuesta es JSON
-                        const contentType = response.headers.get('content-type');
-                        if (!contentType || !contentType.includes('application/json')) {
-                            const textResponse = await response.text();
-                            console.error('Respuesta no JSON recibida:', textResponse.substring(0, 500));
-
-                            if (response.status === 401 || response.status === 403) {
-                                throw new Error('Error de autenticación. Por favor, inicie sesión nuevamente.');
-                            } else if (response.status === 500) {
-                                throw new Error('Error interno del servidor. Por favor, contacte al administrador.');
-                            } else {
-                                throw new Error('Error del servidor: ' + response.status + ' - ' + response.statusText);
-                            }
-                        }
-
-                        const result = await response.json();
-
-                        // Mostrar resultados
-                        mostrarResultadoImportacion(result);
-
-                        //fue exitoso, recargar al cerrar
-                    if (result.success) {
-                        debeRecargarAlCerrar = true;
-                        console.log('Importación exitosa - Se recargará la página al cerrar el modal');
-
-                        // Opcional: Cambiar el texto del botón cancelar para indicar que recargará
-                        const btnCancelar = document.querySelector('#importarLibrosModal .btn-libros-secondary');
-                        if (btnCancelar) {
-                            btnCancelar.innerHTML = '<i class="fas fa-sync me-2"></i> Cerrar y Actualizar';
-                        }
-                    }
-
-
-                    } catch (error) {
-                        console.error('Error en la importación:', error);
-                        mostrarResultadoImportacion({
-                            success: false,
-                            message: 'Error al procesar la importación: ' + error.message
-                        });
-                    } finally {
-                        if (btnImportar) {
-                            btnImportar.innerHTML = originalText;
-                            btnImportar.disabled = false;
-                        }
-                    }
-                });
-            }
-
-            // Mostrar nombre del archivo seleccionado
-            if (archivoExcel) {
-                archivoExcel.addEventListener('change', function() {
-                    if (this.files.length > 0) {
-                        if (resultadoImportacion) {
-                            resultadoImportacion.style.display = 'none';
-                            resultadoImportacion.innerHTML = '';
-                        }
-                    }
-                });
-            }
-
-            // =============================================
-            // FUNCIONALIDAD DE BÚSQUEDA Y PAGINACIÓN CORREGIDA
-            // =============================================
-            // ... (todo tu código existente de búsqueda y paginación se mantiene igual)
-            const searchInput = document.getElementById('searchInput');
-            const buscarPorDescripcion = document.getElementById('buscarPorDescripcion');
-            const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
-            const paginaHidden = document.getElementById('paginaHidden');
-            const searchForm = document.getElementById('searchForm');
-
-            // Función para cambiar página
-            window.cambiarPagina = function(pagina) {
-                paginaHidden.value = pagina;
-                searchForm.submit();
-            }
-
-            // Limpiar filtro de búsqueda por descripción
-            function limpiarFiltros() {
-                if (buscarPorDescripcion.checked) {
-                    buscarPorDescripcion.checked = false;
-                    paginaHidden.value = 1;
-                    searchForm.submit();
-                }
-            }
-
-            // Enviar formulario automáticamente al cambiar el checkbox
-            buscarPorDescripcion.addEventListener('change', function() {
-                paginaHidden.value = 1;
-                searchForm.submit();
-            });
-
-            // Event listeners
-            btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
-
-            // Al realizar una búsqueda nueva, volver a página 1
-            searchForm.addEventListener('submit', function(e) {
-                const activeElement = document.activeElement;
-                if (!activeElement || activeElement.name !== 'pagina') {
-                    paginaHidden.value = 1;
-                }
-            });
-
-            // Auto-ocultar alertas
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
-
-            // Focus en el input de búsqueda si hay término
-            @if (!string.IsNullOrEmpty(terminoBusqueda))
-            {
-                    <text>
-                    setTimeout(function() {
-                        searchInput.focus();
-                        searchInput.select();
-                    }, 100);
-                    </text>
-            }
-
-            // Actualizar texto del botón "Limpiar filtro"
-            function actualizarTextoBotonLimpiar() {
-                if (buscarPorDescripcion.checked) {
-                    btnLimpiarFiltros.innerHTML = '<i class="fas fa-filter me-1"></i>Quitar filtro descripción';
-                } else {
-                    btnLimpiarFiltros.innerHTML = '<i class="fas fa-filter me-1"></i>Limpiar filtro';
-                }
-            }
-
-            actualizarTextoBotonLimpiar();
-            buscarPorDescripcion.addEventListener('change', actualizarTextoBotonLimpiar);
-
-            // =============================================
-            // FUNCIONALIDAD DEL MODAL
-            // =============================================
-            console.log('Inicializando modal de libros...');
-
-            // Vista previa de imagen
             const imagenArchivo = document.getElementById('ImagenArchivo');
             const previewImagen = document.getElementById('previewImagenLibro');
 
@@ -955,141 +891,9 @@
                 });
             }
 
-            // Sistema de chips simplificado
-            class ChipManager {
-                constructor(containerId, dropdownId, searchId, hiddenInputId) {
-                    this.container = document.getElementById(containerId);
-                    this.dropdown = document.getElementById(dropdownId);
-                    this.searchInput = document.getElementById(searchId);
-                    this.hiddenInput = document.getElementById(hiddenInputId);
-                    this.selectedItems = new Map();
-                    this.init();
-                }
-
-                init() {
-                    this.setupSearch();
-                    this.setupDropdown();
-                    this.updateHiddenInput();
-                    this.showEmptyMessage();
-                }
-
-                setupSearch() {
-                    this.searchInput.addEventListener('input', (e) => {
-                        const searchTerm = e.target.value.toLowerCase();
-                        const items = this.dropdown.querySelectorAll('.dropdown-item:not(.disabled)');
-
-                        items.forEach(item => {
-                            const text = item.textContent.toLowerCase();
-                            item.style.display = text.includes(searchTerm) ? 'block' : 'none';
-                        });
-                    });
-
-                    this.searchInput.addEventListener('focus', () => {
-                        new bootstrap.Dropdown(this.searchInput).show();
-                    });
-                }
-
-                setupDropdown() {
-                    this.dropdown.addEventListener('click', (e) => {
-                        const target = e.target.closest('.dropdown-item');
-                        if (target && !target.classList.contains('disabled')) {
-                            e.preventDefault();
-                            const value = target.getAttribute('data-value');
-                            const text = target.getAttribute('data-text');
-
-                            if (!this.selectedItems.has(value)) {
-                                this.addChip(value, text);
-                                target.classList.add('selected');
-                            }
-
-                            this.searchInput.value = '';
-                            this.searchInput.focus();
-                            bootstrap.Dropdown.getInstance(this.searchInput)?.hide();
-                        }
-                    });
-                }
-
-                addChip(value, text) {
-                    this.selectedItems.set(value, text);
-
-                    const chip = document.createElement('div');
-                    chip.className = 'chip';
-                    chip.innerHTML = `
-                        <span>${text}</span>
-                        <button type="button" class="chip-remove" data-value="${value}">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-
-                    this.container.appendChild(chip);
-                    this.hideEmptyMessage();
-
-                    chip.querySelector('.chip-remove').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        this.removeChip(value);
-                    });
-
-                    this.updateHiddenInput();
-                }
-
-                removeChip(value) {
-                    this.selectedItems.delete(value);
-
-                    const chip = this.container.querySelector(`.chip-remove[data-value="${value}"]`)?.closest('.chip');
-                    if (chip) chip.remove();
-
-                    const dropdownItem = this.dropdown.querySelector(`.dropdown-item[data-value="${value}"]`);
-                    if (dropdownItem) dropdownItem.classList.remove('selected');
-
-                    if (this.selectedItems.size === 0) this.showEmptyMessage();
-                    this.updateHiddenInput();
-                }
-
-                updateHiddenInput() {
-                    this.hiddenInput.value = Array.from(this.selectedItems.keys()).join(',');
-                }
-
-                showEmptyMessage() {
-                    if (!this.container.querySelector('.empty-chips-message')) {
-                        const emptyMessage = document.createElement('div');
-                        emptyMessage.className = 'empty-chips-message';
-                        emptyMessage.textContent = 'No hay elementos seleccionados';
-                        this.container.appendChild(emptyMessage);
-                    }
-                }
-
-                hideEmptyMessage() {
-                    const emptyMessage = this.container.querySelector('.empty-chips-message');
-                    if (emptyMessage) emptyMessage.remove();
-                }
-            }
-
-            // Inicializar managers para géneros y autores - hacerlos globales
-            generosManager = new ChipManager('generosChipsContainer', 'generosDropdown', 'generosSearch', 'GenerosSeleccionados');
-            autoresManager = new ChipManager('autoresChipsContainer', 'autoresDropdown', 'autoresSearch', 'AutoresSeleccionados');
-
-            // Validación del formulario del modal
-            const formAgregarLibro = document.getElementById('formAgregarLibro');
-            if (formAgregarLibro) {
-                formAgregarLibro.addEventListener('submit', function(e) {
-                    const generosSeleccionados = generosManager.selectedItems.size;
-                    const autoresSeleccionados = autoresManager.selectedItems.size;
-
-                    if (generosSeleccionados === 0) {
-                        e.preventDefault();
-                        showAlert('Por favor seleccione al menos un género', 'error');
-                        return;
-                    }
-
-                    if (autoresSeleccionados === 0) {
-                        e.preventDefault();
-                        showAlert('Por favor seleccione al menos un autor', 'error');
-                        return;
-                    }
-                });
-            }
-
-            // Cerrar dropdown cuando se hace click fuera
+            // =============================================
+            // MANEJO DE DROPDOWNS
+            // =============================================
             document.addEventListener('click', function(e) {
                 if (!e.target.closest('.dropdown-chip-container')) {
                     document.querySelectorAll('.dropdown-chip-menu.show').forEach(dropdown => {
@@ -1099,273 +903,311 @@
                 }
             });
 
-            // Event listener para cuando se cierra el modal de edición
-            document.getElementById('agregarLibroModal').addEventListener('hidden.bs.modal', function () {
-                setTimeout(() => {
-                    resetearModalACreacion();
-                }, 300);
-            });
-        });
+            // =============================================
+            // FORMULARIO AGREGAR/EDITAR LIBRO (CON AJAX)
+            // =============================================
+            const formAgregarLibro = document.getElementById('formAgregarLibro');
+            if (formAgregarLibro) {
+                formAgregarLibro.addEventListener('submit', async function(e) {
+                    e.preventDefault();
 
-        // =============================================
-        // FUNCIONES MEJORADAS PARA IMPORTACIÓN
-        // =============================================
+                    const generosSeleccionados = generosManager?.selectedItems.size || 0;
+                    const autoresSeleccionados = autoresManager?.selectedItems.size || 0;
 
-        // Función para mostrar resultados de importación MEJORADA
-        function mostrarResultadoImportacion(result) {
-            if (!resultadoImportacion) return;
+                    if (generosSeleccionados === 0) {
+                        showAlert('Por favor seleccione al menos un género', 'error');
+                        return;
+                    }
 
-            let html = '';
+                    if (autoresSeleccionados === 0) {
+                        showAlert('Por favor seleccione al menos un autor', 'error');
+                        return;
+                    }
 
-            if (result.success) {
-                // ÉXITO TOTAL - Todo salió perfectamente
-                html = `
-                    <div class="alert alert-success">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle fa-2x me-3"></i>
-                            <div>
-                                <h6 class="mb-1">¡Importación completada exitosamente!</h6>
-                                <p class="mb-0">${result.message}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalHtml = submitBtn.innerHTML;
 
-                // Mostrar estadísticas incluso en éxito
-                if (result.data) {
-                    html += crearEstadisticasImportacion(result.data);
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Guardando...';
+                    submitBtn.disabled = true;
+
+                    try {
+                        const response = await fetch(this.action, {
+                            method: 'POST',
+                            body: new FormData(this),
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('agregarLibroModal'));
+                            modal.hide();
+                            showSuccess(data.message);
+                            setTimeout(() => window.location.reload(), 2000);
+                        } else {
+                            showError(data.message);
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        showError('Error de conexión al procesar la solicitud');
+                    } finally {
+                        submitBtn.innerHTML = originalHtml;
+                        submitBtn.disabled = false;
+                    }
+                });
+            }
+
+            // =============================================
+            // EVENT LISTENERS DE MODALES
+            // =============================================
+            const agregarLibroModal = document.getElementById('agregarLibroModal');
+            if (agregarLibroModal) {
+                agregarLibroModal.addEventListener('hidden.bs.modal', function() {
+                    setTimeout(() => resetearModalACreacion(), 300);
+                });
+            }
+
+            // =============================================
+            // CONFIGURACIÓN DEL MODAL DE IMPORTACIÓN
+            // =============================================
+            const importarLibrosModal = document.getElementById('importarLibrosModal');
+            if (importarLibrosModal) {
+                importarLibrosModal.addEventListener('show.bs.modal', function() {
+                    debeRecargarAlCerrar = false;
+                    const instrucciones = document.getElementById('instruccionesImportacion');
+                    const resultadoImportacion = document.getElementById('resultadoImportacion');
+
+                    if (instrucciones) instrucciones.style.display = 'block';
+                    if (resultadoImportacion) {
+                        resultadoImportacion.style.display = 'none';
+                        resultadoImportacion.innerHTML = '';
+                    }
+                });
+
+                importarLibrosModal.addEventListener('hidden.bs.modal', function() {
+                    if (debeRecargarAlCerrar) {
+                        console.log('Recargando página después de importación exitosa...');
+                        setTimeout(() => window.location.reload(), 300);
+                        return;
+                    }
+
+                    const resultadoImportacion = document.getElementById('resultadoImportacion');
+                    const formImportarLibros = document.getElementById('formImportarLibros');
+                    const btnImportar = document.getElementById('btnImportar');
+
+                    if (resultadoImportacion) {
+                        resultadoImportacion.innerHTML = '';
+                        resultadoImportacion.style.display = 'none';
+                    }
+                    if (formImportarLibros) formImportarLibros.reset();
+                    if (btnImportar) {
+                        btnImportar.innerHTML = '<i class="fas fa-upload me-2"></i> Iniciar Importación';
+                        btnImportar.disabled = false;
+                    }
+                });
+            }
+
+            // =============================================
+            // FUNCIONALIDAD DE IMPORTACIÓN DESDE EXCEL
+            // =============================================
+            const formImportarLibros = document.getElementById('formImportarLibros');
+            const archivoExcel = document.getElementById('archivoExcel');
+            const btnImportar = document.getElementById('btnImportar');
+
+            if (formImportarLibros) {
+                formImportarLibros.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    if (!archivoExcel.files.length) {
+                        mostrarAlertaTemporal('Por favor seleccione un archivo Excel', 'error');
+                        return;
+                    }
+
+                    const file = archivoExcel.files[0];
+                    const extension = file.name.split('.').pop().toLowerCase();
+
+                    if (extension !== 'xlsx' && extension !== 'xls') {
+                        mostrarAlertaTemporal('Solo se permiten archivos Excel (.xlsx, .xls)', 'error');
+                        return;
+                    }
+
+                    if (file.size > 10 * 1024 * 1024) {
+                        mostrarAlertaTemporal('El archivo es demasiado grande. Tamaño máximo: 10MB', 'error');
+                        return;
+                    }
+
+                    const originalText = btnImportar.innerHTML;
+                    btnImportar.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Importando...';
+                    btnImportar.disabled = true;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('archivo', file);
+
+                        const response = await fetch('/Libro/ImportarLibrosExcel', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        });
+
+                        const contentType = response.headers.get('content-type');
+                        if (!contentType || !contentType.includes('application/json')) {
+                            const textResponse = await response.text();
+                            console.error('Respuesta no JSON recibida:', textResponse.substring(0, 500));
+
+                            if (response.status === 401 || response.status === 403) {
+                                throw new Error('Error de autenticación. Por favor, inicie sesión nuevamente.');
+                            } else if (response.status === 500) {
+                                throw new Error('Error interno del servidor. Por favor, contacte al administrador.');
+                            } else {
+                                throw new Error('Error del servidor: ' + response.status + ' - ' + response.statusText);
+                            }
+                        }
+
+                        const result = await response.json();
+                        mostrarResultadoImportacion(result);
+
+                        if (result.success) {
+                            debeRecargarAlCerrar = true;
+                            console.log('Importación exitosa - Se recargará la página al cerrar el modal');
+                            const btnCancelar = document.querySelector('#importarLibrosModal .btn-libros-secondary');
+                            if (btnCancelar) {
+                                btnCancelar.innerHTML = '<i class="fas fa-sync me-2"></i> Cerrar y Actualizar';
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error en la importación:', error);
+                        mostrarResultadoImportacion({
+                            success: false,
+                            message: 'Error al procesar la importación: ' + error.message
+                        });
+                    } finally {
+                        if (btnImportar) {
+                            btnImportar.innerHTML = originalText;
+                            btnImportar.disabled = false;
+                        }
+                    }
+                });
+            }
+
+            if (archivoExcel) {
+                archivoExcel.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        const resultadoImportacion = document.getElementById('resultadoImportacion');
+                        if (resultadoImportacion) {
+                            resultadoImportacion.style.display = 'none';
+                            resultadoImportacion.innerHTML = '';
+                        }
+                    }
+                });
+            }
+
+            // =============================================
+            // BÚSQUEDA Y PAGINACIÓN
+            // =============================================
+            const searchInput = document.getElementById('searchInput');
+            const buscarPorDescripcion = document.getElementById('buscarPorDescripcion');
+            const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
+            const paginaHidden = document.getElementById('paginaHidden');
+            const searchForm = document.getElementById('searchForm');
+
+            window.cambiarPagina = function(pagina) {
+                paginaHidden.value = pagina;
+                searchForm.submit();
+            }
+
+            function limpiarFiltros() {
+                if (buscarPorDescripcion.checked) {
+                    buscarPorDescripcion.checked = false;
+                    paginaHidden.value = 1;
+                    searchForm.submit();
                 }
+            }
 
-            } else {
-                // ERROR - Puede ser parcial o total
-                const esErrorParcial = result.data && result.data.insertados > 0;
+            if (buscarPorDescripcion) {
+                buscarPorDescripcion.addEventListener('change', function() {
+                    paginaHidden.value = 1;
+                    searchForm.submit();
+                });
+            }
 
-                html = `
-                    <div class="alert ${esErrorParcial ? 'alert-warning' : 'alert-danger'}">
-                        <div class="d-flex align-items-center">
-                            <i class="fas ${esErrorParcial ? 'fa-exclamation-triangle' : 'fa-times-circle'} fa-2x me-3"></i>
-                            <div>
-                                <h6 class="mb-1">${esErrorParcial ? 'Importación parcial' : 'Importación fallida'}</h6>
-                                <p class="mb-0">${result.message}</p>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            if (btnLimpiarFiltros) {
+                btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
+            }
 
-                // Mostrar estadísticas
-                if (result.data) {
-                    html += crearEstadisticasImportacion(result.data);
+            if (searchForm) {
+                searchForm.addEventListener('submit', function(e) {
+                    const activeElement = document.activeElement;
+                    if (!activeElement || activeElement.name !== 'pagina') {
+                        paginaHidden.value = 1;
+                    }
+                });
+            }
 
-                    // Mostrar errores detallados si existen
-                    if (result.data.detallesErrores && result.data.detallesErrores.length > 0) {
-                        html += crearListaErrores(result.data.detallesErrores);
+            // Auto-ocultar alertas
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+
+            function actualizarTextoBotonLimpiar() {
+                if (btnLimpiarFiltros && buscarPorDescripcion) {
+                    if (buscarPorDescripcion.checked) {
+                        btnLimpiarFiltros.innerHTML = '<i class="fas fa-filter me-1"></i>Quitar filtro descripción';
+                    } else {
+                        btnLimpiarFiltros.innerHTML = '<i class="fas fa-filter me-1"></i>Limpiar filtro';
                     }
                 }
             }
 
-            resultadoImportacion.innerHTML = html;
-            resultadoImportacion.style.display = 'block';
-            resultadoImportacion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        // Función auxiliar para estadísticas
-        function crearEstadisticasImportacion(data) {
-            return `
-                <div class="row text-center mt-3">
-                    <div class="col-4">
-                        <div class="border rounded p-2 bg-light">
-                            <div class="h4 mb-0 text-primary">${data.total || 0}</div>
-                            <small class="text-muted">Total procesados</small>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="border rounded p-2 bg-light">
-                            <div class="h4 mb-0 text-success">${data.insertados || 0}</div>
-                            <small class="text-muted">Insertados</small>
-                        </div>
-                    </div>
-                    <div class="col-4">
-                        <div class="border rounded p-2 bg-light">
-                            <div class="h4 mb-0 text-danger">${data.errores || 0}</div>
-                            <small class="text-muted">Errores</small>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Función auxiliar para lista de errores con mejoras
-        function crearListaErrores(detallesErrores) {
-            const totalErrores = detallesErrores.length;
-            const mostrarTodos = totalErrores <= 10;
-            const erroresVisibles = mostrarTodos ? detallesErrores : detallesErrores.slice(0, 10);
-            const erroresId = 'errores-' + Date.now();
-
-            return `
-                <div class="mt-3">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <h6 class="text-warning mb-0">
-                            <i class="fas fa-exclamation-triangle me-1"></i>Detalles de errores (${totalErrores})
-                        </h6>
-                        <div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary me-2"
-                                    onclick="copiarErrores('${erroresId}')"
-                                    title="Copiar todos los errores al portapapeles">
-                                <i class="fas fa-copy me-1"></i>Copiar Log
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-info"
-                                    onclick="descargarLogErrores('${erroresId}')"
-                                    title="Descargar archivo con todos los errores">
-                                <i class="fas fa-download me-1"></i>Descargar
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="error-scroll small" id="${erroresId}" data-errores-completos='${JSON.stringify(detallesErrores)}'>
-                        <ul class="mb-0">
-                            ${erroresVisibles.map(error => `<li class="text-danger">${error}</li>`).join('')}
-                        </ul>
-
-                        ${!mostrarTodos ? `
-                            <div class="text-center mt-2">
-                                <div class="mb-1">
-                                    <small class="text-muted">Mostrando 10 de ${totalErrores} errores</small>
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-warning"
-                                        onclick="mostrarTodosLosErrores('${erroresId}')">
-                                    <i class="fas fa-expand me-1"></i>Mostrar todos los errores
-                                </button>
-                            </div>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        // Función para copiar errores al portapapeles
-        function copiarErrores(erroresId) {
-            const contenedorErrores = document.getElementById(erroresId);
-            if (!contenedorErrores) return;
-
-            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
-            const textoErrores = erroresCompletos.join('\n');
-
-            navigator.clipboard.writeText(textoErrores)
-                .then(() => {
-                    const btn = event.target;
-                    const originalHTML = btn.innerHTML;
-                    btn.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
-                    btn.classList.remove('btn-outline-secondary');
-                    btn.classList.add('btn-success');
-
-                    setTimeout(() => {
-                        btn.innerHTML = originalHTML;
-                        btn.classList.remove('btn-success');
-                        btn.classList.add('btn-outline-secondary');
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error('Error al copiar: ', err);
-                    alert('No se pudo copiar al portapapeles. Use la opción de descargar.');
-                });
-        }
-
-        // Función para descargar log de errores
-        function descargarLogErrores(erroresId) {
-            const contenedorErrores = document.getElementById(erroresId);
-            if (!contenedorErrores) return;
-
-            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
-            const textoErrores = erroresCompletos.join('\r\n');
-
-            const blob = new Blob([textoErrores], { type: 'text/plain' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `errores-importacion-${new Date().toISOString().split('T')[0]}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
-
-        // Función para expandir y mostrar todos los errores
-        function mostrarTodosLosErrores(erroresId) {
-            const contenedorErrores = document.getElementById(erroresId);
-            if (!contenedorErrores) return;
-
-            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
-            const listaHTML = erroresCompletos.map(error => `<li class="text-danger">${error}</li>`).join('');
-            contenedorErrores.querySelector('ul').innerHTML = listaHTML;
-
-            const botonContainer = contenedorErrores.querySelector('.text-center');
-            if (botonContainer) {
-                botonContainer.style.display = 'none';
-            }
-        }
-
-        // Función para mostrar alertas temporales
-        function mostrarAlertaTemporal(mensaje, tipo) {
-            const alerta = document.createElement('div');
-            alerta.className = `alert alert-${tipo === 'error' ? 'danger' : 'warning'} alert-dismissible fade show`;
-            alerta.innerHTML = `
-                ${mensaje}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-
-            const campoArchivo = document.querySelector('.form-group-libros');
-            if (campoArchivo) {
-                campoArchivo.parentNode.insertBefore(alerta, campoArchivo.nextSibling);
+            actualizarTextoBotonLimpiar();
+            if (buscarPorDescripcion) {
+                buscarPorDescripcion.addEventListener('change', actualizarTextoBotonLimpiar);
             }
 
-            setTimeout(() => {
-                if (alerta.parentNode) {
-                    alerta.remove();
-                }
-            }, 5000);
-        }
+            @if (!string.IsNullOrEmpty(terminoBusqueda))
+            {
+                    <text>
+                    setTimeout(function() {
+                        if (searchInput) {
+                            searchInput.focus();
+                            searchInput.select();
+                        }
+                    }, 100);
+                    </text>
+            }
+        });
 
         // =============================================
-        // FUNCIONES EXISTENTES (se mantienen igual)
+        // FUNCIONES GLOBALES PARA LIBROS
         // =============================================
-
-        // Función auxiliar para limpiar chips
         function limpiarChipsExistentes() {
-            // Limpiar autores
-            autoresManager.selectedItems.clear();
-            document.getElementById('autoresChipsContainer').innerHTML = '';
-            autoresManager.showEmptyMessage();
-
-            // Limpiar géneros
-            generosManager.selectedItems.clear();
-            document.getElementById('generosChipsContainer').innerHTML = '';
-            generosManager.showEmptyMessage();
-
-            document.querySelectorAll('#autoresDropdown .dropdown-item.selected').forEach(item => {
-                item.classList.remove('selected');
-            });
-            document.querySelectorAll('#generosDropdown .dropdown-item.selected').forEach(item => {
-                item.classList.remove('selected');
-            });
-
+            console.log('Limpiando chips existentes...');
+            if (autoresManager) autoresManager.clearAll();
+            if (generosManager) generosManager.clearAll();
             console.log('Chips limpiados exitosamente');
         }
 
-        /*
-         * Funciones para editar libro
-         */
         async function editarLibro(idLibro) {
             try {
                 console.log('Editando libro ID:', idLibro);
-
-                document.getElementById('agregarLibroModalLabel').innerHTML =
-                    '<i class="fas fa-edit me-2"></i> Editar Libro';
-
+                document.getElementById('agregarLibroModalLabel').innerHTML = '<i class="fas fa-edit me-2"></i> Editar Libro';
                 await cargarDatosLibroParaEditar(idLibro);
 
-                const modal = new bootstrap.Modal(document.getElementById('agregarLibroModal'));
-                modal.show();
-
+                const modalElement = document.getElementById('agregarLibroModal');
+                if (modalElement) {
+                    new bootstrap.Modal(modalElement).show();
+                } else {
+                    throw new Error('No se encontró el modal de agregar/editar libro');
+                }
             } catch (error) {
                 console.error('Error al abrir modal de edición:', error);
                 showAlert('Error al cargar el libro para editar', 'error');
@@ -1375,23 +1217,20 @@
         async function cargarDatosLibroParaEditar(idLibro) {
             try {
                 console.log('Cargando datos para libro ID:', idLibro);
-
                 const response = await fetch(`/Libro/ObtenerLibroParaEditar?id=${idLibro}`);
 
                 if (!response.ok) {
-                    throw new Error('Error en la respuesta del servidor');
+                    throw new Error('Error en la respuesta del servidor: ' + response.status);
                 }
 
                 const result = await response.json();
                 console.log('Respuesta del servidor:', result);
 
                 if (result.success) {
-                    const libro = result.data;
-                    llenarFormularioEdicion(libro);
+                    llenarFormularioEdicion(result.data);
                 } else {
-                    throw new Error(result.message);
+                    throw new Error(result.message || 'Error desconocido del servidor');
                 }
-
             } catch (error) {
                 console.error('Error:', error);
                 showAlert('Error al cargar los datos del libro: ' + error.message, 'error');
@@ -1401,7 +1240,6 @@
         function llenarFormularioEdicion(libro) {
             console.log('Datos del libro recibidos para edición:', libro);
 
-            // 1. Campos básicos
             document.getElementById('IdLibro').value = libro.idLibro || '';
             document.getElementById('Titulo').value = libro.titulo || '';
             document.getElementById('ISBN').value = libro.isbn || '';
@@ -1409,25 +1247,20 @@
             document.getElementById('SeccionId').value = libro.seccionId || '';
             document.getElementById('Descripcion').value = libro.descripcion || '';
 
-            // 2. Estado - mapeo correcto
             const estadoMap = {
                 'disponible': 'Disponible',
                 'no disponible': 'No Disponible',
                 'en préstamo': 'En Préstamo',
                 'en reparación': 'En Reparación'
             };
-
             const estadoSelect = document.getElementById('Estado');
             const estadoNormalizado = libro.estado?.toLowerCase();
             estadoSelect.value = estadoMap[estadoNormalizado] || 'Disponible';
-            console.log('Estado seleccionado:', estadoSelect.value);
 
-            // 3. Limpiar chips existentes
             limpiarChipsExistentes();
 
-            // 4. Cargar autores - con delay para asegurar que se limpiaron primero
             setTimeout(() => {
-                if (libro.autores && Array.isArray(libro.autores)) {
+                if (libro.autores && Array.isArray(libro.autores) && autoresManager) {
                     console.log('Cargando autores:', libro.autores);
                     libro.autores.forEach(autor => {
                         if (autor.id && autor.nombre) {
@@ -1436,8 +1269,7 @@
                     });
                 }
 
-                // 5. Cargar géneros
-                if (libro.generos && Array.isArray(libro.generos)) {
+                if (libro.generos && Array.isArray(libro.generos) && generosManager) {
                     console.log('Cargando géneros:', libro.generos);
                     libro.generos.forEach(genero => {
                         if (genero.id && genero.nombre) {
@@ -1445,58 +1277,45 @@
                         }
                     });
                 }
-            }, 100);
+            }, 200);
 
-            // 6. Cargar imagen - CORREGIDO (usar portadaUrl en lugar de portada)
             const preview = document.getElementById('previewImagenLibro');
             if (libro.portadaUrl && libro.portadaUrl !== '/imagenes/portadas/default-book-cover.jpg') {
                 preview.src = libro.portadaUrl;
                 preview.classList.remove('d-none');
-                console.log('Imagen cargada:', libro.portadaUrl);
             } else {
                 preview.src = '#';
                 preview.classList.add('d-none');
-                console.log('Imagen por defecto o no disponible');
             }
 
-            // 7. Cambiar action del form para edición
-            const form = document.getElementById('formAgregarLibro');
-            form.action = '/Libro/Edit';
-            console.log('Formulario configurado para edición');
+            document.getElementById('formAgregarLibro').action = '/Libro/Edit';
         }
 
         function resetearModalACreacion() {
             console.log('Reseteando modal a modo creación');
-
-            document.getElementById('agregarLibroModalLabel').innerHTML =
-                '<i class="fas fa-book-medical me-2"></i> Agregar Nuevo Libro';
-
-            // Resetear formulario
+            document.getElementById('agregarLibroModalLabel').innerHTML = '<i class="fas fa-book-medical me-2"></i> Agregar Nuevo Libro';
             document.getElementById('formAgregarLibro').reset();
             document.getElementById('IdLibro').value = '0';
-
-            // Limpiar chips
             limpiarChipsExistentes();
-
-            // Resetear estado a valor por defecto
             document.getElementById('Estado').value = 'Disponible';
 
-            // Ocultar preview de imagen
             const preview = document.getElementById('previewImagenLibro');
             preview.src = '#';
             preview.classList.add('d-none');
 
-            // Resetear action del form
             document.getElementById('formAgregarLibro').action = '/Libro/RegistroLibro';
-
-            // Limpiar archivo de imagen
             document.getElementById('ImagenArchivo').value = '';
         }
 
-        // Funciones globales
+        // =============================================
+        // FUNCIONES PARA DETALLES DEL LIBRO
+        // =============================================
         async function verDetalle(idLibro) {
             try {
-                const modal = new bootstrap.Modal(document.getElementById('detalleLibroModal'));
+                const modalElement = document.getElementById('detalleLibroModal');
+                if (!modalElement) throw new Error('No se encontró el modal de detalles');
+
+                const modal = new bootstrap.Modal(modalElement);
                 modal.show();
 
                 document.getElementById('detalleLibroContent').innerHTML = `
@@ -1518,20 +1337,14 @@
         async function cargarDetalleLibro(idLibro) {
             try {
                 const response = await fetch(`/Libro/ObtenerDetalleLibro?id=${idLibro}`);
-
-                if (!response.ok) {
-                    throw new Error('Error en la respuesta del servidor');
-                }
+                if (!response.ok) throw new Error('Error en la respuesta del servidor: ' + response.status);
 
                 const result = await response.json();
-
                 if (result.success) {
-                    const libro = result.data;
-                    mostrarDetalleLibro(libro);
+                    mostrarDetalleLibro(result.data);
                 } else {
-                    throw new Error(result.message);
+                    throw new Error(result.message || 'Error desconocido del servidor');
                 }
-
             } catch (error) {
                 console.error('Error:', error);
                 document.getElementById('detalleLibroContent').innerHTML = `
@@ -1546,80 +1359,60 @@
         function mostrarDetalleLibro(libro) {
             const contenido = `
                 <div class="row">
-                    <!-- Portada -->
                     <div class="col-md-4 text-center mb-4">
-                        <img src="${libro.portada || '/imagenes/portadas/default-book-cover.jpg'}"
+                        <img src="${libro.portadaUrl || libro.portada || '/imagenes/portadas/default-book-cover.jpg'}"
                              alt="Portada de ${libro.titulo}"
                              class="img-fluid rounded shadow"
                              style="max-height: 300px;"
                              onerror="this.src='/imagenes/portadas/default-book-cover.jpg'">
                     </div>
-
-                    <!-- Información del libro -->
                     <div class="col-md-8">
                         <h4 class="text-primary">${libro.titulo}</h4>
-
                         <div class="libro-detalle-info">
-                            <!-- ISBN -->
                             <div class="d-flex align-items-center mb-3">
                                 <i class="fas fa-barcode me-3 text-muted fa-lg"></i>
-                                <div>
-                                    <strong>ISBN:</strong>
-                                    <span class="ms-2">${libro.isbn}</span>
-                                </div>
+                                <div><strong>ISBN:</strong><span class="ms-2">${libro.isbn}</span></div>
                             </div>
-
-                            <!-- Autores -->
                             <div class="d-flex align-items-start mb-3">
                                 <i class="fas fa-user-edit me-3 text-muted fa-lg mt-1"></i>
                                 <div>
                                     <strong>Autor(es):</strong>
                                     <div class="ms-2">
-                                        ${libro.autor && libro.autor.length > 0 ?
-                                            libro.autor.map(autor =>
-                                                `<span class="badge bg-primary me-1 mb-1">${autor}</span>`
-                                            ).join('') :
-                                            '<span class="text-muted">No especificado</span>'
+                                        ${libro.autores && Array.isArray(libro.autores) && libro.autores.length > 0 ?
+                                            libro.autores.map(autor => `<span class="badge bg-primary me-1 mb-1">${autor.nombre || autor}</span>`).join('') :
+                                            (libro.autor && Array.isArray(libro.autor) && libro.autor.length > 0 ?
+                                                libro.autor.map(a => `<span class="badge bg-primary me-1 mb-1">${a}</span>`).join('') :
+                                                '<span class="text-muted">No especificado</span>')
                                         }
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Géneros -->
                             <div class="d-flex align-items-start mb-3">
                                 <i class="fas fa-tags me-3 text-muted fa-lg mt-1"></i>
                                 <div>
                                     <strong>Género(s):</strong>
                                     <div class="ms-2">
-                                        ${libro.genero && libro.genero.length > 0 ?
-                                            libro.genero.map(genero =>
-                                                `<span class="badge bg-success me-1 mb-1">${genero}</span>`
-                                            ).join('') :
-                                            '<span class="text-muted">No especificado</span>'
+                                        ${libro.generos && Array.isArray(libro.generos) && libro.generos.length > 0 ?
+                                            libro.generos.map(genero => `<span class="badge bg-success me-1 mb-1">${genero.nombre || genero}</span>`).join('') :
+                                            (libro.genero && Array.isArray(libro.genero) && libro.genero.length > 0 ?
+                                                libro.genero.map(g => `<span class="badge bg-success me-1 mb-1">${g}</span>`).join('') :
+                                                '<span class="text-muted">No especificado</span>')
                                         }
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Editorial -->
                             <div class="d-flex align-items-center mb-3">
                                 <i class="fas fa-building me-3 text-muted fa-lg"></i>
-                                <div>
-                                    <strong>Editorial:</strong>
-                                    <span class="ms-2">${libro.editorial || 'No especificada'}</span>
-                                </div>
+                                <div><strong>Editorial:</strong><span class="ms-2">${libro.editorial || 'No especificada'}</span></div>
                             </div>
-
-                            <!-- Sección -->
                             <div class="d-flex align-items-center mb-3">
                                 <i class="fas fa-layer-group me-3 text-muted fa-lg"></i>
-                                <div>
-                                    <strong>Sección:</strong>
-                                    <span class="ms-2">${libro.seccion || 'No especificada'}</span>
-                                </div>
+                                <div><strong>Sección:</strong><span class="ms-2">${libro.seccion || 'No especificada'}</span></div>
                             </div>
-
-                            <!-- Descripción -->
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="fas fa-toggle-on me-3 text-muted fa-lg"></i>
+                                <div><strong>Estado:</strong><span class="ms-2 badge ${GetEstadoBadgeClass(libro.estado)}">${libro.estado}</span></div>
+                            </div>
                             ${libro.descripcion ? `
                                 <div class="d-flex align-items-start mb-3">
                                     <i class="fas fa-align-left me-3 text-muted fa-lg mt-1"></i>
@@ -1636,33 +1429,348 @@
                     </div>
                 </div>
             `;
-
             document.getElementById('detalleLibroContent').innerHTML = contenido;
         }
 
-        // Función para mostrar alertas
-        function showAlert(message, type = 'success') {
-            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
-            const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+        // =============================================
+        // FUNCIONES DE IMPORTACIÓN
+        // =============================================
+        function mostrarResultadoImportacion(result) {
+            const resultadoImportacion = document.getElementById('resultadoImportacion');
+            if (!resultadoImportacion) return;
 
-            const alertHtml = `
-                <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;" role="alert">
-                    <i class="fas ${iconClass} me-2"></i>${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            let html = '';
+
+            if (result.success) {
+                html = `
+                    <div class="alert alert-success">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle fa-2x me-3"></i>
+                            <div>
+                                <h6 class="mb-1">¡Importación completada exitosamente!</h6>
+                                <p class="mb-0">${result.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (result.data) html += crearEstadisticasImportacion(result.data);
+            } else {
+                const esErrorParcial = result.data && result.data.insertados > 0;
+                html = `
+                    <div class="alert ${esErrorParcial ? 'alert-warning' : 'alert-danger'}">
+                        <div class="d-flex align-items-center">
+                            <i class="fas ${esErrorParcial ? 'fa-exclamation-triangle' : 'fa-times-circle'} fa-2x me-3"></i>
+                            <div>
+                                <h6 class="mb-1">${esErrorParcial ? 'Importación parcial' : 'Importación fallida'}</h6>
+                                <p class="mb-0">${result.message}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (result.data) {
+                    html += crearEstadisticasImportacion(result.data);
+                    if (result.data.detallesErrores && result.data.detallesErrores.length > 0) {
+                        html += crearListaErrores(result.data.detallesErrores);
+                    }
+                }
+            }
+
+            resultadoImportacion.innerHTML = html;
+            resultadoImportacion.style.display = 'block';
+            resultadoImportacion.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function crearEstadisticasImportacion(data) {
+            return `
+                <div class="row text-center mt-3">
+                    <div class="col-4"><div class="border rounded p-2 bg-light"><div class="h4 mb-0 text-primary">${data.total || 0}</div><small class="text-muted">Total procesados</small></div></div>
+                    <div class="col-4"><div class="border rounded p-2 bg-light"><div class="h4 mb-0 text-success">${data.insertados || 0}</div><small class="text-muted">Insertados</small></div></div>
+                    <div class="col-4"><div class="border rounded p-2 bg-light"><div class="h4 mb-0 text-danger">${data.errores || 0}</div><small class="text-muted">Errores</small></div></div>
                 </div>
             `;
+        }
 
-            document.body.insertAdjacentHTML('beforeend', alertHtml);
+        function crearListaErrores(detallesErrores) {
+            const totalErrores = detallesErrores.length;
+            const mostrarTodos = totalErrores <= 10;
+            const erroresVisibles = mostrarTodos ? detallesErrores : detallesErrores.slice(0, 10);
+            const erroresId = 'errores-' + Date.now();
+
+            return `
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-warning mb-0"><i class="fas fa-exclamation-triangle me-1"></i>Detalles de errores (${totalErrores})</h6>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary me-2" onclick="copiarErrores('${erroresId}')" title="Copiar todos los errores al portapapeles">
+                                <i class="fas fa-copy me-1"></i>Copiar Log
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="descargarLogErrores('${erroresId}')" title="Descargar archivo con todos los errores">
+                                <i class="fas fa-download me-1"></i>Descargar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="error-scroll small" id="${erroresId}" data-errores-completos='${JSON.stringify(detallesErrores)}'>
+                        <ul class="mb-0">${erroresVisibles.map(error => `<li class="text-danger">${error}</li>`).join('')}</ul>
+                        ${!mostrarTodos ? `
+                            <div class="text-center mt-2">
+                                <div class="mb-1"><small class="text-muted">Mostrando 10 de ${totalErrores} errores</small></div>
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="mostrarTodosLosErrores('${erroresId}')">
+                                    <i class="fas fa-expand me-1"></i>Mostrar todos los errores
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function copiarErrores(erroresId) {
+            const contenedorErrores = document.getElementById(erroresId);
+            if (!contenedorErrores) return;
+
+            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
+            const textoErrores = erroresCompletos.join('\n');
+
+            navigator.clipboard.writeText(textoErrores)
+                .then(() => {
+                    const btn = event.target;
+                    const originalHTML = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check me-1"></i>Copiado!';
+                    btn.classList.remove('btn-outline-secondary');
+                    btn.classList.add('btn-success');
+                    setTimeout(() => {
+                        btn.innerHTML = originalHTML;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-secondary');
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Error al copiar: ', err);
+                    alert('No se pudo copiar al portapapeles. Use la opción de descargar.');
+                });
+        }
+
+        function descargarLogErrores(erroresId) {
+            const contenedorErrores = document.getElementById(erroresId);
+            if (!contenedorErrores) return;
+
+            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
+            const textoErrores = erroresCompletos.join('\r\n');
+            const blob = new Blob([textoErrores], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `errores-importacion-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function mostrarTodosLosErrores(erroresId) {
+            const contenedorErrores = document.getElementById(erroresId);
+            if (!contenedorErrores) return;
+
+            const erroresCompletos = JSON.parse(contenedorErrores.dataset.erroresCompletos);
+            const listaHTML = erroresCompletos.map(error => `<li class="text-danger">${error}</li>`).join('');
+            contenedorErrores.querySelector('ul').innerHTML = listaHTML;
+            const botonContainer = contenedorErrores.querySelector('.text-center');
+            if (botonContainer) botonContainer.style.display = 'none';
+        }
+
+        function mostrarAlertaTemporal(mensaje, tipo) {
+            const alerta = document.createElement('div');
+            alerta.className = `alert alert-${tipo === 'error' ? 'danger' : 'warning'} alert-dismissible fade show`;
+            alerta.innerHTML = `${mensaje}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>`;
+
+            const campoArchivo = document.querySelector('.form-group-libros');
+            if (campoArchivo) {
+                campoArchivo.parentNode.insertBefore(alerta, campoArchivo.nextSibling);
+            }
 
             setTimeout(() => {
-                const alertElement = document.querySelector('.alert.position-fixed');
-                if (alertElement) {
-                    new bootstrap.Alert(alertElement).close();
-                }
+                if (alerta.parentNode) alerta.remove();
             }, 5000);
         }
+
+        // =============================================
+        // FUNCIONES DE MENSAJES Y ALERTAS
+        // =============================================
+        // function showAlert(message, type = 'success') {
+        //     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        //     const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+
+        //     const alertHtml = `
+        //         <div class="alert ${alertClass} alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3" style="z-index: 1060;" role="alert">
+        //             <i class="fas ${iconClass} me-2"></i>${message}
+        //             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        //         </div>
+        //     `;
+
+        //     document.body.insertAdjacentHTML('beforeend', alertHtml);
+        //     setTimeout(() => {
+        //         const alertElement = document.querySelector('.alert.position-fixed');
+        //         if (alertElement) new bootstrap.Alert(alertElement).close();
+        //     }, 5000);
+        // }
+
+        // function showSuccess(message) {
+        //     console.log('Éxito:', message);
+        //     if (typeof Swal !== 'undefined') {
+        //         Swal.fire({
+        //             icon: 'success',
+        //             title: 'Éxito',
+        //             text: message,
+        //             timer: 3000,
+        //             showConfirmButton: false
+        //         });
+        //     } else {
+        //         showAlert(message, 'success');
+        //     }
+        // }
+
+        // function showError(message) {
+        //     console.log('Error:', message);
+        //     if (typeof Swal !== 'undefined') {
+        //         Swal.fire({
+        //             icon: 'error',
+        //             title: 'Error',
+        //             text: message,
+        //             timer: 4000
+        //         });
+        //     } else {
+        //         showAlert(message, 'error');
+        //     }
+        // }
+
+        // function showWarning(message) {
+        //     if (typeof Swal !== 'undefined') {
+        //         Swal.fire({
+        //             icon: 'warning',
+        //             title: 'Advertencia',
+        //             text: message,
+        //             timer: 3000
+        //         });
+        //     } else {
+        //         showAlert(message, 'warning');
+        //     }
+        // }
+
+        function GetEstadoBadgeClass(estado) {
+            const estadoLower = estado?.toLowerCase();
+            switch(estadoLower) {
+                case 'disponible': return 'bg-success';
+                case 'no disponible': return 'bg-danger';
+                case 'en préstamo':
+                case 'prestado': return 'bg-warning';
+                case 'en reparación':
+                case 'en reparacion': return 'bg-secondary';
+                case 'reservado': return 'bg-info';
+                default: return 'bg-secondary';
+            }
+        }
+
+        // =============================================
+        // MANEJO DE MENSAJES DEL CONTROLADOR
+        // =============================================
+        // @if (ViewData["ModalSuccess"] != null)
+        // {
+        //         <text>
+        //         console.log('Mostrando mensaje de éxito desde ViewData');
+        //         showSuccess('@Html.Raw(ViewData["ModalSuccess"])');
+        //         </text>
+        // }
+
+        // @if (ViewData["ModalError"] != null)
+        // {
+        //         var errorMessage = ViewData["ModalError"].ToString();
+        //         var detailMessage = ViewData["ModalDetail"]?.ToString();
+
+        //         if (!string.IsNullOrEmpty(detailMessage))
+        //         {
+        //                 errorMessage += "\\n\\nDetalle: " + detailMessage;
+        //         }
+
+        //         <text>
+        //         console.log('Mostrando mensaje de error desde ViewData');
+        //         showError('@Html.Raw(errorMessage)');
+        //         </text>
+        // }
+
+        // @if (TempData["ToastType"] != null)
+        // {
+        //         <text>
+        //         document.addEventListener('DOMContentLoaded', function() {
+        //             setTimeout(function() {
+        //                 const message = '@Html.Raw(TempData["ToastMessage"])';
+        //                 const type = '@TempData["ToastType"]';
+
+        //                 if (type === 'success') {
+        //                     showSuccess(message);
+        //                 } else if (type === 'error') {
+        //                     showError(message);
+        //                 } else if (type === 'warning') {
+        //                     showWarning(message);
+        //                 }
+        //             }, 300);
+        //         });
+        //         </text>
+
+
+
+        // }
+                // =============================================
+        // MANEJO DE MENSAJES DEL CONTROLADOR
+        // =============================================
+        @if (ViewData["ModalSuccess"] != null)
+        {
+                    <text>
+                    console.log('Mostrando mensaje de éxito desde ViewData');
+                    showSuccess('@Html.Raw(ViewData["ModalSuccess"])');
+                    </text>
+        }
+
+        @if (ViewData["ModalError"] != null)
+        {
+                    var errorMessage = ViewData["ModalError"].ToString();
+                    var detailMessage = ViewData["ModalDetail"]?.ToString();
+
+                    if (!string.IsNullOrEmpty(detailMessage))
+                    {
+                                errorMessage += "\\n\\nDetalle: " + detailMessage;
+                    }
+
+                    <text>
+                    console.log('Mostrando mensaje de error desde ViewData');
+                    showError('@Html.Raw(errorMessage)');
+                    </text>
+        }
+
+        @if (TempData["ToastType"] != null)
+        {
+                    <text>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        setTimeout(function() {
+                            const message = '@Html.Raw(TempData["ToastMessage"])';
+                            const type = '@TempData["ToastType"]';
+
+                            if (type === 'success') {
+                                showSuccess(message);
+                            } else if (type === 'error') {
+                                showError(message);
+                            } else if (type === 'warning') {
+                                showWarning(message);
+                            }
+                        }, 300);
+                    });
+                    </text>
+        }
+
     </script>
 }
+
+
+
 @functions {
     // Función para obtener la clase CSS del badge según el estado - CORREGIDA
     public string GetEstadoBadgeClass(string estado)
