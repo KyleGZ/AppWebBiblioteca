@@ -1,11 +1,12 @@
-﻿@model List<AppWebBiblioteca.Models.AutorDto>
+﻿@model PaginacionResponse<AppWebBiblioteca.Models.AutorDto>
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Gestión de Autores - Biblioteca Esparza";
     ViewData["PageTitle"] = "Gestión de Autores";
 
-    var autores = Model ?? new List<AppWebBiblioteca.Models.AutorDto>();
-    var terminoBusqueda = ViewBag.Filtro as string ?? "";
+    var autores = Model?.Data ?? new List<AppWebBiblioteca.Models.AutorDto>();
+    var paginacion = Model?.Pagination ?? new PaginationInfo();
+    var terminoBusqueda = ViewBag.TerminoBusqueda as string ?? "";
 }
 
 <div class="container-fluid p-4">
@@ -37,9 +38,12 @@
                                         <span class="input-group-text bg-light">
                                             <i class="fas fa-search text-muted"></i>
                                         </span>
-                                        <input type="text" class="form-control" name="nombre" id="searchInput"
+                                        <input type="text"
+                                               class="form-control"
+                                               name="termino"
+                                               id="searchInput"
                                                placeholder="Buscar por nombre de autor..."
-                                               value="@terminoBusqueda">
+                                               value="@terminoBusqueda" />
                                         <button class="btn btn-esparza-primary" type="submit" id="btnBuscar">
                                             <i class="fas fa-search me-1"></i>Buscar
                                         </button>
@@ -47,6 +51,10 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Campos ocultos para paginación -->
+                        <input type="hidden" name="pagina" id="paginaHidden" value="@paginacion.PaginaActual" />
+                        <input type="hidden" name="resultadosPorPagina" id="resultadosPorPaginaHidden" value="@paginacion.ResultadosPorPagina" />
                     </form>
 
                     <!-- Info resultados -->
@@ -54,11 +62,13 @@
                         <div class="text-muted small">
                             @if (!string.IsNullOrEmpty(terminoBusqueda))
                             {
-                                <span>@autores.Count</span> <span>autor(es) encontrados para "@terminoBusqueda"</span>
+                                <span id="resultCount">@paginacion.TotalResultados</span>
+                                <span>autor(es) encontrados para "@terminoBusqueda"</span>
                             }
                             else
                             {
-                                <span>@autores.Count</span> <span>autor(es) registrados</span>
+                                <span id="resultCount">@paginacion.TotalResultados</span>
+                                <span>autor(es) registrados</span>
                             }
                         </div>
                         <div class="d-flex gap-2">
@@ -138,6 +148,115 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        <!-- Paginación -->
+                        @if (paginacion.TotalPaginas > 1)
+                        {
+                            <nav aria-label="Paginación de resultados" class="mt-4">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+
+                                    <!-- Info -->
+                                    <div class="pagination-info">
+                                        <small class="text-muted">
+                                            Mostrando <strong>@autores.Count</strong> de
+                                            <strong>@paginacion.TotalResultados.ToString("N0")</strong> autores
+                                            — Página <strong>@paginacion.PaginaActual</strong> de
+                                            <strong>@paginacion.TotalPaginas</strong>
+                                        </small>
+                                    </div>
+
+                                    <!-- Controles -->
+                                    <ul class="pagination justify-content-center mb-0">
+                                        <li class="page-item @(paginacion.PaginaActual == 1 ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual > 1)
+                                            {
+                                                <button type="button" class="page-link" title="Primera página" onclick="cambiarPagina(1)">
+                                                    <i class="fas fa-angle-double-left"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                                            }
+                                        </li>
+
+                                        <li class="page-item @(paginacion.PaginaActual == 1 ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual > 1)
+                                            {
+                                                <button type="button" class="page-link" title="Página anterior" onclick="cambiarPagina(@(paginacion.PaginaActual - 1))">
+                                                    <i class="fas fa-chevron-left"></i> Anterior
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
+                                            }
+                                        </li>
+
+                                        @{
+                                            int inicio = Math.Max(1, paginacion.PaginaActual - 2);
+                                            int fin = Math.Min(paginacion.TotalPaginas, paginacion.PaginaActual + 2);
+                                            if (inicio > 1)
+                                            {
+                                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                                            }
+                                        }
+
+                                        @for (int i = inicio; i <= fin; i++)
+                                        {
+                                            <li class="page-item @(i == paginacion.PaginaActual ? "active" : "")">
+                                                <button type="button" class="page-link @(i == paginacion.PaginaActual ? "fw-bold" : "")" onclick="cambiarPagina(@i)">@i</button>
+                                            </li>
+                                        }
+
+                                        @if (fin < paginacion.TotalPaginas)
+                                        {
+                                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                                        }
+
+                                        <li class="page-item @(paginacion.PaginaActual >= paginacion.TotalPaginas ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual < paginacion.TotalPaginas)
+                                            {
+                                                <button type="button" class="page-link" title="Página siguiente" onclick="cambiarPagina(@(paginacion.PaginaActual + 1))">
+                                                    Siguiente <i class="fas fa-chevron-right"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link">Siguiente <i class="fas fa-chevron-right"></i></span>
+                                            }
+                                        </li>
+
+                                        <li class="page-item @(paginacion.PaginaActual >= paginacion.TotalPaginas ? "disabled" : "")">
+                                            @if (paginacion.PaginaActual < paginacion.TotalPaginas)
+                                            {
+                                                <button type="button" class="page-link" title="Última página" onclick="cambiarPagina(@paginacion.TotalPaginas)">
+                                                    <i class="fas fa-angle-double-right"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                                            }
+                                        </li>
+                                    </ul>
+
+                                    <!-- Tamaño página -->
+                                    <div class="pagination-size">
+                                        <small class="text-muted me-2">Mostrar:</small>
+                                        <select class="form-select form-select-sm d-inline-block w-auto"
+                                                onchange="cambiarResultadosPorPagina(this.value)">
+                                            @{
+                                                var rpp = paginacion.ResultadosPorPagina;
+                                            }
+                                            <option value="20" selected="@(rpp == 20)">20</option>
+                                            <option value="50" selected="@(rpp == 50)">50</option>
+                                            <option value="100" selected="@(rpp == 100)">100</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </nav>
+                        }
                     }
                     else if (!string.IsNullOrEmpty(terminoBusqueda))
                     {
@@ -284,8 +403,10 @@
             const searchInput = document.getElementById('searchInput');
             const searchForm  = document.getElementById('searchForm');
             const btnBuscar   = document.getElementById('btnBuscar');
+            const paginaHidden = document.getElementById('paginaHidden');
 
             function submitSearch() {
+                if (paginaHidden) paginaHidden.value = 1; // Reinicia a página 1 en cada búsqueda
                 if (searchForm) searchForm.submit();
             }
 
@@ -305,13 +426,40 @@
                 });
             }
 
-            // Botón Buscar sigue funcionando (compatibilidad)
+            // Botón Buscar (compatibilidad)
             if (btnBuscar) {
                 btnBuscar.addEventListener('click', function (e) {
                     e.preventDefault();
                     submitSearch();
                 });
             }
+
+            // =============================================
+            // 🧭 PAGINACIÓN
+            // =============================================
+            window.cambiarPagina = function (pagina) {
+                if (paginaHidden && searchForm) {
+                    paginaHidden.value = pagina;
+                    searchForm.submit();
+                }
+            };
+
+            window.cambiarResultadosPorPagina = function (resultados) {
+                if (!searchForm) return;
+
+                let resultadosInput = document.getElementById('resultadosPorPaginaHidden');
+                if (!resultadosInput) {
+                    resultadosInput = document.createElement('input');
+                    resultadosInput.type = 'hidden';
+                    resultadosInput.name = 'resultadosPorPagina';
+                    resultadosInput.id = 'resultadosPorPaginaHidden';
+                    searchForm.appendChild(resultadosInput);
+                }
+                resultadosInput.value = resultados;
+
+                if (paginaHidden) paginaHidden.value = 1;
+                searchForm.submit();
+            };
 
             // =============================================
             // ✏️ MODAL EDITAR

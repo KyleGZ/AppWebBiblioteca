@@ -32,6 +32,75 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        public async Task<PaginacionResponse<AutorDto>> BuscarAutoresRapidaAsync(
+         string termino,
+         int pagina = 1,
+          int resultadosPorPagina = 20)
+        {
+            try
+            {
+                // Si no hay término => listar paginado
+                if (string.IsNullOrWhiteSpace(termino))
+                {
+                    var apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Autor/ListarViewAutor?pagina={pagina}&resultadoPorPagina={resultadosPorPagina}";
+                    var response = await _httpClient.GetAsync(apiUrl);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var resultado = await response.Content.ReadFromJsonAsync<PaginacionResponse<AutorDto>>();
+                        if (resultado != null && resultado.Success)
+                        {
+                            return resultado;
+                        }
+                        return new PaginacionResponse<AutorDto>
+                        {
+                            Success = false,
+                            Message = "No se pudieron obtener los autores"
+                        };
+                    }
+
+                    return new PaginacionResponse<AutorDto>
+                    {
+                        Success = false,
+                        Message = $"Error al obtener los autores: {response.StatusCode}"
+                    };
+                }
+
+                // Con término => búsqueda paginada
+                var buscarUrl =
+                    $"{_configuration["ApiSettings:BaseUrl"]}/Autor/Busqueda-Autor" +
+                    $"?termino={Uri.EscapeDataString(termino.Trim())}" +
+                    $"&pagina={pagina}&resultadoPorPagina={resultadosPorPagina}";
+
+                var buscarResponse = await _httpClient.GetAsync(buscarUrl);
+
+                if (buscarResponse.IsSuccessStatusCode)
+                {
+                    var result = await buscarResponse.Content.ReadFromJsonAsync<PaginacionResponse<AutorDto>>();
+                    return result ?? new PaginacionResponse<AutorDto>
+                    {
+                        Success = false,
+                        Message = "No se pudieron procesar los resultados de la búsqueda"
+                    };
+                }
+
+                return new PaginacionResponse<AutorDto>
+                {
+                    Success = false,
+                    Message = $"Error en la búsqueda: {buscarResponse.StatusCode}"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new PaginacionResponse<AutorDto>
+                {
+                    Success = false,
+                    Message = $"Error de conexión: {ex.Message}"
+                };
+            }
+        }
+
+
         // Crea un autor. Devuelve el Id generado por la API.
         public async Task<int> RegistrarAutorAsync(string nombre)
         {
@@ -92,6 +161,8 @@ namespace AppWebBiblioteca.Services
     public interface IAutorService
     {
         Task<List<AutorDto>> ObtenerAutoresAsync(string? nombre);
+        Task<PaginacionResponse<AutorDto>> BuscarAutoresRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
+
         Task<int> RegistrarAutorAsync(string nombre);
         Task<bool> EditarAutorAsync(int idAutor, string nombre);
         Task<bool> EliminarAutorAsync(int idAutor);

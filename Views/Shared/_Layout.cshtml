@@ -126,12 +126,12 @@
                 }
 
                 <!-- Actividades Culturales - Para todos -->
-                <div class="nav-item">
+                @* <div class="nav-item">
                     <a href="#" class="nav-link">
                         <i class="fas fa-calendar-alt"></i>
                         <span class="nav-text">Actividades Culturales</span>
                     </a>
-                </div>
+                </div> *@
 
                 <!-- Reportes - Solo para Administradores y Bibliotecarios -->
                 @if (User.IsInRole("Administrador") || User.IsInRole("Bibliotecario"))

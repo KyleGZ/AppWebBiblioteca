@@ -7,27 +7,61 @@ namespace AppWebBiblioteca.Controllers
     public class AutorController : Controller
     {
         private readonly IAutorService _autorService;
+        private readonly IAuthService _authService;
 
-        public AutorController(IAutorService autorService)
+        public AutorController(IAutorService autorService, IAuthService authService)
         {
             _autorService = autorService;
+            _authService = authService;
         }
 
-        // GET: /Autor?nombre=Gab
-        public async Task<IActionResult> Index(string? nombre)
+
+        [HttpGet]
+        public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
         {
             try
             {
-                var autores = await _autorService.ObtenerAutoresAsync(nombre);
-                ViewBag.Filtro = nombre;
-                return View(autores); // Vista fuertemente tipada a List<AutorDto>
+                if (!_authService.IsAuthenticated())
+                    return RedirectToAction("Login", "Usuario");
+
+                PaginacionResponse<AutorDto> resultado;
+
+                if (!string.IsNullOrWhiteSpace(termino))
+                {
+                    // Buscar autores por término (nombre)
+                    resultado = await _autorService.BuscarAutoresRapidaAsync(termino, pagina, resultadosPorPagina);
+                }
+                else
+                {
+                    // Listar todos los autores paginados
+                    resultado = await _autorService.BuscarAutoresRapidaAsync(string.Empty, pagina, resultadosPorPagina);
+                }
+
+                ViewBag.TerminoBusqueda = termino;
+                ViewBag.PaginaActual = pagina;
+                ViewBag.ResultadosPorPagina = resultadosPorPagina;
+
+                return View(resultado); // Vista tipada a PaginacionResponse<AutorDto>
             }
-            catch (Exception ex)
+            catch
             {
-                TempData["Error"] = $"No se pudo cargar la lista de autores: {ex.Message}";
-                return View(new List<AutorDto>());
+                ViewBag.Error = "Error al cargar la lista de autores";
+                return View(new PaginacionResponse<AutorDto>
+                {
+                    Success = false,
+                    Message = "Error al cargar los autores",
+                    Data = new List<AutorDto>(),
+                    Pagination = new PaginationInfo
+                    {
+                        PaginaActual = pagina,
+                        ResultadosPorPagina = resultadosPorPagina,
+                        TotalResultados = 0,
+                        TotalPaginas = 0
+                    }
+                });
             }
         }
+
 
         // POST: /Autor/Crear
         [HttpPost]
@@ -124,15 +158,6 @@ namespace AppWebBiblioteca.Controllers
                 return LocalRedirect(returnUrl);
 
             return RedirectToAction(nameof(Index));
-        }
-
-        // (Opcional) GET: /Autor/BuscarJson?term=Gar
-        // Útil para autocompletar/Select2 en creación de libros
-        [HttpGet]
-        public async Task<IActionResult> BuscarJson(string? term)
-        {
-            var autores = await _autorService.ObtenerAutoresAsync(term);
-            return Json(autores);
         }
     }
 }
