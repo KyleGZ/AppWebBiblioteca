@@ -1,4 +1,5 @@
-﻿@{
+﻿@model AppWebBiblioteca.Models.PrestamoCreateViewModel
+@{
     ViewData["Title"] = "Préstamos y Devoluciones";
     ViewData["PageTitle"] = "Préstamos y Devoluciones";
 }
@@ -10,9 +11,9 @@
                 <div class="card-body">
                     <div class="row g-2 mb-3">
                         <div class="col-auto">
-                            <a class="btn btn-primary">
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
                                 <i class="fas fa-plus me-1"></i> Nuevo préstamo
-                            </a>
+                            </button>
                         </div>
                         <div class="col-auto">
                             <a class="btn btn-success">
@@ -34,3 +35,136 @@
         </div>
     </div>
 </div>
+
+<!-- Modal: Nuevo Préstamo -->
+<div class="modal fade" id="modalNuevoPrestamo" tabindex="-1" aria-labelledby="modalNuevoPrestamoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content rounded-4">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalNuevoPrestamoLabel">
+                    <i class="fas fa-plus-circle me-2"></i> Nuevo préstamo
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+
+            <form id="formNuevoPrestamo" asp-action="Create" asp-controller="Prestamos" method="post" novalidate>
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="UsuarioId" class="form-label">Lector</label>
+                            <select asp-for="UsuarioId" class="form-select" asp-items="ViewBag.Usuarios" required>
+                                <option value="">-- Seleccione un lector --</option>
+                            </select>
+                            <span class="text-danger" data-valmsg-for="UsuarioId"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="LibroId" class="form-label">Libro</label>
+                            <select asp-for="LibroId" class="form-select" asp-items="ViewBag.Libros" required>
+                                <option value="">-- Seleccione un libro --</option>
+                            </select>
+                            <span class="text-danger" data-valmsg-for="LibroId"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="FechaPrestamo" class="form-label">Fecha de préstamo</label>
+                            <input asp-for="FechaPrestamo" class="form-control" type="date" required />
+                            <span class="text-danger" data-valmsg-for="FechaPrestamo"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="FechaVencimiento" class="form-label">Fecha de vencimiento</label>
+                            <input asp-for="FechaVencimiento" class="form-control" type="date" required />
+                            <span class="text-danger" data-valmsg-for="FechaVencimiento"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Observaciones" class="form-label">Observaciones</label>
+                            <textarea asp-for="Observaciones" class="form-control" rows="3" maxlength="500" placeholder="Notas sobre el préstamo..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Guardar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const modalEl = document.getElementById('modalNuevoPrestamo');
+            const modal = new bootstrap.Modal(modalEl);
+            const form = document.getElementById('formNuevoPrestamo');
+
+            // Defaults de fechas al abrir el modal
+            modalEl.addEventListener('show.bs.modal', () => {
+                const today = new Date();
+                const toISODate = (d) => d.toISOString().split('T')[0];
+
+                const fechaPrestamo = form.querySelector('input[name="FechaPrestamo"]');
+                const fechaVenc = form.querySelector('input[name="FechaVencimiento"]');
+
+                if (!fechaPrestamo.value) {
+                    fechaPrestamo.value = toISODate(today);
+                }
+                if (!fechaVenc.value) {
+                    const due = new Date(today);
+                    due.setDate(due.getDate() + 14); // 14 días por defecto
+                    fechaVenc.value = toISODate(due);
+                }
+            });
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                // Validación HTML5 simple
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated');
+                    return;
+                }
+
+                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
+                const formData = new FormData(form);
+
+                try {
+                    const res = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': token
+                        },
+                        body: formData
+                    });
+
+                    if (!res.ok) {
+                        const error = await res.json().catch(() => ({}));
+                        const msg = error?.message || 'No se pudo registrar el préstamo.';
+                        showError(msg, 'Error al guardar');
+                        return;
+                    }
+
+                    const data = await res.json();
+                    if (data?.success) {
+                        modal.hide();
+                        form.reset();
+                        form.classList.remove('was-validated');
+                        showSuccess(data.message || 'Préstamo registrado correctamente.');
+                        // TODO: refrescar tabla/listado de movimientos recientes
+                    } else {
+                        showError(data?.message || 'No se pudo registrar el préstamo.', 'Error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showError('Ocurrió un error inesperado.', 'Error');
+                }
+            });
+        })();
+    </script>
+}
