@@ -583,11 +583,7 @@ namespace AppWebBiblioteca.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest model)
         {
-            _logger.LogInformation("=== INICIO RESET PASSWORD POST ===");
-            _logger.LogInformation($"Token recibido: {model.Token}");
-            _logger.LogInformation($"NewPassword length: {model.NewPassword?.Length}");
-            _logger.LogInformation($"ConfirmPassword length: {model.ConfirmPassword?.Length}");
-
+            
             if (!ModelState.IsValid)
             {
                 _logger.LogWarning("ModelState no es válido");
