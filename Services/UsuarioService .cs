@@ -18,6 +18,10 @@ namespace AppWebBiblioteca.Services
         Task<bool> EliminarUsuarioAsync(int id);
         Task<bool> DesactivarUsuarioAsync(int id);
         Task<bool> ActivarUsuarioAsync(int id);
+        Task<ApiResponse> ForgotPasswordAsync(string email);
+        Task<ApiResponse> ResetPasswordAsync(string token, string newPassword);
+        Task<ApiResponse> ValidateResetTokenAsync(string token);
+
     }
 
 
@@ -25,11 +29,13 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<UsuarioService> _logger;
 
-        public UsuarioService(HttpClient httpClient, IConfiguration configuration)
+        public UsuarioService(HttpClient httpClient, IConfiguration configuration, ILogger<UsuarioService> logger)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _logger = logger;
         }
 
         public async Task<List<UsuarioListaViewModel>> ObtenerUsuariosAsync()
@@ -519,6 +525,153 @@ namespace AppWebBiblioteca.Services
                 return false;
             }
         }
+
+
+        /*
+         * Metodo para enviar correo de recuperacion de contraseña
+         */
+        public async Task<ApiResponse> ForgotPasswordAsync(string email)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/ForgotPassword";
+
+                var request = new ForgotPasswordRequest { Email = email };
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(apiUrl, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    return apiResponse ?? new ApiResponse
+                    {
+                        Success = true,
+                        Message = "Se ha enviado el enlace de recuperación a su correo electrónico."
+                    };
+                }
+
+                // Si hay error, deserializar la respuesta de error de la API
+                var errorResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return errorResponse ?? new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error al procesar la solicitud"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error de conexión: " + ex.Message
+                };
+            }
+        }
+
+        public async Task<ApiResponse> ResetPasswordAsync(string token, string newPassword)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/ResetPassword";
+
+                var request = new ResetPasswordRequest
+                {
+                    Token = token,
+                    NewPassword = newPassword,
+                    ConfirmPassword = newPassword
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+
+                _logger.LogInformation("API ResetPassword body: {body}", json);
+
+
+                var response = await _httpClient.PostAsync(apiUrl, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    return apiResponse ?? new ApiResponse
+                    {
+                        Success = true,
+                        Message = "Contraseña restablecida exitosamente."
+                    };
+                }
+
+                // Si hay error, deserializar la respuesta de error de la API
+                var errorResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return errorResponse ?? new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error al restablecer la contraseña"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error de conexión: " + ex.Message
+                };
+            }
+        }
+
+        public async Task<ApiResponse> ValidateResetTokenAsync(string token)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/ValidateResetToken?token={Uri.EscapeDataString(token)}";
+
+                var response = await _httpClient.GetAsync(apiUrl);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                    return apiResponse ?? new ApiResponse
+                    {
+                        Success = true,
+                        Message = "Token válido."
+                    };
+                }
+
+                // Si hay error, deserializar la respuesta de error de la API
+                var errorResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                return errorResponse ?? new ApiResponse
+                {
+                    Success = false,
+                    Message = "Token inválido o expirado"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error de conexión: " + ex.Message
+                };
+            }
+        }
+
+
     }
 
     public class UsuarioWrapper
@@ -528,4 +681,5 @@ namespace AppWebBiblioteca.Services
         public bool Resultado { get; set; }
     }
 
+    
 }

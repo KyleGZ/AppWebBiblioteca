@@ -16,18 +16,21 @@ namespace AppWebBiblioteca.Controllers
         private readonly IAuthService _authService;
         private readonly IUsuarioService _usuarioService;
         private readonly IRolService _rolService;
+        private readonly ILogger<UsuarioController> _logger;
 
         public UsuarioController(
             IAuthService authService,
             IUsuarioService usuarioService,
-            IRolService rolService)
+            IRolService rolService,
+            ILogger<UsuarioController> logger)
         {
             _authService = authService;
             _usuarioService = usuarioService;
             _rolService = rolService;
+            _logger = logger;
         }
 
-     
+
         [Authorize(Policy = "AdminOnly")]
         [HttpGet]
         public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 20)
@@ -107,7 +110,7 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Resultado)
                 {
-            
+
 
 
                     //TempData["SuccessMessage"] = $"¡Bienvenido {resultado.Nombre}!";
@@ -312,7 +315,7 @@ namespace AppWebBiblioteca.Controllers
                     return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
                 }
 
-                
+
                 var resultado = await _usuarioService.DesactivarUsuarioAsync(id);
 
                 return Json(new
@@ -517,8 +520,114 @@ namespace AppWebBiblioteca.Controllers
             await _authService.LogoutAsync();
             //TempData["SuccessMessage"] = "Sesión cerrada exitosamente";
 
-            
+
             return RedirectToAction("Login");
+        }
+
+
+        public IActionResult ForgotPassword()
+        {
+            return View();
+
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPassword model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var result = await _usuarioService.ForgotPasswordAsync(model.Email);
+
+            if (result.Success)
+            {
+                TempData["SuccessMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = result.Message;
+            }
+
+            return View(model);
+        }
+
+        // GET: Reset Password (cuando el usuario hace clic en el enlace del correo)
+        [HttpGet]
+        public async Task<IActionResult> ResetPassword(string token)
+        {
+            _logger.LogInformation($"Token recibido: {token}");
+
+
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "Token de recuperación inválido.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            // Validar el token antes de mostrar el formulario
+            var validationResult = await _usuarioService.ValidateResetTokenAsync(token);
+
+            if (!validationResult.Success)
+            {
+                TempData["ErrorMessage"] = validationResult.Message ?? "El enlace de recuperación no es válido o ha expirado.";
+                return RedirectToAction("ForgotPassword");
+            }
+
+            var model = new ResetPasswordRequest { Token = token };
+            return View(model);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest model)
+        {
+            _logger.LogInformation("=== INICIO RESET PASSWORD POST ===");
+            _logger.LogInformation($"Token recibido: {model.Token}");
+            _logger.LogInformation($"NewPassword length: {model.NewPassword?.Length}");
+            _logger.LogInformation($"ConfirmPassword length: {model.ConfirmPassword?.Length}");
+
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("ModelState no es válido");
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                {
+                    _logger.LogWarning($"Error: {error.ErrorMessage}");
+                }
+                return View(model);
+            }
+
+            if (model.NewPassword != model.ConfirmPassword)
+            {
+                _logger.LogWarning("Las contraseñas no coinciden");
+                ModelState.AddModelError(string.Empty, "Las contraseñas no coinciden.");
+                return View(model);
+            }
+
+            try
+            {
+                _logger.LogInformation("Llamando a _usuarioService.ResetPasswordAsync");
+                var result = await _usuarioService.ResetPasswordAsync(model.Token, model.NewPassword);
+                _logger.LogInformation($"Resultado: Success={result.Success}, Message={result.Message}");
+
+                if (result.Success)
+                {
+                    TempData["SuccessMessage"] = result.Message;
+                    return RedirectToAction("Login", "Usuario");
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return View(model);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error crítico en ResetPassword POST");
+                TempData["ErrorMessage"] = "Error interno del servidor.";
+                return View(model);
+            }
         }
     }
 }
