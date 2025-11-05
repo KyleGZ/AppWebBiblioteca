@@ -1,0 +1,321 @@
+﻿@model AppWebBiblioteca.Models.EmailSettings
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Configuración de Correo";
+    ViewData["PageTitle"] = "Configuración de Correo";
+}
+
+<!-- Agregar el mismo CSS -->
+<link rel="stylesheet" href="~/css/StylePerfil.css" asp-append-version="true" />
+
+<div class="container-fluid perfil-container">
+    <!-- Mensajes de alerta -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success-usuarios alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger-usuarios alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="alert alert-danger-usuarios alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @ViewBag.ErrorMessage
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Columna izquierda - Información de la configuración -->
+        <div class="col-lg-4 col-md-5 slide-in-left">
+            <div class="card perfil-card hover-lift mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-server me-2 animated-icon"></i>Estado del Servidor
+                    </h5>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Icono del servidor -->
+                    <div class="mb-3">
+                        <div class="avatar-circle d-inline-flex align-items-center justify-content-center rounded-circle"
+                             style="width: 100px; height: 100px; font-size: 2rem; background: linear-gradient(135deg, var(--esparza-green), #1b5e20);">
+                            <i class="fas fa-envelope text-white"></i>
+                        </div>
+                    </div>
+
+                    <!-- Información básica del servidor -->
+                    <h4 class="user-name">@Model.SmtpHost</h4>
+                    <p class="user-email mb-3">Puerto: @Model.SmtpPort</p>
+                    <p class="user-cedula mb-3">@(Model.UseStartTls ? "STARTTLS Activado" : "Conexión Estándar")</p>
+
+                    <!-- Estado de conexión -->
+                    <div class="d-grid gap-2 mt-3">
+                        <div class="d-flex justify-content-between text-start">
+                            <small class="text-muted">Estado:</small>
+                            <small class="fw-bold text-success">
+                                <i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i>
+                                Configurado
+                            </small>
+                        </div>
+                        <div class="d-flex justify-content-between text-start">
+                            <small class="text-muted">Autenticación:</small>
+                            <small class="fw-bold text-success">
+                                <i class="fas fa-check-circle me-1" style="font-size: 0.6rem;"></i>
+                                Activa
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta de acciones rápidas -->
+            <div class="card perfil-card hover-lift">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 animated-icon"></i>Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-action="TestConnection" class="btn btn-perfil-primary btn-sm">
+                            <i class="fas fa-plug me-1"></i>Probar Conexión
+                        </a>
+                        <button type="button" class="btn btn-perfil-secondary btn-sm" onclick="mostrarConfiguracion()">
+                            <i class="fas fa-eye me-1"></i>Ver Configuración
+                        </button>
+                        <a href="#" class="btn btn-outline-danger btn-sm">
+                            <i class="fas fa-history me-1"></i>Restablecer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Columna derecha - Formulario de configuración -->
+        <div class="col-lg-8 col-md-7 slide-in-right">
+            <div class="card perfil-card hover-lift">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2 animated-icon"></i>Configuración del Servidor SMTP
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="formEmailConfig" class="form-perfil" asp-action="Update" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row">
+                            <!-- Servidor SMTP -->
+                            <div class="col-md-6 mb-3">
+                                <label for="SmtpHost" class="form-label">Servidor SMTP</label>
+                                <input asp-for="SmtpHost" class="form-control"
+                                       placeholder="Ej: smtp.gmail.com" required />
+                                <div class="form-text">Dirección del servidor de correo saliente.</div>
+                            </div>
+
+                            <!-- Puerto SMTP -->
+                            <div class="col-md-6 mb-3">
+                                <label for="SmtpPort" class="form-label">Puerto SMTP</label>
+                                <input asp-for="SmtpPort" class="form-control" type="number"
+                                       placeholder="Ej: 587" required />
+                                <div class="form-text">Puerto para la conexión SMTP.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Correo de origen -->
+                            <div class="col-md-6 mb-3">
+                                <label for="FromEmail" class="form-label">Correo de Origen</label>
+                                <input asp-for="FromEmail" class="form-control" type="email"
+                                       placeholder="Ej: correo@dominio.com" required />
+                                <div class="form-text">Dirección de correo que aparecerá como remitente.</div>
+                            </div>
+
+                            <!-- Nombre de origen -->
+                            <div class="col-md-6 mb-3">
+                                <label for="FromName" class="form-label">Nombre de Origen</label>
+                                <input asp-for="FromName" class="form-control"
+                                       placeholder="Ej: Biblioteca ESPARZA" required />
+                                <div class="form-text">Nombre que aparecerá como remitente.</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Usuario SMTP -->
+                            <div class="col-md-6 mb-3">
+                                <label for="Username" class="form-label">Usuario SMTP</label>
+                                <input asp-for="Username" class="form-control"
+                                       placeholder="Ej: correo@dominio.com" required />
+                                <div class="form-text">Usuario para autenticación en el servidor.</div>
+                            </div>
+
+                            <!-- Contraseña SMTP -->
+                            <div class="col-md-6 mb-3">
+                                <label for="Password" class="form-label">Contraseña SMTP</label>
+                                <div class="input-group">
+                                    <input asp-for="Password" class="form-control" type="password"
+                                           placeholder="Ingresa la contraseña" />
+                                    <button type="button" class="btn btn-outline-secondary"
+                                            onclick="togglePasswordVisibility('Password')">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Contraseña de aplicación o del correo.</div>
+                            </div>
+                        </div>
+
+                        <!-- STARTTLS -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="UseStartTls" class="form-check-input" type="checkbox"
+                                       style="width: 3rem; height: 1.5rem;" />
+                                <label class="form-check-label fw-bold" for="UseStartTls">
+                                    Usar STARTTLS
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                Habilita el cifrado STARTTLS para conexiones seguras (recomendado para puerto 587).
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-perfil-primary">
+                                <i class="fas fa-save me-1"></i>Guardar Configuración
+                            </button>
+                            <button type="button" class="btn btn-perfil-secondary" onclick="resetForm()">
+                                <i class="fas fa-undo me-1"></i>Restablecer
+                            </button>
+                            <a asp-action="TestConnection" class="btn btn-outline-success">
+                                <i class="fas fa-plug me-1"></i>Probar Conexión
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información de configuración actual -->
+            <div class="card perfil-card hover-lift mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2 animated-icon"></i>Configuración Actual
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="config-item mb-3">
+                                <small class="text-muted d-block">Servidor SMTP</small>
+                                <strong>@Model.SmtpHost</strong>
+                            </div>
+                            <div class="config-item mb-3">
+                                <small class="text-muted d-block">Puerto</small>
+                                <strong>@Model.SmtpPort</strong>
+                            </div>
+                            <div class="config-item mb-3">
+                                <small class="text-muted d-block">Correo de Origen</small>
+                                <strong>@Model.FromEmail</strong>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="config-item mb-3">
+                                <small class="text-muted d-block">Nombre de Origen</small>
+                                <strong>@Model.FromName</strong>
+                            </div>
+                            <div class="config-item mb-3">
+                                <small class="text-muted d-block">Usuario</small>
+                                <strong>@Model.Username</strong>
+                            </div>
+                            <div class="config-item mb-3">
+                                <small class="text-muted d-block">STARTTLS</small>
+                                <strong>@(Model.UseStartTls ? "Activado" : "Desactivado")</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-ocultar alertas después de 5 segundos
+            setTimeout(function() {
+                document.querySelectorAll('.alert').forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+
+            // Validar formulario
+            const form = document.getElementById('formEmailConfig');
+            form.addEventListener('submit', function(e) {
+                const smtpHost = document.getElementById('SmtpHost').value;
+                const smtpPort = document.getElementById('SmtpPort').value;
+                const fromEmail = document.getElementById('FromEmail').value;
+
+                if (!smtpHost || !smtpPort || !fromEmail) {
+                    e.preventDefault();
+                    alert('Por favor, complete los campos obligatorios.');
+                    return false;
+                }
+
+                // Mostrar confirmación
+                if (!confirm('¿Está seguro de que desea guardar la configuración de correo?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+
+        function togglePasswordVisibility(fieldId) {
+            const passwordField = document.getElementById(fieldId);
+            const icon = passwordField.nextElementSibling.querySelector('i');
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordField.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        function resetForm() {
+            if (confirm('¿Está seguro de que desea restablecer todos los campos?')) {
+                document.getElementById('formEmailConfig').reset();
+            }
+        }
+
+        function mostrarConfiguracion() {
+            const configSection = document.querySelector('.card .card-body .row');
+            if (configSection) {
+                configSection.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+
+                // Efecto visual temporal
+                configSection.style.backgroundColor = 'rgba(255, 255, 0, 0.1)';
+                setTimeout(() => {
+                    configSection.style.backgroundColor = '';
+                }, 2000);
+            }
+        }
+    </script>
+}

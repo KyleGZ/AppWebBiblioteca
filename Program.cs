@@ -68,6 +68,7 @@ builder.Services.AddScoped<IAutorService, AutorService>();
 builder.Services.AddScoped<IGeneroService, GeneroService>();
 builder.Services.AddScoped<ISeccionService, SeccionService>();
 builder.Services.AddScoped<IEditorialService, EditorialService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 /*
  * Servicio para manejo de imágenes
