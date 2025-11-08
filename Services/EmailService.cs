@@ -37,27 +37,67 @@ namespace AppWebBiblioteca.Services
             }
 
         }
-             public async Task<bool> UpdateSettingsAsync(EmailSettings settings)
-            {
+        public async Task<ApiResponse> UpdateSettingsAsync(UpdateEmailSettings settings)
+        {
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/EmailSettings/UpdateSettings";
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, settings);
 
                 if (response.IsSuccessStatusCode)
-                    return true;
+                {
+                    // Leer la respuesta exitosa
+                    var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse>();
+                    return apiResponse ?? new ApiResponse
+                    {
+                        Success = true,
+                        Message = "Configuración actualizada correctamente"
+                    };
+                }
+                else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    // Leer la respuesta de bad request
+                    var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse>();
+                    return apiResponse ?? new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Error de validación en la solicitud"
+                    };
+                }
+                else
+                {
+                    // Para otros códigos de error
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("No se pudo actualizar la configuración. Código: {StatusCode}, Respuesta: {Error}",
+                        response.StatusCode, errorContent);
 
-                _logger.LogWarning("No se pudo actualizar la configuración. Código: {StatusCode}", response.StatusCode);
-                return false;
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Error del servidor: {response.StatusCode}"
+                    };
+                }
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "Error de conexión al actualizar la configuración de correo.");
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error de conexión con el servidor"
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al actualizar la configuración de correo.");
-                return false;
+                _logger.LogError(ex, "Error inesperado al actualizar la configuración de correo.");
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error inesperado al procesar la solicitud"
+                };
             }
         }
-
-        public async Task<bool> TestConnectionAsync()
+        public async Task<ApiResponse> TestConnectionAsync()
         {
             try
             {
@@ -65,15 +105,50 @@ namespace AppWebBiblioteca.Services
                 var response = await _httpClient.GetAsync(apiUrl);
 
                 if (response.IsSuccessStatusCode)
-                    return true;
+                {
+                    // Leer la respuesta exitosa de la API
+                    var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse>();
+                    return apiResponse ?? new ApiResponse
+                    {
+                        Success = true,
+                        Message = "Conexión SMTP probada exitosamente"
+                    };
+                }
+                else
+                {
+                    // Leer la respuesta de error de la API
+                    var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse>();
 
-                _logger.LogWarning("Prueba de conexión SMTP fallida. Código: {StatusCode}", response.StatusCode);
-                return false;
+                    if (apiResponse != null)
+                    {
+                        return apiResponse;
+                    }
+
+                    // Fallback si no se pudo leer la respuesta
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Error del servidor: {response.StatusCode}"
+                    };
+                }
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "Error de conexión al probar configuración SMTP.");
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error de conexión con el servidor API"
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al probar la conexión SMTP.");
-                return false;
+                _logger.LogError(ex, "Error inesperado al probar conexión SMTP.");
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Error inesperado al procesar la solicitud"
+                };
             }
         }
     }
@@ -81,8 +156,8 @@ namespace AppWebBiblioteca.Services
     public interface IEmailService
     {
         Task<EmailSettings> GetSettingsAsync();
-        Task<bool> UpdateSettingsAsync(EmailSettings settings);
-        Task<bool> TestConnectionAsync();
+        Task<ApiResponse> UpdateSettingsAsync(UpdateEmailSettings settings);
+        Task<ApiResponse> TestConnectionAsync();
 
     }
 }

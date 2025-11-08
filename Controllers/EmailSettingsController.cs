@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
@@ -17,7 +18,7 @@ namespace AppWebBiblioteca.Controllers
             _logger = logger;
             _authService = authService;
         }
-
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -28,7 +29,18 @@ namespace AppWebBiblioteca.Controllers
                     return RedirectToAction("Login", "Usuario");
                 }
                 var settings = await _emailService.GetSettingsAsync();
-                return View(settings);
+                var updateModel = new UpdateEmailSettings
+                {
+                    FromName = settings.FromName,
+                    FromEmail = settings.FromEmail,
+                    SmtpHost = settings.SmtpHost,
+                    SmtpPort = settings.SmtpPort,
+                    UseStartTls = settings.UseStartTls,
+                    Username = settings.Username,
+                    Password = string.Empty // No llenar el campo de contraseña por seguridad
+                };
+
+                return View(updateModel);
             }
             catch (Exception ex)
             {
@@ -38,63 +50,111 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Update(EmailSettings model)
-        {
-            if(!_authService.IsAuthenticated())
-            {
-                return RedirectToAction("Login", "Usuario");
-            }
+        //[HttpPost]
+        //public async Task<IActionResult> Update(UpdateEmailSettings settings)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //        {
+        //            return RedirectToAction("Login", "Usuario");
+        //        }
 
-            if (!ModelState.IsValid)
-            {
-                TempData["Error"] = "Hay errores en el formulario. Verifique los datos.";
-                return View("Index", model);
-            }
+        //        if (!ModelState.IsValid)
+        //        {
+        //            TempData["ErrorMessage"] = "Hay errores en el formulario. Verifique los datos.";
+        //            return View("Index", settings);
+        //        }
 
-            var result = await _emailService.UpdateSettingsAsync(model);
+        //        var result = await _emailService.UpdateSettingsAsync(settings);
 
-            if (result)
-            {
-                TempData["Success"] = "Configuración de correo actualizada correctamente.";
-            }
-            else
-            {
-                TempData["Error"] = "No se pudo actualizar la configuración. Revise el log para más detalles.";
-            }
+        //        if (result.Success)
+        //        {
+        //            TempData["SuccessMessage"] = result.Message ?? "Configuración de correo actualizada correctamente.";
+        //        }
+        //        else
+        //        {
+        //            TempData["ErrorMessage"] = result.Message ?? "No se pudo actualizar la configuración.";
+        //        }
 
-            return RedirectToAction(nameof(Index));
-        }
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error inesperado al actualizar configuración de correo");
+        //        TempData["ErrorMessage"] = "Error inesperado al procesar la solicitud.";
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //}
 
-        // GET: /EmailSettings/TestConnection
-        [HttpGet]
-        public async Task<IActionResult> TestConnection()
+        public async Task<IActionResult> Update(UpdateEmailSettings settings)
         {
             try
             {
-                if(!_authService.IsAuthenticated())
+                if (!_authService.IsAuthenticated())
                 {
                     return RedirectToAction("Login", "Usuario");
                 }
 
-                var success = await _emailService.TestConnectionAsync();
+                if (!ModelState.IsValid)
+                {
+                    // Recopilar todos los mensajes de error específicos
+                    var errorMessages = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
 
-                if (success)
-                    TempData["Success"] = "La conexión SMTP se probó exitosamente.";
+                    TempData["ErrorMessage"] = "Hay errores en el formulario: " + string.Join("; ", errorMessages);
+                    return View("Index", settings);
+                }
+
+                var result = await _emailService.UpdateSettingsAsync(settings);
+
+                if (result.Success)
+                {
+                    TempData["SuccessMessage"] = result.Message ?? "Configuración de correo actualizada correctamente.";
+                }
                 else
-                    TempData["Error"] = "Falló la prueba de conexión SMTP.";
+                {
+                    TempData["ErrorMessage"] = result.Message ?? "No se pudo actualizar la configuración.";
+                }
 
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error probando conexión SMTP.");
-                TempData["Error"] = "Ocurrió un error al probar la conexión SMTP.";
+                _logger.LogError(ex, "Error inesperado al actualizar configuración de correo");
+                TempData["ErrorMessage"] = "Error inesperado al procesar la solicitud.";
                 return RedirectToAction(nameof(Index));
             }
         }
 
+
+
+        // GET: /EmailSettings/TestConnection
+        [HttpGet]
+        public async Task<IActionResult> TestConnection()
+        {
+            var result = await _emailService.TestConnectionAsync();
+
+            if (result.Success)
+            {
+                TempData["SuccessMessage"] = result.Message;
+            }
+            else
+            {
+                TempData["ErrorMessage"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet("TestConnectionAjax")]
+        public async Task<IActionResult> TestConnectionAjax()
+        {
+            var result = await _emailService.TestConnectionAsync();
+            return Json(result);
+        }
 
 
     }

@@ -1,4 +1,4 @@
-﻿@model AppWebBiblioteca.Models.EmailSettings
+﻿@model AppWebBiblioteca.Models.UpdateEmailSettings
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Configuración de Correo";
@@ -9,34 +9,6 @@
 <link rel="stylesheet" href="~/css/StylePerfil.css" asp-append-version="true" />
 
 <div class="container-fluid perfil-container">
-    <!-- Mensajes de alerta -->
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success-usuarios alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            @TempData["Success"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger-usuarios alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-triangle me-2"></i>
-            @TempData["Error"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
-    @if (ViewBag.ErrorMessage != null)
-    {
-        <div class="alert alert-danger-usuarios alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            @ViewBag.ErrorMessage
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
-
     <div class="row">
         <!-- Columna izquierda - Información de la configuración -->
         <div class="col-lg-4 col-md-5 slide-in-left">
@@ -64,19 +36,30 @@
                     <div class="d-grid gap-2 mt-3">
                         <div class="d-flex justify-content-between text-start">
                             <small class="text-muted">Estado:</small>
-                            <small class="fw-bold text-success">
+                            <small class="fw-bold" id="connectionStatus">
                                 <i class="fas fa-circle me-1" style="font-size: 0.6rem;"></i>
-                                Configurado
+                                <span id="statusText">Verificando...</span>
                             </small>
                         </div>
                         <div class="d-flex justify-content-between text-start">
                             <small class="text-muted">Autenticación:</small>
-                            <small class="fw-bold text-success">
+                            <small class="fw-bold" id="authStatus">
                                 <i class="fas fa-check-circle me-1" style="font-size: 0.6rem;"></i>
-                                Activa
+                                <span id="authText">Verificando...</span>
+                            </small>
+                        </div>
+                        <div class="d-flex justify-content-between text-start">
+                            <small class="text-muted">Última verificación:</small>
+                            <small class="text-muted" id="lastCheck">
+                                Justo ahora
                             </small>
                         </div>
                     </div>
+
+                    <!-- Botón para probar manualmente -->
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="testConnectionStatus()">
+                        <i class="fas fa-sync-alt me-1"></i>Probar Ahora
+                    </button>
                 </div>
             </div>
 
@@ -91,12 +74,6 @@
                     <div class="d-grid gap-2">
                         <a asp-action="TestConnection" class="btn btn-perfil-primary btn-sm">
                             <i class="fas fa-plug me-1"></i>Probar Conexión
-                        </a>
-                        <button type="button" class="btn btn-perfil-secondary btn-sm" onclick="mostrarConfiguracion()">
-                            <i class="fas fa-eye me-1"></i>Ver Configuración
-                        </button>
-                        <a href="#" class="btn btn-outline-danger btn-sm">
-                            <i class="fas fa-history me-1"></i>Restablecer
                         </a>
                     </div>
                 </div>
@@ -115,20 +92,23 @@
                     <form id="formEmailConfig" class="form-perfil" asp-action="Update" method="post">
                         @Html.AntiForgeryToken()
 
+                        <!-- Mostrar errores generales -->
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger-usuarios"></div>
+
                         <div class="row">
                             <!-- Servidor SMTP -->
                             <div class="col-md-6 mb-3">
-                                <label for="SmtpHost" class="form-label">Servidor SMTP</label>
-                                <input asp-for="SmtpHost" class="form-control"
-                                       placeholder="Ej: smtp.gmail.com" required />
+                                <label asp-for="SmtpHost" class="form-label"></label>
+                                <input asp-for="SmtpHost" class="form-control" placeholder="Ej: smtp.gmail.com" />
+                                <span asp-validation-for="SmtpHost" class="text-danger"></span>
                                 <div class="form-text">Dirección del servidor de correo saliente.</div>
                             </div>
 
                             <!-- Puerto SMTP -->
                             <div class="col-md-6 mb-3">
-                                <label for="SmtpPort" class="form-label">Puerto SMTP</label>
-                                <input asp-for="SmtpPort" class="form-control" type="number"
-                                       placeholder="Ej: 587" required />
+                                <label asp-for="SmtpPort" class="form-label"></label>
+                                <input asp-for="SmtpPort" class="form-control" type="number" placeholder="Ej: 587" />
+                                <span asp-validation-for="SmtpPort" class="text-danger"></span>
                                 <div class="form-text">Puerto para la conexión SMTP.</div>
                             </div>
                         </div>
@@ -136,17 +116,17 @@
                         <div class="row">
                             <!-- Correo de origen -->
                             <div class="col-md-6 mb-3">
-                                <label for="FromEmail" class="form-label">Correo de Origen</label>
-                                <input asp-for="FromEmail" class="form-control" type="email"
-                                       placeholder="Ej: correo@dominio.com" required />
+                                <label asp-for="FromEmail" class="form-label"></label>
+                                <input asp-for="FromEmail" class="form-control" type="email" placeholder="Ej: correo@dominio.com" />
+                                <span asp-validation-for="FromEmail" class="text-danger"></span>
                                 <div class="form-text">Dirección de correo que aparecerá como remitente.</div>
                             </div>
 
                             <!-- Nombre de origen -->
                             <div class="col-md-6 mb-3">
-                                <label for="FromName" class="form-label">Nombre de Origen</label>
-                                <input asp-for="FromName" class="form-control"
-                                       placeholder="Ej: Biblioteca ESPARZA" required />
+                                <label asp-for="FromName" class="form-label"></label>
+                                <input asp-for="FromName" class="form-control" placeholder="Ej: Biblioteca ESPARZA" />
+                                <span asp-validation-for="FromName" class="text-danger"></span>
                                 <div class="form-text">Nombre que aparecerá como remitente.</div>
                             </div>
                         </div>
@@ -154,23 +134,22 @@
                         <div class="row">
                             <!-- Usuario SMTP -->
                             <div class="col-md-6 mb-3">
-                                <label for="Username" class="form-label">Usuario SMTP</label>
-                                <input asp-for="Username" class="form-control"
-                                       placeholder="Ej: correo@dominio.com" required />
+                                <label asp-for="Username" class="form-label"></label>
+                                <input asp-for="Username" class="form-control" placeholder="Ej: correo@dominio.com" />
+                                <span asp-validation-for="Username" class="text-danger"></span>
                                 <div class="form-text">Usuario para autenticación en el servidor.</div>
                             </div>
 
                             <!-- Contraseña SMTP -->
                             <div class="col-md-6 mb-3">
-                                <label for="Password" class="form-label">Contraseña SMTP</label>
+                                <label asp-for="Password" class="form-label"></label>
                                 <div class="input-group">
-                                    <input asp-for="Password" class="form-control" type="password"
-                                           placeholder="Ingresa la contraseña" />
-                                    <button type="button" class="btn btn-outline-secondary"
-                                            onclick="togglePasswordVisibility('Password')">
+                                    <input asp-for="Password" class="form-control" type="password" placeholder="Ingresa la contraseña" />
+                                    <button type="button" class="btn btn-outline-secondary" onclick="togglePasswordVisibility('Password')">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                 </div>
+                                <span asp-validation-for="Password" class="text-danger"></span>
                                 <div class="form-text">Contraseña de aplicación o del correo.</div>
                             </div>
                         </div>
@@ -178,12 +157,10 @@
                         <!-- STARTTLS -->
                         <div class="mb-4">
                             <div class="form-check form-switch">
-                                <input asp-for="UseStartTls" class="form-check-input" type="checkbox"
-                                       style="width: 3rem; height: 1.5rem;" />
-                                <label class="form-check-label fw-bold" for="UseStartTls">
-                                    Usar STARTTLS
-                                </label>
+                                <input asp-for="UseStartTls" class="form-check-input" type="checkbox" style="width: 3rem; height: 1.5rem;" />
+                                <label asp-for="UseStartTls" class="form-check-label fw-bold"></label>
                             </div>
+                            <span asp-validation-for="UseStartTls" class="text-danger"></span>
                             <div class="form-text">
                                 Habilita el cifrado STARTTLS para conexiones seguras (recomendado para puerto 587).
                             </div>
@@ -197,9 +174,6 @@
                             <button type="button" class="btn btn-perfil-secondary" onclick="resetForm()">
                                 <i class="fas fa-undo me-1"></i>Restablecer
                             </button>
-                            <a asp-action="TestConnection" class="btn btn-outline-success">
-                                <i class="fas fa-plug me-1"></i>Probar Conexión
-                            </a>
                         </div>
                     </form>
                 </div>
@@ -248,37 +222,39 @@
         </div>
     </div>
 </div>
-
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Auto-ocultar alertas después de 5 segundos
-            setTimeout(function() {
-                document.querySelectorAll('.alert').forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
+            // 1. Mostrar mensajes del TempData en el modal global
+            const successMessage = '@Html.Raw(TempData["SuccessMessage"] != null ? System.Net.WebUtility.HtmlEncode(TempData["SuccessMessage"].ToString()) : "")';
+            const errorMessage = '@Html.Raw(TempData["ErrorMessage"] != null ? System.Net.WebUtility.HtmlEncode(TempData["ErrorMessage"].ToString()) : "")';
+            const viewErrorMessage = '@Html.Raw(ViewBag.ErrorMessage != null ? System.Net.WebUtility.HtmlEncode(ViewBag.ErrorMessage.ToString()) : "")';
 
-            // Validar formulario
+            if (successMessage) {
+                showSuccess(successMessage);
+            }
+
+            if (errorMessage) {
+                showError(errorMessage);
+            }
+
+            if (viewErrorMessage) {
+                showError(viewErrorMessage);
+            }
+
+            // 2. Configurar el formulario
             const form = document.getElementById('formEmailConfig');
             form.addEventListener('submit', function(e) {
-                const smtpHost = document.getElementById('SmtpHost').value;
-                const smtpPort = document.getElementById('SmtpPort').value;
-                const fromEmail = document.getElementById('FromEmail').value;
-
-                if (!smtpHost || !smtpPort || !fromEmail) {
-                    e.preventDefault();
-                    alert('Por favor, complete los campos obligatorios.');
-                    return false;
-                }
-
                 // Mostrar confirmación
                 if (!confirm('¿Está seguro de que desea guardar la configuración de correo?')) {
                     e.preventDefault();
                     return false;
                 }
             });
+
+            // 3. Probar conexión automáticamente al cargar la página
+            testConnectionStatus();
+
         });
 
         function togglePasswordVisibility(fieldId) {
@@ -299,6 +275,7 @@
         function resetForm() {
             if (confirm('¿Está seguro de que desea restablecer todos los campos?')) {
                 document.getElementById('formEmailConfig').reset();
+                showSuccess('Formulario restablecido correctamente.', 'Formulario Restablecido');
             }
         }
 
@@ -316,6 +293,54 @@
                     configSection.style.backgroundColor = '';
                 }, 2000);
             }
+        }
+
+        function testConnectionStatus() {
+            // Mostrar estado de carga
+            document.getElementById('statusText').textContent = 'Probando...';
+            document.getElementById('authText').textContent = 'Probando...';
+            document.getElementById('connectionStatus').className = 'fw-bold text-warning';
+            document.getElementById('authStatus').className = 'fw-bold text-warning';
+
+            fetch('@Url.Action("TestConnectionAjax", "EmailSettings")')
+                .then(response => response.json())
+                .then(data => {
+                    const connectionElement = document.getElementById('connectionStatus');
+                    const authElement = document.getElementById('authStatus');
+                    const statusText = document.getElementById('statusText');
+                    const authText = document.getElementById('authText');
+                    const lastCheck = document.getElementById('lastCheck');
+
+                    if (data.success) {
+                        // Conexión exitosa
+                        connectionElement.className = 'fw-bold text-success';
+                        statusText.textContent = 'Conectado';
+                        connectionElement.querySelector('i').className = 'fas fa-check-circle me-1';
+
+                        authElement.className = 'fw-bold text-success';
+                        authText.textContent = 'Activa';
+                        authElement.querySelector('i').className = 'fas fa-check-circle me-1';
+                    } else {
+                        // Error de conexión
+                        connectionElement.className = 'fw-bold text-danger';
+                        statusText.textContent = 'Error';
+                        connectionElement.querySelector('i').className = 'fas fa-times-circle me-1';
+
+                        authElement.className = 'fw-bold text-danger';
+                        authText.textContent = 'Fallida';
+                        authElement.querySelector('i').className = 'fas fa-times-circle me-1';
+                    }
+
+                    // Actualizar timestamp
+                    lastCheck.textContent = new Date().toLocaleTimeString();
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('statusText').textContent = 'Error';
+                    document.getElementById('authText').textContent = 'Error';
+                    document.getElementById('connectionStatus').className = 'fw-bold text-danger';
+                    document.getElementById('authStatus').className = 'fw-bold text-danger';
+                });
         }
     </script>
 }
