@@ -150,6 +150,28 @@
             }
           }
 
+          // ---------- Función para mostrar notificaciones ----------
+          function showNotification(success, message) {
+            // Crear elemento de notificación
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${success ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                <i class="fas ${success ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-eliminar después de 5 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+          }
+
           // ---------- Cablear cada contenedor de pestaña ----------
           function wireTabHost(host){
             if(!host) return;
@@ -170,27 +192,49 @@
                 return;
               }
 
-              // Crear / Editar / Eliminar (POST)
+              // Crear / Editar / Eliminar (POST) - MODIFICADO
               const isCrud = action.endsWith('/crear') || action.endsWith('/editar') || action.endsWith('/eliminar');
               if(isCrud && isPost){
                 e.preventDefault();
+
                 fetch(action, {
                   method: 'POST',
                   body: new FormData(form),
-                  headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                  headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                  }
                 })
-                .then(async () => {
-                  const urlToReload = host.dataset.urlCurrent || host.dataset.urlDefault;
-                  if(urlToReload) await loadInto(host, urlToReload);
+                .then(async (response) => {
+                  let result;
+                  try {
+                    result = await response.json();
+                  } catch (jsonError) {
+                    console.error('Error parsing JSON:', jsonError);
+                    showNotification(false, 'Error en la respuesta del servidor');
+                    return;
+                  }
 
+                  // Mostrar notificación
+                  showNotification(result.success, result.message);
+
+                  // Recargar el contenido de la pestaña si fue exitoso
+                  if (result.success) {
+                    const urlToReload = host.dataset.urlCurrent || host.dataset.urlDefault;
+                    if(urlToReload) {
+                      await loadInto(host, urlToReload);
+                    }
+                  }
+
+                  // Cerrar el modal
                   const modalEl = form.closest('.modal');
                   if(modalEl && window.bootstrap){
                     (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)).hide();
                   }
                 })
                 .catch(err => {
-                  console.error(err);
-                  alert('Ocurrió un error procesando la acción.');
+                  console.error('Fetch error:', err);
+                  showNotification(false, 'Ocurrió un error procesando la acción.');
                 });
               }
             });
@@ -331,4 +375,3 @@
         })();
     </script>
 }
-
