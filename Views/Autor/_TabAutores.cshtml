@@ -1,0 +1,230 @@
+﻿@model PaginacionResponse<AppWebBiblioteca.Models.AutorDto>
+
+@{
+    var autores = Model?.Data ?? new List<AppWebBiblioteca.Models.AutorDto>();
+    var pag = Model?.Pagination ?? new PaginationInfo();
+    var termino = ViewBag.TerminoBusqueda as string ?? "";
+    var returnUrl = Url.Action("Index", "SociosLectores", new { tab = "autores" });
+}
+
+<!-- Header compacto -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">
+        <i class="fas fa-feather-alt me-2"></i> Autores
+    </h5>
+
+    <button type="button"
+            class="btn btn-autores-primary btn-sm"
+            data-bs-toggle="modal" data-bs-target="#modalAgregarAutor">
+        <i class="fas fa-user-plus"></i> Nuevo Autor
+    </button>
+</div>
+
+<!-- Búsqueda -->
+<form method="get" id="searchFormAutores" action="@Url.Action("Tab","Autor")" class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+        <input name="termino" id="searchInputAutores" class="form-control" placeholder="Buscar por nombre de autor..." value="@termino" />
+        <button class="btn btn-esparza-primary" id="btnBuscarAutores" type="submit">
+            <i class="fas fa-search me-1"></i> Buscar
+        </button>
+    </div>
+
+    <input type="hidden" name="pagina" id="paginaHiddenAutores" value="@pag.PaginaActual" />
+    <input type="hidden" name="resultadosPorPagina" id="rppHiddenAutores" value="@pag.ResultadosPorPagina" />
+</form>
+
+<!-- Info -->
+<div class="text-muted small mb-2">
+    <span>@(pag.TotalResultados)</span>
+    <span>@(string.IsNullOrWhiteSpace(termino) ? "autor(es) registrados" : $"autor(es) encontrados para \"{termino}\"")</span>
+</div>
+
+@if (autores.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-autores">
+            <thead>
+                <tr>
+                    <th style="width:120px;">ID</th>
+                    <th>Nombre</th>
+                    <th class="text-center" style="width:220px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in autores)
+                {
+                    <tr>
+                        <td class="fw-bold">#@a.IdAutor</td>
+                        <td><i class="fas fa-user-pen me-2 text-muted"></i>@a.Nombre</td>
+                        <td class="text-center">
+                            <div class="btn-actions-group justify-content-center">
+                                <button type="button" class="btn btn-action btn-action-edit"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditarAutor"
+                                        data-id="@a.IdAutor" data-nombre="@a.Nombre"
+                                        title="Editar Autor">
+                                    <i class="fas fa-edit icon-elegant"></i>
+                                </button>
+                                <button type="button" class="btn btn-action btn-action-deactivate"
+                                        data-bs-toggle="modal" data-bs-target="#modalEliminarAutor"
+                                        data-id="@a.IdAutor" data-nombre="@a.Nombre"
+                                        title="Eliminar Autor">
+                                    <i class="fas fa-trash-alt icon-elegant"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (pag.TotalPaginas > 1)
+    {
+        <!-- ✅ PAGINACIÓN SIN ERRORES -->
+        <ul class="pagination pagination-sm mt-3">
+            <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="1" title="Primera"><i class="fas fa-angle-double-left"></i></a>
+            </li>
+            <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual - 1)" title="Anterior"><i class="fas fa-chevron-left"></i></a>
+            </li>
+
+            @{
+                var ini = Math.Max(1, pag.PaginaActual - 2);
+                var fin = Math.Min(pag.TotalPaginas, pag.PaginaActual + 2);
+            }
+
+            @for (int i = ini; i <= fin; i++)
+            {
+                <li class="page-item @(i == pag.PaginaActual ? "active" : "")">
+                    <a href="#" class="page-link js-page" data-page="@i">@i</a>
+                </li>
+            }
+
+            <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual + 1)" title="Siguiente"><i class="fas fa-chevron-right"></i></a>
+            </li>
+            <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="@pag.TotalPaginas" title="Última"><i class="fas fa-angle-double-right"></i></a>
+            </li>
+
+            <!-- ✅ SELECT SIN C# EN ATRIBUTOS -->
+            <li class="ms-2">
+                @{
+                    var rpps = new[] { 20, 50, 100 };
+                    var rppActual = pag.ResultadosPorPagina;
+                }
+                <select class="form-select form-select-sm d-inline-block w-auto"
+                        name="resultadosPorPagina"
+                        id="rppSelectAutores">
+                    @foreach (var n in rpps)
+                    {
+                        if (n == rppActual)
+                        {
+                            <option value="@n" selected="selected">@n</option>
+                        }
+                        else
+                        {
+                            <option value="@n">@n</option>
+                        }
+                    }
+                </select>
+            </li>
+        </ul>
+    }
+}
+else
+{
+    <div class="text-center text-muted py-4">
+        <i class="fas fa-search fa-2x mb-2"></i>
+        <div>No hay autores que coincidan.</div>
+    </div>
+}
+
+<!-- Modales (IMPORTANTE: returnUrl para volver al tab actual) -->
+<!-- Modal Agregar -->
+<div class="modal fade modal-autores" id="modalAgregarAutor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i> Agregar Nuevo Autor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Crear" asp-controller="Autor" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <div class="modal-body">
+                    <div class="form-group-autores">
+                        <label class="form-label-autores"><i class="fas fa-signature"></i> Nombre del Autor</label>
+                        <input type="text" class="form-control form-control-autores" name="nombre" required placeholder="Ingrese el nombre">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-autores-primary"><i class="fas fa-save me-2"></i>Guardar Autor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade modal-autores" id="modalEditarAutor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Editar Autor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Editar" asp-controller="Autor" method="post" id="formEditarAutor">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <input type="hidden" id="editarIdAutor" name="idAutor" />
+                <div class="modal-body">
+                    <div class="form-group-autores">
+                        <label class="form-label-autores"><i class="fas fa-signature"></i> Nombre del Autor</label>
+                        <input type="text" class="form-control form-control-autores" id="editarNombreAutor" name="nombre" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-autores-primary"><i class="fas fa-save me-2"></i>Actualizar Autor</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar -->
+<div class="modal fade modal-autores" id="modalEliminarAutor" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i> Eliminar Autor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Eliminar" asp-controller="Autor" method="post" id="formEliminarAutor">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <input type="hidden" id="eliminarIdAutor" name="idAutor">
+                <div class="modal-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                        <h5>¿Eliminar Autor?</h5>
+                    </div>
+                    <p>Está a punto de eliminar al autor:</p>
+                    <h6 class="text-danger mb-0" id="nombreAutorEliminar"></h6>
+                    <p class="text-muted small mt-2">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Esta acción no se puede deshacer.
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal"><i class="fas fa-times me-2"></i>Cancelar</button>
+                    <button type="submit" class="btn btn-action-deactivate"><i class="fas fa-trash-alt me-2"></i>Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

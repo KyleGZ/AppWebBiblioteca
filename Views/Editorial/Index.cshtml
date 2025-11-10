@@ -1,0 +1,233 @@
+﻿@model PaginacionResponse<AppWebBiblioteca.Models.EditorialDto>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Gestión de Editoriales - Biblioteca Esparza";
+    ViewData["PageTitle"] = "Gestión de Editoriales";
+
+    var editoriales = Model?.Data ?? new List<AppWebBiblioteca.Models.EditorialDto>();
+    var paginacion = Model?.Pagination ?? new PaginationInfo();
+    var terminoBusqueda = ViewBag.TerminoBusqueda as string ?? "";
+}
+
+<div class="container-fluid p-4">
+    <div class="row justify-content-center fade-in-autores">
+        <div class="col-12">
+            <div class="card autores-card">
+                <div class="card-body p-4">
+
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-building me-2" style="color: var(--esparza-blue);"></i>
+                                Editoriales
+                            </h2>
+                            <p class="text-muted mb-0">Administra las editoriales disponibles para asociar a los libros</p>
+                        </div>
+                        <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarEditorial">
+                            <i class="fas fa-plus"></i> Nueva Editorial
+                        </button>
+                    </div>
+
+                    <!-- Búsqueda -->
+                    <form asp-action="Index" method="get" class="mb-3" id="searchForm">
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                            <input name="termino" id="searchInput" class="form-control" placeholder="Buscar por nombre..." value="@terminoBusqueda" />
+                            <button class="btn btn-esparza-primary" id="btnBuscar" type="submit">
+                                <i class="fas fa-search me-1"></i> Buscar
+                            </button>
+                        </div>
+
+                        <input type="hidden" name="pagina" id="paginaHidden" value="@paginacion.PaginaActual" />
+                        <input type="hidden" name="resultadosPorPagina" id="resultadosPorPaginaHidden" value="@paginacion.ResultadosPorPagina" />
+                    </form>
+
+                    <!-- Info -->
+                    <div class="text-muted small mb-2">
+                        <span>@paginacion.TotalResultados</span>
+                        <span>@(string.IsNullOrWhiteSpace(terminoBusqueda) ? "editoriales registradas" : $"editoriales encontradas para \"{terminoBusqueda}\"")</span>
+                    </div>
+
+                    <!-- Tabla -->
+                    @if (editoriales.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-autores">
+                                <thead>
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Nombre</th>
+                                        <th class="text-center" style="width:220px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var e in editoriales)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">#@e.IdEditorial</td>
+                                            <td>@e.Nombre</td>
+                                            <td class="text-center">
+                                                <button class="btn btn-action btn-action-edit"
+                                                        data-bs-toggle="modal" data-bs-target="#modalEditarEditorial"
+                                                        data-id="@e.IdEditorial" data-nombre="@e.Nombre"
+                                                        title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-action btn-action-deactivate"
+                                                        data-bs-toggle="modal" data-bs-target="#modalEliminarEditorial"
+                                                        data-id="@e.IdEditorial" data-nombre="@e.Nombre"
+                                                        title="Eliminar">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        @if (paginacion.TotalPaginas > 1)
+                        {
+                            <nav aria-label="Paginación" class="mt-3">
+                                <ul class="pagination justify-content-center mb-0">
+                                    <li class="page-item @(paginacion.PaginaActual == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="javascript:cambiarPagina(1)"><i class="fas fa-angle-double-left"></i></a>
+                                    </li>
+                                    <li class="page-item @(paginacion.PaginaActual == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="javascript:cambiarPagina(@(paginacion.PaginaActual - 1))"><i class="fas fa-chevron-left"></i></a>
+                                    </li>
+                                    @{
+                                        var ini = Math.Max(1, paginacion.PaginaActual - 2);
+                                        var fin = Math.Min(paginacion.TotalPaginas, paginacion.PaginaActual + 2);
+                                    }
+                                    @for (int i = ini; i <= fin; i++)
+                                    {
+                                        <li class="page-item @(i == paginacion.PaginaActual ? "active" : "")">
+                                            <a class="page-link" href="javascript:cambiarPagina(@i)">@i</a>
+                                        </li>
+                                    }
+                                    <li class="page-item @(paginacion.PaginaActual >= paginacion.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="javascript:cambiarPagina(@(paginacion.PaginaActual + 1))"><i class="fas fa-chevron-right"></i></a>
+                                    </li>
+                                    <li class="page-item @(paginacion.PaginaActual >= paginacion.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="javascript:cambiarPagina(@paginacion.TotalPaginas)"><i class="fas fa-angle-double-right"></i></a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <div>No hay resultados.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar -->
+<div class="modal fade" id="modalAgregarEditorial" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Crear" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i> Nueva Editorial</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Nombre de la Editorial</label>
+                    <input class="form-control" name="nombre" required />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditarEditorial" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Editar" method="post" id="formEditarEditorial">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editarIdEditorial" name="idEditorial" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i> Editar Editorial</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Nombre</label>
+                    <input class="form-control" id="editarNombreEditorial" name="nombre" required />
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-primary" type="submit">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar -->
+<div class="modal fade" id="modalEliminarEditorial" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Eliminar" method="post" id="formEliminarEditorial">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="eliminarIdEditorial" name="idEditorial" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-trash me-2"></i> Eliminar Editorial</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>¿Desea eliminar la editorial?</p>
+                    <h6 id="nombreEditorialEliminar" class="text-danger"></h6>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-danger" type="submit">Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Paginación
+            window.cambiarPagina = function (pagina) {
+                document.getElementById('paginaHidden').value = pagina;
+                document.getElementById('searchForm').submit();
+            };
+
+            // Editar modal
+            const modalEditar = document.getElementById('modalEditarEditorial');
+            modalEditar.addEventListener('show.bs.modal', function (e) {
+                const btn = e.relatedTarget;
+                document.getElementById('editarIdEditorial').value = btn.getAttribute('data-id');
+                document.getElementById('editarNombreEditorial').value = btn.getAttribute('data-nombre');
+            });
+
+            // Eliminar modal
+            const modalEliminar = document.getElementById('modalEliminarEditorial');
+            modalEliminar.addEventListener('show.bs.modal', function (e) {
+                const btn = e.relatedTarget;
+                document.getElementById('eliminarIdEditorial').value = btn.getAttribute('data-id');
+                document.getElementById('nombreEditorialEliminar').textContent = btn.getAttribute('data-nombre');
+            });
+        });
+    </script>
+}

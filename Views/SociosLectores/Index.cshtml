@@ -1,0 +1,313 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Socios y Lectores";
+
+    string activeTab = (Context.Request.Query["tab"].ToString() ?? string.Empty).ToLowerInvariant();
+    if (string.IsNullOrWhiteSpace(activeTab)) activeTab = "editoriales"; // pestaña por defecto
+
+    bool isAutores = activeTab == "autores";
+    bool isEditoriales = activeTab == "editoriales";
+    bool isGeneros = activeTab == "generos";
+    bool isSecciones = activeTab == "secciones";
+}
+
+<div class="container-fluid p-4">
+    <div class="card">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="mb-0">
+                    <i class="fas fa-users me-2"></i> Socios y Lectores
+                </h2>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs" id="slTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(isEditoriales ? "active" : "")"
+                            id="tab-editoriales"
+                            data-bs-toggle="tab"
+                            data-bs-target="#pane-editoriales"
+                            type="button" role="tab"
+                            aria-controls="pane-editoriales"
+                            aria-selected="@(isEditoriales ? "true" : "false")"
+                            data-tabkey="editoriales">
+                        <i class="fas fa-building me-1"></i>Editoriales
+                    </button>
+                </li>
+
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(isAutores ? "active" : "")"
+                            id="tab-autores"
+                            data-bs-toggle="tab"
+                            data-bs-target="#pane-autores"
+                            type="button" role="tab"
+                            aria-controls="pane-autores"
+                            aria-selected="@(isAutores ? "true" : "false")"
+                            data-tabkey="autores">
+                        <i class="fas fa-feather-alt me-1"></i>Autores
+                    </button>
+                </li>
+
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(isGeneros ? "active" : "")"
+                            id="tab-generos"
+                            data-bs-toggle="tab"
+                            data-bs-target="#pane-generos"
+                            type="button" role="tab"
+                            aria-controls="pane-generos"
+                            aria-selected="@(isGeneros ? "true" : "false")"
+                            data-tabkey="generos">
+                        <i class="fas fa-tag me-1"></i>Géneros
+                    </button>
+                </li>
+
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(isSecciones ? "active" : "")"
+                            id="tab-secciones"
+                            data-bs-toggle="tab"
+                            data-bs-target="#pane-secciones"
+                            type="button" role="tab"
+                            aria-controls="pane-secciones"
+                            aria-selected="@(isSecciones ? "true" : "false")"
+                            data-tabkey="secciones">
+                        <i class="fas fa-layer-group me-1"></i>Secciones
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content pt-3">
+                <!-- Editoriales -->
+                <div class="tab-pane fade @(isEditoriales ? "show active" : "")"
+                     id="pane-editoriales" role="tabpanel" aria-labelledby="tab-editoriales">
+                    <div id="tabEditoriales"
+                         data-url-default="@Url.Action("Tab", "Editorial", new { termino = "", pagina = 1, resultadosPorPagina = 20 })">
+                        <div class="text-center text-muted py-5" id="editorialesLoading">
+                            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando…</span></div>
+                            <div class="mt-2">Cargando editoriales…</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Autores -->
+                <div class="tab-pane fade @(isAutores ? "show active" : "")"
+                     id="pane-autores" role="tabpanel" aria-labelledby="tab-autores">
+                    <div id="tabAutores"
+                         data-url-default="@Url.Action("Tab", "Autor", new { termino = "", pagina = 1, resultadosPorPagina = 20 })">
+                        <div class="text-center text-muted py-5" id="autoresLoading">
+                            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando…</span></div>
+                            <div class="mt-2">Cargando autores…</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Géneros -->
+                <div class="tab-pane fade @(isGeneros ? "show active" : "")"
+                     id="pane-generos" role="tabpanel" aria-labelledby="tab-generos">
+                    <div id="tabGeneros"
+                         data-url-default="@Url.Action("Tab", "Genero", new { termino = "", pagina = 1, resultadosPorPagina = 20 })">
+                        <div class="text-center text-muted py-5" id="generosLoading">
+                            <div class="spinner-border" role="status"><span class="visualmente-hidden">Cargando…</span></div>
+                            <div class="mt-2">Cargando géneros…</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secciones -->
+                <div class="tab-pane fade @(isSecciones ? "show active" : "")"
+                     id="pane-secciones" role="tabpanel" aria-labelledby="tab-secciones">
+                    <div id="tabSecciones"
+                         data-url-default="@Url.Action("Tab", "Seccion", new { termino = "", pagina = 1, resultadosPorPagina = 20 })">
+                        <div class="text-center text-muted py-5" id="seccionesLoading">
+                            <div class="spinner-border" role="status"><span class="visually-hidden">Cargando…</span></div>
+                            <div class="mt-2">Cargando secciones…</div>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- /tab-content -->
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function(){
+          // ---------- Utilidad común ----------
+          async function loadInto(host, url) {
+            try {
+              host.dataset.urlCurrent = url; // recordar URL para recargas
+              const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+              const html = await res.text();
+              if (!res.ok) {
+                console.error('HTTP ' + res.status, html);
+                host.innerHTML = `<div class="alert alert-danger">Error al cargar (HTTP ${res.status}).</div>`;
+                return;
+              }
+              host.innerHTML = html;
+            } catch (e) {
+              console.error(e);
+              host.innerHTML = `<div class="alert alert-danger">No se pudo cargar el contenido.</div>`;
+            }
+          }
+
+          // ---------- Cableado genérico de cada tab (búsqueda, paginación, RPP, modales y CRUD AJAX) ----------
+          function wireTabHost(host) {
+            if (!host) return;
+
+            // Buscar (submit del form de búsqueda)
+            host.addEventListener('submit', function(e){
+              const form = e.target;
+              if (!form) return;
+
+              // Formularios de búsqueda: id que empieza por "searchForm"
+              if (form.id && form.id.startsWith('searchForm')) {
+                e.preventDefault();
+                const qs = new URLSearchParams(new FormData(form)).toString();
+                loadInto(host, form.action + '?' + qs);
+                return;
+              }
+
+              // Formularios de CRUD (Crear/Editar/Eliminar)
+              const action = (form.getAttribute('action') || '').toLowerCase();
+              const isCrud = (action.endsWith('/crear') || action.endsWith('/editar') || action.endsWith('/eliminar'));
+              const isPost = (form.method || 'get').toLowerCase() === 'post';
+
+              if (isCrud && isPost) {
+                e.preventDefault();
+                const fd = new FormData(form);
+
+                fetch(action, {
+                  method: 'POST',
+                  body: fd,
+                  headers: { 'X-Requested-With':'XMLHttpRequest' }
+                })
+                .then(async (r) => {
+                  // Tras acción, recargar el listado del mismo tab
+                  const urlToReload = host.dataset.urlCurrent || host.dataset.urlDefault;
+                  if (urlToReload) await loadInto(host, urlToReload);
+
+                  // Cerrar modal
+                  const modalEl = form.closest('.modal');
+                  if (modalEl) {
+                    const inst = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                    inst.hide();
+                  }
+                })
+                .catch(err => {
+                  console.error(err);
+                  alert('Ocurrió un error procesando la acción.');
+                });
+
+                return;
+              }
+            });
+
+            // Paginación (botones con .js-page)
+            host.addEventListener('click', function(e){
+              const btn = e.target.closest('.js-page');
+              if (!btn) return;
+              e.preventDefault();
+
+              const page = btn.getAttribute('data-page');
+              const form = host.querySelector('form[id^="searchForm"]');
+              if (!form) return;
+
+              const ph = form.querySelector('input[name="pagina"]');
+              if (ph) ph.value = page;
+
+              const qs = new URLSearchParams(new FormData(form)).toString();
+              loadInto(host, form.action + '?' + qs);
+            });
+
+            // Tamaño de página (select name="resultadosPorPagina")
+            host.addEventListener('change', function(e){
+              const sel = e.target;
+              if (sel && sel.name === 'resultadosPorPagina') {
+                const form = host.querySelector('form[id^="searchForm"]');
+                if (!form) return;
+
+                const ph = form.querySelector('input[name="pagina"]');
+                if (ph) ph.value = 1;
+
+                const qs = new URLSearchParams(new FormData(form)).toString();
+                loadInto(host, form.action + '?' + qs);
+              }
+            });
+
+            // Rellenar modales de Editar y Eliminar
+            host.addEventListener('click', function(e){
+              // Editar: cualquier botón que apunte a un modal que empiece en #modalEditar...
+              const btnEdit = e.target.closest('[data-bs-target^="#modalEditar"]');
+              if (btnEdit) {
+                const id = btnEdit.getAttribute('data-id') || '';
+                const nombre = btnEdit.getAttribute('data-nombre') || '';
+                const ubicacion = btnEdit.getAttribute('data-ubicacion') || ''; // solo secciones
+
+                // Asignación por convención de IDs (cada partial define los suyos)
+                const idEdit = document.querySelector('#editarIdEditorial, #editarIdAutor, #editarIdGenero, #editarIdSeccion');
+                const nomEdit = document.querySelector('#editarNombreEditorial, #editarNombreAutor, #editarNombreGenero, #editarNombreSeccion');
+                const ubiEdit = document.querySelector('#editarUbicacionSeccion');
+
+                if (idEdit) idEdit.value = id;
+                if (nomEdit) nomEdit.value = nombre;
+                if (ubiEdit) ubiEdit.value = ubicacion;
+              }
+
+              // Eliminar: cualquier botón que apunte a un modal que empiece en #modalEliminar...
+              const btnDel = e.target.closest('[data-bs-target^="#modalEliminar"]');
+              if (btnDel) {
+                const id = btnDel.getAttribute('data-id') || '';
+                const nombre = btnDel.getAttribute('data-nombre') || '';
+
+                const idDel = document.querySelector('#eliminarIdEditorial, #eliminarIdAutor, #eliminarIdGenero, #eliminarIdSeccion');
+                const lblDel = document.querySelector('#nombreEditorialEliminar, #nombreAutorEliminar, #nombreGeneroEliminar, #nombreSeccionEliminar');
+
+                if (idDel) idDel.value = id;
+                if (lblDel) lblDel.textContent = nombre;
+              }
+            });
+          }
+
+          // ---------- Referencias a los 4 hosts ----------
+          const hostEd = document.getElementById('tabEditoriales');
+          const hostAu = document.getElementById('tabAutores');
+          const hostGe = document.getElementById('tabGeneros');
+          const hostSe = document.getElementById('tabSecciones');
+
+          // Cablear cada tab
+          [hostEd, hostAu, hostGe, hostSe].forEach(wireTabHost);
+
+          // Carga inicial solo del tab activo
+          document.addEventListener('DOMContentLoaded', function(){
+            if (hostEd && document.getElementById('pane-editoriales').classList.contains('show') && document.getElementById('pane-editoriales').classList.contains('active')) {
+              loadInto(hostEd, hostEd.dataset.urlDefault);
+            }
+            if (hostAu && document.getElementById('pane-autores').classList.contains('show') && document.getElementById('pane-autores').classList.contains('active')) {
+              loadInto(hostAu, hostAu.dataset.urlDefault);
+            }
+            if (hostGe && document.getElementById('pane-generos').classList.contains('show') && document.getElementById('pane-generos').classList.contains('active')) {
+              loadInto(hostGe, hostGe.dataset.urlDefault);
+            }
+            if (hostSe && document.getElementById('pane-secciones').classList.contains('show') && document.getElementById('pane-secciones').classList.contains('active')) {
+              loadInto(hostSe, hostSe.dataset.urlDefault);
+            }
+          });
+
+          // Cargar al cambiar de tab (si aún está en loading)
+          document.addEventListener('shown.bs.tab', function (ev) {
+            const key = ev.target.getAttribute('data-tabkey');
+            if (key === 'editoriales' && hostEd && hostEd.querySelector('#editorialesLoading')) {
+              loadInto(hostEd, hostEd.dataset.urlDefault);
+            }
+            if (key === 'autores' && hostAu && hostAu.querySelector('#autoresLoading')) {
+              loadInto(hostAu, hostAu.dataset.urlDefault);
+            }
+            if (key === 'generos' && hostGe && hostGe.querySelector('#generosLoading')) {
+              loadInto(hostGe, hostGe.dataset.urlDefault);
+            }
+            if (key === 'secciones' && hostSe && hostSe.querySelector('#seccionesLoading')) {
+              loadInto(hostSe, hostSe.dataset.urlDefault);
+            }
+          });
+        })();
+    </script>
+}

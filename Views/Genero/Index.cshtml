@@ -1,0 +1,310 @@
+﻿@model PaginacionResponse<AppWebBiblioteca.Models.GeneroDto>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Gestión de Géneros - Biblioteca Esparza";
+    ViewData["PageTitle"] = "Gestión de Géneros";
+
+    var generos = Model?.Data ?? new List<AppWebBiblioteca.Models.GeneroDto>();
+    var pag = Model?.Pagination ?? new PaginationInfo();
+    var termino = ViewBag.TerminoBusqueda as string ?? "";
+    var rpp = pag.ResultadosPorPagina <= 0 ? 20 : pag.ResultadosPorPagina;
+
+    string Q(int pagina)
+        => $"?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={rpp}";
+}
+
+<div class="container-fluid p-4">
+    <div class="row justify-content-center fade-in-autores">
+        <div class="col-12">
+            <div class="card autores-card">
+                <div class="card-body p-4">
+
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-tag me-2" style="color: var(--esparza-blue);"></i>
+                                Géneros
+                            </h2>
+                            <p class="text-muted mb-0">Administra los géneros disponibles para los libros.</p>
+                        </div>
+                        <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarGenero">
+                            <i class="fas fa-plus"></i> Nuevo Género
+                        </button>
+                    </div>
+
+                    <!-- Búsqueda -->
+                    <form asp-action="Index" method="get" id="searchForm" class="mb-4">
+                        <div class="row g-3">
+                            <div class="col-12 col-xl-8">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" name="termino" id="searchInput" class="form-control" placeholder="Buscar género..." value="@termino" />
+                                    <button class="btn btn-esparza-primary" type="submit" id="btnBuscar">
+                                        <i class="fas fa-search me-1"></i>Buscar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-12 col-xl-4 d-flex align-items-center">
+                                <input type="hidden" name="pagina" id="paginaHidden" value="@pag.PaginaActual" />
+                                <div class="ms-auto">
+                                    <small class="text-muted me-2">Mostrar:</small>
+                                    <select class="form-select form-select-sm d-inline-block w-auto" name="resultadosPorPagina" id="rppSelect">
+                                        @if (rpp == 20)
+                                        {
+                                            <option value="20" selected>20</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="20">20</option>
+                                        }
+                                        @if (rpp == 50)
+                                        {
+                                            <option value="50" selected>50</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="50">50</option>
+                                        }
+                                        @if (rpp == 100)
+                                        {
+                                            <option value="100" selected>100</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="100">100</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Alertas -->
+                    @if (TempData["Ok"] != null)
+                    {
+                        <div class="alert alert-success-autores alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["Ok"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger-autores alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Info -->
+                    <div class="text-muted small mb-3">
+                        <span>@pag.TotalResultados</span>
+                        <span>@(string.IsNullOrWhiteSpace(termino) ? "género(s) registrados" : $"género(s) encontrados para \"{termino}\"")</span>
+                    </div>
+
+                    <!-- Tabla -->
+                    @if (generos.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-autores">
+                                <thead>
+                                    <tr>
+                                        <th style="width:120px;">ID</th>
+                                        <th>Nombre</th>
+                                        <th class="text-center" style="width:220px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var g in generos)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">#@g.IdGenero</td>
+                                            <td><i class="fas fa-tag me-2 text-muted"></i>@g.Nombre</td>
+                                            <td class="text-center">
+                                                <div class="btn-actions-group justify-content-center">
+                                                    <button type="button"
+                                                            class="btn btn-action btn-action-edit"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalEditarGenero"
+                                                            data-id="@g.IdGenero"
+                                                            data-nombre="@g.Nombre">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-action btn-action-deactivate"
+                                                            data-bs-toggle="modal"
+                                                            data-bs-target="#modalEliminarGenero"
+                                                            data-id="@g.IdGenero"
+                                                            data-nombre="@g.Nombre">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        @if (pag.TotalPaginas > 1)
+                        {
+                            <nav class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(1)"><i class="fas fa-angle-double-left"></i></a>
+                                    </li>
+                                    <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.PaginaActual - 1)"><i class="fas fa-chevron-left"></i></a>
+                                    </li>
+
+                                    @{
+                                        var ini = Math.Max(1, pag.PaginaActual - 2);
+                                        var fin = Math.Min(pag.TotalPaginas, pag.PaginaActual + 2);
+                                    }
+                                    @for (int i = ini; i <= fin; i++)
+                                    {
+                                        <li class="page-item @(i == pag.PaginaActual ? "active" : "")">
+                                            <a class="page-link" href="@Q(i)">@i</a>
+                                        </li>
+                                    }
+
+                                    <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.PaginaActual + 1)"><i class="fas fa-chevron-right"></i></a>
+                                    </li>
+                                    <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.TotalPaginas)"><i class="fas fa-angle-double-right"></i></a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-search fa-2x mb-2"></i>
+                            <div>No hay géneros que mostrar.</div>
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALES -->
+<!-- Agregar -->
+<div class="modal fade" id="modalAgregarGenero" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Crear" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Agregar Género</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Nombre del género</label>
+                    <input type="text" name="nombre" class="form-control" required />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-autores-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Editar -->
+<div class="modal fade" id="modalEditarGenero" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Editar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="editarIdGenero" name="idGenero" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Género</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Nombre del género</label>
+                    <input type="text" id="editarNombreGenero" name="nombre" class="form-control" required />
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-autores-primary">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Eliminar -->
+<div class="modal fade" id="modalEliminarGenero" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Eliminar" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="eliminarIdGenero" name="idGenero" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i>Eliminar Género</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>¿Desea eliminar el género?</p>
+                    <h6 id="nombreGeneroEliminar" class="text-danger"></h6>
+                    <p class="text-muted small"><i class="fas fa-info-circle me-1"></i>Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-action-deactivate">Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            // Debounce búsqueda
+            const f = document.getElementById('searchForm');
+            const i = document.getElementById('searchInput');
+            const btn = document.getElementById('btnBuscar');
+            const ph = document.getElementById('paginaHidden');
+            const rpp = document.getElementById('rppSelect');
+            let t;
+
+            function go(){ if(ph) ph.value = 1; f.submit(); }
+
+            if(i){
+                i.addEventListener('input', ()=>{ clearTimeout(t); t = setTimeout(go, 500); });
+                i.addEventListener('keypress', e => { if(e.key === 'Enter') e.preventDefault(); });
+            }
+            if(btn){ btn.addEventListener('click', e => { e.preventDefault(); go(); }); }
+            if(rpp){ rpp.addEventListener('change', ()=> go()); }
+
+            // Modales: Editar
+            const modalEditar = document.getElementById('modalEditarGenero');
+            if(modalEditar){
+                modalEditar.addEventListener('show.bs.modal', function (ev){
+                    const btn = ev.relatedTarget;
+                    document.getElementById('editarIdGenero').value = btn.getAttribute('data-id');
+                    document.getElementById('editarNombreGenero').value = btn.getAttribute('data-nombre');
+                });
+            }
+            // Modales: Eliminar
+            const modalEliminar = document.getElementById('modalEliminarGenero');
+            if(modalEliminar){
+                modalEliminar.addEventListener('show.bs.modal', function (ev){
+                    const btn = ev.relatedTarget;
+                    document.getElementById('eliminarIdGenero').value = btn.getAttribute('data-id');
+                    document.getElementById('nombreGeneroEliminar').textContent = btn.getAttribute('data-nombre');
+                });
+            }
+        });
+    </script>
+}

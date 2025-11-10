@@ -159,5 +159,20 @@ namespace AppWebBiblioteca.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        //Tab
+        [HttpGet]
+        public async Task<IActionResult> Tab(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
+        {
+            if (!_authService.IsAuthenticated())
+                return Unauthorized();
+
+            var resultado = await _autorService.BuscarAutoresRapidaAsync(
+                termino ?? string.Empty, pagina, resultadosPorPagina);
+
+            ViewBag.TerminoBusqueda = termino;
+            return PartialView("_TabAutores", resultado);
+        }
+
     }
 }

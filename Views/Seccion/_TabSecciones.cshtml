@@ -1,0 +1,110 @@
+﻿@model PaginacionResponse<AppWebBiblioteca.Models.SeccionDto>
+
+@{
+    var items = Model?.Data ?? new List<AppWebBiblioteca.Models.SeccionDto>();
+    var pag = Model?.Pagination ?? new PaginationInfo();
+    var termino = ViewBag.TerminoBusqueda as string ?? "";
+    var returnUrl = Url.Action("Index", "SociosLectores", new { tab = "secciones" });
+}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">
+        <i class="fas fa-layer-group me-2"></i> Secciones
+    </h5>
+    <button type="button" class="btn btn-autores-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarSeccion">
+        <i class="fas fa-plus"></i> Nueva Sección
+    </button>
+</div>
+
+<!-- Búsqueda -->
+<form method="get" id="searchFormSecciones" action="@Url.Action("Tab","Seccion")" class="mb-3">
+    <div class="input-group">
+        <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+        <input name="termino" id="searchInputSecciones" class="form-control" placeholder="Buscar por nombre..." value="@termino" />
+        <button class="btn btn-esparza-primary" id="btnBuscarSecciones" type="submit">
+            <i class="fas fa-search me-1"></i> Buscar
+        </button>
+    </div>
+
+    <input type="hidden" name="pagina" id="paginaHiddenSecciones" value="@pag.PaginaActual" />
+    <input type="hidden" name="resultadosPorPagina" id="rppHiddenSecciones" value="@pag.ResultadosPorPagina" />
+</form>
+
+<!-- Tabla -->
+@if (items.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-autores">
+            <thead>
+                <tr>
+                    <th style="width:120px;">ID</th>
+                    <th>Nombre</th>
+                    <th class="text-center" style="width:220px;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in items)
+                {
+                    <tr>
+                        <td class="fw-bold">#@s.IdSeccion</td>
+                        <td><i class="fas fa-layer-group me-2 text-muted"></i>@s.Nombre</td>
+                        <td class="text-center">
+                            <div class="btn-actions-group justify-content-center">
+                                <button type="button" class="btn btn-action btn-action-edit"
+                                        data-bs-toggle="modal" data-bs-target="#modalEditarSeccion"
+                                        data-id="@s.IdSeccion" data-nombre="@s.Nombre">
+                                    <i class="fas fa-edit icon-elegant"></i>
+                                </button>
+                                <button type="button" class="btn btn-action btn-action-deactivate"
+                                        data-bs-toggle="modal" data-bs-target="#modalEliminarSeccion"
+                                        data-id="@s.IdSeccion" data-nombre="@s.Nombre">
+                                    <i class="fas fa-trash-alt icon-elegant"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    @if (pag.TotalPaginas > 1)
+    {
+        <ul class="pagination pagination-sm mt-3">
+            <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="1"><i class="fas fa-angle-double-left"></i></a>
+            </li>
+            <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual - 1)"><i class="fas fa-chevron-left"></i></a>
+            </li>
+            @{
+                var ini = Math.Max(1, pag.PaginaActual - 2);
+                var fin = Math.Min(pag.TotalPaginas, pag.PaginaActual + 2);
+            }
+            @for (int i = ini; i <= fin; i++)
+            {
+                <li class="page-item @(i == pag.PaginaActual ? "active" : "")">
+                    <a href="#" class="page-link js-page" data-page="@i">@i</a>
+                </li>
+            }
+            <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual + 1)"><i class="fas fa-chevron-right"></i></a>
+            </li>
+            <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                <a href="#" class="page-link js-page" data-page="@pag.TotalPaginas"><i class="fas fa-angle-double-right"></i></a>
+            </li>
+        </ul>
+    }
+}
+else
+{
+    <div class="text-center text-muted py-4">
+        <i class="fas fa-search fa-2x mb-2"></i>
+        <div>No hay secciones registradas.</div>
+    </div>
+}
+
+<!-- Modales agregar, editar, eliminar -->
+<!-- Puedes copiar los mismos modales de Genero cambiando nombres y controladores -->
