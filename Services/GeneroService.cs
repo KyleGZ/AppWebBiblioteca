@@ -35,7 +35,39 @@ namespace AppWebBiblioteca.Services
         }
 
         // ✅ Registrar un nuevo género
-        public async Task<int> RegistrarGeneroAsync(string nombre)
+        //public async Task<int> RegistrarGeneroAsync(string nombre)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Genero/Registro";
+        //        var payload = new { IdGenero = 0, Nombre = nombre };
+
+        //        var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
+        //        if (!response.IsSuccessStatusCode) return 0;
+
+        //        var json = await response.Content.ReadAsStringAsync();
+        //        using var doc = JsonDocument.Parse(json);
+        //        var root = doc.RootElement;
+
+        //        if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean() &&
+        //            root.TryGetProperty("data", out var dataProp) &&
+        //            dataProp.ValueKind == JsonValueKind.Object &&
+        //            dataProp.TryGetProperty("idGenero", out var idProp) &&
+        //            idProp.TryGetInt32(out var id))
+        //        {
+        //            return id;
+        //        }
+
+        //        return 0;
+        //    }
+        //    catch
+        //    {
+        //        return 0;
+        //    }
+        //}
+
+        // ✅ Registrar un nuevo género con ApiResponse
+        public async Task<ApiResponse> RegistrarGeneroAsync(string nombre)
         {
             try
             {
@@ -43,31 +75,72 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdGenero = 0, Nombre = nombre };
 
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-                if (!response.IsSuccessStatusCode) return 0;
+                if (!response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = false, Message = "Error en la comunicación con el API" };
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean() &&
-                    root.TryGetProperty("data", out var dataProp) &&
-                    dataProp.ValueKind == JsonValueKind.Object &&
-                    dataProp.TryGetProperty("idGenero", out var idProp) &&
-                    idProp.TryGetInt32(out var id))
+                if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean())
                 {
-                    return id;
-                }
+                    string message = "Registro exitoso";
+                    if (root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
+                    {
+                        message = messageProp.GetString();
+                    }
 
-                return 0;
+                    object data = null;
+                    if (root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind != JsonValueKind.Null)
+                    {
+                        data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
+                    }
+
+                    return new ApiResponse { Success = true, Message = message, Data = data };
+                }
+                else
+                {
+                    string errorMessage = "Error en el registro";
+                    if (root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
+                    {
+                        errorMessage = messageProp.GetString();
+                    }
+
+                    return new ApiResponse { Success = false, Message = errorMessage };
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return 0;
+                return new ApiResponse { Success = false, Message = $"Error interno: {ex.Message}" };
             }
         }
 
+
+
         // ✅ Editar género existente
-        public async Task<bool> EditarGeneroAsync(int idGenero, string nombre)
+        //public async Task<bool> EditarGeneroAsync(int idGenero, string nombre)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Genero/Editar";
+        //        var payload = new { IdGenero = idGenero, Nombre = nombre };
+
+        //        var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
+        //        if (!response.IsSuccessStatusCode) return false;
+
+        //        var json = await response.Content.ReadAsStringAsync();
+        //        using var doc = JsonDocument.Parse(json);
+        //        var root = doc.RootElement;
+
+        //        return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
+
+        public async Task<ApiResponse> EditarGeneroAsync(int idGenero, string nombre)
         {
             try
             {
@@ -75,38 +148,110 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdGenero = idGenero, Nombre = nombre };
 
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
-                if (!response.IsSuccessStatusCode) return false;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Error HTTP: {response.StatusCode}"
+                    };
+                }
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
+                var apiResponse = new ApiResponse
+                {
+                    Success = root.TryGetProperty("success", out var okProp) && okProp.GetBoolean(),
+                    Message = root.TryGetProperty("message", out var msgProp)
+                             ? msgProp.GetString()
+                             : "Operación completada"
+                };
+
+                // Opcional: incluir data si existe
+                if (root.TryGetProperty("data", out var dataProp))
+                {
+                    apiResponse.Data = dataProp.GetRawText();
+                }
+
+                return apiResponse;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error inesperado: {ex.Message}"
+                };
             }
         }
 
         // ✅ Eliminar género
-        public async Task<bool> EliminarGeneroAsync(int idGenero)
+        //public async Task<bool> EliminarGeneroAsync(int idGenero)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Genero/Eliminar?id={idGenero}";
+        //        var response = await _httpClient.DeleteAsync(apiUrl);
+        //        if (!response.IsSuccessStatusCode) return false;
+
+        //        var json = await response.Content.ReadAsStringAsync();
+        //        using var doc = JsonDocument.Parse(json);
+        //        var root = doc.RootElement;
+
+        //        return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
+
+        public async Task<ApiResponse> EliminarGeneroAsync(int idGenero)
         {
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Genero/Eliminar?id={idGenero}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
-                if (!response.IsSuccessStatusCode) return false;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Error HTTP: {response.StatusCode}"
+                    };
+                }
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
+                var apiResponse = new ApiResponse
+                {
+                    Success = root.TryGetProperty("success", out var okProp) && okProp.GetBoolean(),
+                    Message = root.TryGetProperty("message", out var msgProp)
+                             ? msgProp.GetString()
+                             : "Operación completada"
+                };
+
+                // Opcional: incluir data si existe
+                if (root.TryGetProperty("data", out var dataProp))
+                {
+                    apiResponse.Data = dataProp.GetRawText();
+                }
+
+                return apiResponse;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error inesperado: {ex.Message}"
+                };
             }
         }
 
@@ -179,9 +324,9 @@ namespace AppWebBiblioteca.Services
     public interface IGeneroService
     {
         Task<List<GeneroDto>> ObtenerGenerosAsync(string? nombre);
-        Task<int> RegistrarGeneroAsync(string nombre);
-        Task<bool> EditarGeneroAsync(int idGenero, string nombre);
-        Task<bool> EliminarGeneroAsync(int idGenero);
+        Task<ApiResponse> RegistrarGeneroAsync(string nombre);
+        Task<ApiResponse> EditarGeneroAsync(int idGenero, string nombre);
+        Task<ApiResponse> EliminarGeneroAsync(int idGenero);
         Task<PaginacionResponse<GeneroDto>> BuscarGenerosRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
     }
 }

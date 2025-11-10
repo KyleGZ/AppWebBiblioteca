@@ -36,8 +36,8 @@ namespace AppWebBiblioteca.Services
             }
         }
 
-        //Registrar Editorial
-        public async Task<int> RegistrarEditorialAsync(string nombre)
+        // Registrar Editorial con ApiResponse
+        public async Task<ApiResponse> RegistrarEditorialAsync(string nombre)
         {
             try
             {
@@ -45,33 +45,48 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdEditorial = 0, Nombre = nombre };
 
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-                if (!response.IsSuccessStatusCode) return 0;
+                if (!response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = false, Message = "Error en la comunicación con el API" };
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                // success debe ser true y data.idEditorial debe existir
-                if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean() &&
-                    root.TryGetProperty("data", out var dataProp) &&
-                    dataProp.ValueKind == JsonValueKind.Object &&
-                    dataProp.TryGetProperty("idEditorial", out var idProp) &&
-                    idProp.TryGetInt32(out var id))
+                if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean())
                 {
-                    return id;
-                }
+                    string message = "Registro exitoso";
+                    if (root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
+                    {
+                        message = messageProp.GetString();
+                    }
 
-                // Fallback (por compatibilidad)
-                return 0;
+                    object data = null;
+                    if (root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind != JsonValueKind.Null)
+                    {
+                        data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
+                    }
+
+                    return new ApiResponse { Success = true, Message = message, Data = data };
+                }
+                else
+                {
+                    string errorMessage = "Error en el registro";
+                    if (root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
+                    {
+                        errorMessage = messageProp.GetString();
+                    }
+
+                    return new ApiResponse { Success = false, Message = errorMessage };
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return 0;
+                return new ApiResponse { Success = false, Message = $"Error interno: {ex.Message}" };
             }
         }
 
-        // Editar Editorial -> ApiResponse { success, message, data? }
-        public async Task<bool> EditarEditorialAsync(int idEditorial, string nombre)
+        // Editar Editorial con ApiResponse
+        public async Task<ApiResponse> EditarEditorialAsync(int idEditorial, string nombre)
         {
             try
             {
@@ -79,38 +94,90 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdEditorial = idEditorial, Nombre = nombre };
 
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
-                if (!response.IsSuccessStatusCode) return false;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Error HTTP: {response.StatusCode}"
+                    };
+                }
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
+                var apiResponse = new ApiResponse
+                {
+                    Success = root.TryGetProperty("success", out var okProp) && okProp.GetBoolean(),
+                    Message = root.TryGetProperty("message", out var msgProp)
+                             ? msgProp.GetString()
+                             : "Operación completada"
+                };
+
+                // Opcional: incluir data si existe
+                if (root.TryGetProperty("data", out var dataProp))
+                {
+                    apiResponse.Data = dataProp.GetRawText();
+                }
+
+                return apiResponse;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error inesperado: {ex.Message}"
+                };
             }
         }
 
-        // Eliminar Editorial -> ApiResponse { success, message }
-        public async Task<bool> EliminarEditorialAsync(int idEditorial)
+        // Eliminar Editorial con ApiResponse
+        public async Task<ApiResponse> EliminarEditorialAsync(int idEditorial)
         {
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Editorial/Eliminar?id={idEditorial}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
-                if (!response.IsSuccessStatusCode) return false;
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"Error HTTP: {response.StatusCode}"
+                    };
+                }
 
                 var json = await response.Content.ReadAsStringAsync();
                 using var doc = JsonDocument.Parse(json);
                 var root = doc.RootElement;
 
-                return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
+                var apiResponse = new ApiResponse
+                {
+                    Success = root.TryGetProperty("success", out var okProp) && okProp.GetBoolean(),
+                    Message = root.TryGetProperty("message", out var msgProp)
+                             ? msgProp.GetString()
+                             : "Operación completada"
+                };
+
+                // Opcional: incluir data si existe
+                if (root.TryGetProperty("data", out var dataProp))
+                {
+                    apiResponse.Data = dataProp.GetRawText();
+                }
+
+                return apiResponse;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error inesperado: {ex.Message}"
+                };
             }
         }
 
@@ -187,9 +254,9 @@ namespace AppWebBiblioteca.Services
     public interface IEditorialService
     {
         Task<List<EditorialDto>> ObtenerEditorialesAsync(string? nombre);
-        Task<int> RegistrarEditorialAsync(string nombre);
-        Task<bool> EditarEditorialAsync(int idEditorial, string nombre);
-        Task<bool> EliminarEditorialAsync(int idEditorial);
+        Task<ApiResponse> RegistrarEditorialAsync(string nombre);
+        Task<ApiResponse> EditarEditorialAsync(int idEditorial, string nombre);
+        Task<ApiResponse> EliminarEditorialAsync(int idEditorial);
         Task<PaginacionResponse<EditorialDto>> BuscarEditorialesRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
     }
 }

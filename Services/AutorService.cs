@@ -1,4 +1,5 @@
-﻿using AppWebBiblioteca.Models;
+﻿using System.Text.Json;
+using AppWebBiblioteca.Models;
 
 namespace AppWebBiblioteca.Services
 {
@@ -101,8 +102,62 @@ namespace AppWebBiblioteca.Services
         }
 
 
-        // Crea un autor. Devuelve el Id generado por la API.
-        public async Task<int> RegistrarAutorAsync(string nombre)
+        //// Crea un autor. Devuelve el Id generado por la API.
+        //public async Task<int> RegistrarAutorAsync(string nombre)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Autor/Registro";
+        //        var payload = new { IdAutor = 0, Nombre = nombre };
+
+        //        var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
+        //        if (!response.IsSuccessStatusCode) return 0;
+
+        //        // La API responde: { mensaje, idAutor }
+        //        var data = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
+        //        return data != null && data.TryGetValue("idUsuario", out var wrong) // por si alguna API usa otra key
+        //            ? Convert.ToInt32(wrong)
+        //            : (data != null && data.TryGetValue("idAutor", out var ok) ? Convert.ToInt32(ok) : 0);
+        //    }
+        //    catch
+        //    {
+        //        return 0;
+        //    }
+        //}
+
+        //// Edita un autor existente (Id + Nombre). True si guardó.
+        //public async Task<bool> EditarAutorAsync(int idAutor, string nombre)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Autor/Editar";
+        //        var payload = new { IdAutor = idAutor, Nombre = nombre };
+
+        //        var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
+        //        return response.IsSuccessStatusCode;
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
+
+        //// Elimina un autor por Id. True si eliminó.
+        //public async Task<bool> EliminarAutorAsync(int idAutor)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Autor/Eliminar?id={idAutor}";
+        //        var response = await _httpClient.DeleteAsync(apiUrl);
+        //        return response.IsSuccessStatusCode;
+        //    }
+        //    catch
+        //    {
+        //        return false;
+        //    }
+        //}
+
+        public async Task<ApiResponse> RegistrarAutorAsync(string nombre)
         {
             try
             {
@@ -110,22 +165,55 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdAutor = 0, Nombre = nombre };
 
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-                if (!response.IsSuccessStatusCode) return 0;
 
-                // La API responde: { mensaje, idAutor }
-                var data = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>();
-                return data != null && data.TryGetValue("idUsuario", out var wrong) // por si alguna API usa otra key
-                    ? Convert.ToInt32(wrong)
-                    : (data != null && data.TryGetValue("idAutor", out var ok) ? Convert.ToInt32(ok) : 0);
+                // Si el HTTP no es OK, devolvemos error
+                if (!response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
+
+                // Si el HTTP es OK, intentamos leer JSON flexible
+                var json = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                // 1) Caso estándar con "success"
+                if (root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True)
+                {
+                    return new ApiResponse
+                    {
+                        Success = true,
+                        Message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
+                                  ? msgProp.GetString()
+                                  : "Autor creado con éxito.",
+                        Data = root.TryGetProperty("data", out var dataProp) ? JsonSerializer.Deserialize<object>(dataProp.GetRawText()) : null
+                    };
+                }
+
+                // 2) Caso alterno sin "success": si trae idAutor o mensaje y el HTTP fue 200, lo tomamos como éxito
+                int idAutor = 0;
+                if (root.TryGetProperty("idAutor", out var idProp) && idProp.TryGetInt32(out var id))
+                    idAutor = id;
+
+                var mensaje = root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String
+                                ? messageProp.GetString()
+                                : (root.TryGetProperty("mensaje", out var mensajeProp) && mensajeProp.ValueKind == JsonValueKind.String
+                                    ? mensajeProp.GetString()
+                                    : "Autor creado con éxito.");
+
+                // HTTP 200 y hay alguna señal (id o mensaje) => éxito
+                return new ApiResponse
+                {
+                    Success = true,
+                    Message = mensaje,
+                    Data = idAutor > 0 ? new { idAutor } : null
+                };
             }
-            catch
+            catch (Exception ex)
             {
-                return 0;
+                return new ApiResponse { Success = false, Message = $"Error interno: {ex.Message}" };
             }
         }
 
-        // Edita un autor existente (Id + Nombre). True si guardó.
-        public async Task<bool> EditarAutorAsync(int idAutor, string nombre)
+        public async Task<ApiResponse> EditarAutorAsync(int idAutor, string nombre)
         {
             try
             {
@@ -133,28 +221,80 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdAutor = idAutor, Nombre = nombre };
 
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
-                return response.IsSuccessStatusCode;
+                if (!response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                // Intentar parsear; si no hay "success", asumimos éxito por HTTP 200:
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    var success = root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True;
+                    var message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
+                                    ? msgProp.GetString()
+                                    : "Autor actualizado correctamente.";
+
+                    object? data = null;
+                    if (root.TryGetProperty("data", out var dataProp))
+                        data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
+
+                    // Si no viene success, pero HTTP fue OK, lo tratamos como éxito
+                    return new ApiResponse { Success = success || true, Message = message, Data = data };
+                }
+                catch
+                {
+                    // Respuesta no JSON estándar, pero HTTP OK => éxito
+                    return new ApiResponse { Success = true, Message = "Autor actualizado correctamente." };
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse { Success = false, Message = $"Error inesperado: {ex.Message}" };
             }
         }
 
-        // Elimina un autor por Id. True si eliminó.
-        public async Task<bool> EliminarAutorAsync(int idAutor)
+        public async Task<ApiResponse> EliminarAutorAsync(int idAutor)
         {
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Autor/Eliminar?id={idAutor}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
-                return response.IsSuccessStatusCode;
+                if (!response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                try
+                {
+                    using var doc = JsonDocument.Parse(json);
+                    var root = doc.RootElement;
+
+                    var success = root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True;
+                    var message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
+                                    ? msgProp.GetString()
+                                    : "Autor eliminado correctamente.";
+
+                    object? data = null;
+                    if (root.TryGetProperty("data", out var dataProp))
+                        data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
+
+                    // Si no viene success pero HTTP fue OK => éxito
+                    return new ApiResponse { Success = success || true, Message = message, Data = data };
+                }
+                catch
+                {
+                    return new ApiResponse { Success = true, Message = "Autor eliminado correctamente." };
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
+                return new ApiResponse { Success = false, Message = $"Error inesperado: {ex.Message}" };
             }
         }
+
 
     }
 
@@ -163,8 +303,8 @@ namespace AppWebBiblioteca.Services
         Task<List<AutorDto>> ObtenerAutoresAsync(string? nombre);
         Task<PaginacionResponse<AutorDto>> BuscarAutoresRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
 
-        Task<int> RegistrarAutorAsync(string nombre);
-        Task<bool> EditarAutorAsync(int idAutor, string nombre);
-        Task<bool> EliminarAutorAsync(int idAutor);
+        Task<ApiResponse> RegistrarAutorAsync(string nombre);
+        Task<ApiResponse> EditarAutorAsync(int idAutor, string nombre);
+        Task<ApiResponse> EliminarAutorAsync(int idAutor);
     }
 }

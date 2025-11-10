@@ -58,33 +58,39 @@ namespace AppWebBiblioteca.Controllers
         {
             if (string.IsNullOrWhiteSpace(nombre))
             {
-                TempData["Error"] = "El nombre es requerido.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "El nombre es requerido." });
             }
 
             try
             {
-                var id = await _editorialService.RegistrarEditorialAsync(nombre.Trim());
+                var resultado = await _editorialService.RegistrarEditorialAsync(nombre.Trim());
 
-                if (id > 0)
+                if (resultado.Success)
                 {
-                    TempData["Ok"] = "Editorial creada con éxito.";
-                    TempData["EditorialCreadaId"] = id;
+                    return Json(new
+                    {
+                        success = true,
+                        message = resultado.Message ?? "Editorial creada con éxito.",
+                        data = resultado.Data
+                    });
                 }
                 else
                 {
-                    TempData["Ok"] = "Editorial creada con éxito.";
+                    return Json(new
+                    {
+                        success = false,
+                        message = resultado.Message ?? "No se pudo crear la editorial."
+                    });
                 }
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"No se pudo crear la editorial. Detalle: {ex.Message}";
+                return Json(new
+                {
+                    success = false,
+                    message = $"No se pudo crear la editorial. Detalle: {ex.Message}"
+                });
             }
-
-            if (!string.IsNullOrEmpty(returnUrl))
-                return LocalRedirect(returnUrl);
-
-            return RedirectToAction(nameof(Index));
         }
 
         // POST: /Editorial/Editar
@@ -94,26 +100,39 @@ namespace AppWebBiblioteca.Controllers
         {
             if (idEditorial <= 0 || string.IsNullOrWhiteSpace(nombre))
             {
-                TempData["Error"] = "Datos de edición inválidos.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Datos de edición inválidos." });
             }
 
             try
             {
-                var ok = await _editorialService.EditarEditorialAsync(idEditorial, nombre.Trim());
-                TempData[ok ? "Ok" : "Error"] = ok
-                    ? "Editorial actualizada correctamente."
-                    : "No se pudo actualizar la editorial.";
+                var resultado = await _editorialService.EditarEditorialAsync(idEditorial, nombre.Trim());
+
+                if (resultado.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = resultado.Message ?? "Editorial actualizada correctamente.",
+                        data = resultado.Data
+                    });
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = resultado.Message ?? "No se pudo actualizar la editorial."
+                    });
+                }
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Error al actualizar editorial: {ex.Message}";
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error al actualizar editorial: {ex.Message}"
+                });
             }
-
-            if (!string.IsNullOrEmpty(returnUrl))
-                return LocalRedirect(returnUrl);
-
-            return RedirectToAction(nameof(Index));
         }
 
         // POST: /Editorial/Eliminar
@@ -123,26 +142,39 @@ namespace AppWebBiblioteca.Controllers
         {
             if (idEditorial <= 0)
             {
-                TempData["Error"] = "Id inválido.";
-                return RedirectToAction(nameof(Index));
+                return Json(new { success = false, message = "Id inválido." });
             }
 
             try
             {
-                var ok = await _editorialService.EliminarEditorialAsync(idEditorial);
-                TempData[ok ? "Ok" : "Error"] = ok
-                    ? "Editorial eliminada correctamente."
-                    : "No se pudo eliminar la editorial (puede tener libros asociados).";
+                var resultado = await _editorialService.EliminarEditorialAsync(idEditorial);
+
+                if (resultado.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = resultado.Message ?? "Editorial eliminada correctamente.",
+                        data = resultado.Data
+                    });
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = resultado.Message ?? "No se pudo eliminar la editorial (puede tener libros asociados)."
+                    });
+                }
             }
             catch (Exception ex)
             {
-                TempData["Error"] = $"Error al eliminar editorial: {ex.Message}";
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error al eliminar editorial: {ex.Message}"
+                });
             }
-
-            if (!string.IsNullOrEmpty(returnUrl))
-                return LocalRedirect(returnUrl);
-
-            return RedirectToAction(nameof(Index));
         }
 
         // GET: /Editorial/Tab?termino=&pagina=1&resultadosPorPagina=20
