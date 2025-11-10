@@ -76,7 +76,21 @@
     border: 1px solid #d7e3ff;
 }
 
+/* === Botón Eliminar rojo === */
 .btn-action-deactivate {
-    background: #fff2f2;
-    border: 1px solid #ffd6d6;
+    background: #dc3545; /* rojo Bootstrap */
+    border: 1px solid #dc3545;
+    color: #fff;
+    transition: background .2s ease-in-out, transform .1s;
 }
+
+    .btn-action-deactivate:hover {
+        background: #bb2d3b;
+        border-color: #b02a37;
+        transform: scale(1.03);
+    }
+
+    .btn-action-deactivate i {
+        color: #fff !important; /* ícono blanco */
+    }
+

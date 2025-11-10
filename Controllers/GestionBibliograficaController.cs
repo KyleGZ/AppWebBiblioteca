@@ -2,7 +2,7 @@
 
 namespace AppWebBiblioteca.Controllers
 {
-    public class SociosLectoresController : Controller
+    public class GestionBibliograficaController : Controller
     {
 
         [HttpGet]
