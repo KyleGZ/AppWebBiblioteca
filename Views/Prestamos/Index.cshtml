@@ -16,19 +16,43 @@
                             </button>
                         </div>
                         <div class="col-auto">
-                            <a class="btn btn-success">
+                            <button id="btnRegistrarDevolucion" class="btn btn-success">
                                 <i class="fas fa-undo me-1"></i> Registrar devolución
-                            </a>
+                            </button>
                         </div>
                     </div>
 
                     <hr class="my-3" />
 
+                    <!-- Sección para Registrar Devolución (VISIBLE) -->
+                    <div id="seccionDevoluciones" class="card mb-4" style="display: none;">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-undo-alt me-2"></i>Gestionar Devoluciones
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="prestamosActivosContainer">
+                                <div class="text-center">
+                                    <div class="spinner-border text-warning" role="status">
+                                        <span class="visually-hidden">Cargando préstamos activos...</span>
+                                    </div>
+                                    <p class="mt-2">Cargando préstamos activos...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <h6 class="mb-2">
                         <i class="fas fa-exchange-alt me-2"></i> Movimientos recientes
                     </h6>
                     <div class="border rounded-3 p-3 bg-light">
-                        <p class="text-muted mb-0">Aquí podrás listar préstamos activos y devoluciones.</p>
+                        <p class="text-muted mb-0">Aquí podrás listar préstamos activos y devoluciones.</p><br />
+                        <div id="lista-prestamos">
+                            <div class="alert alert-info">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando préstamos...
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -99,72 +123,325 @@
 
 @section Scripts {
     <script>
-        (function () {
-            const modalEl = document.getElementById('modalNuevoPrestamo');
-            const modal = new bootstrap.Modal(modalEl);
+        // CONFIGURACIÓN DE RUTAS API 
+        const API_BASE = 'https://localhost:7270';
+
+        // FUNCIÓN PARA MOSTRAR MODAL DE ÉXITO
+        function mostrarModalExito(mensaje) {
+            if (!document.getElementById('modalExito')) {
+                const modalHTML = `
+                    <div class="modal fade" id="modalExito" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-body text-center p-4">
+                                    <div class="text-success mb-3" style="font-size: 3rem;">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <h5 class="modal-title mb-3">¡Éxito!</h5>
+                                    <p class="mb-4">${mensaje}</p>
+                                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                                        Aceptar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHTML);
+            }
+
+            const modalExito = new bootstrap.Modal(document.getElementById('modalExito'));
+            modalExito.show();
+
+            setTimeout(() => {
+                modalExito.hide();
+            }, 3000);
+        }
+
+        // CARGAR PRÉSTAMOS PARA LA SECCIÓN PRINCIPAL DESDE LA API
+        async function cargarPrestamos() {
+            console.log("Cargando préstamos desde API...");
+
+            try {
+                const response = await fetch(`${API_BASE}/api/prestamos`);
+
+                if (!response.ok) throw new Error('Error del servidor: ' + response.status);
+
+                const prestamos = await response.json();
+                console.log("Préstamos recibidos desde API:", prestamos);
+                mostrarPrestamosEnPantalla(prestamos);
+
+            } catch (error) {
+                console.error("Error cargando préstamos:", error);
+                document.getElementById('lista-prestamos').innerHTML =
+                    '<div class="alert alert-danger">Error al cargar préstamos: ' + error.message + '</div>';
+            }
+        }
+
+                function mostrarPrestamosEnPantalla(prestamos) {
+            const container = document.getElementById('lista-prestamos');
+
+            if (!container) {
+                console.error("No se encuentra el contenedor lista-prestamos");
+                return;
+            }
+
+            if (!prestamos || prestamos.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="fas fa-info-circle"></i>
+                        No hay préstamos activos. Crea uno nuevo para verlo aquí.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="row g-3">';
+            prestamos.forEach(prestamo => {
+               
+                const libroInfo = prestamo.libroTitulo || prestamo.libroInfo || `Libro ${prestamo.idLibro}`;
+                const usuarioInfo = prestamo.usuarioNombre || prestamo.usuarioInfo || `Usuario ${prestamo.idUsuario}`;
+                const fechaPrestamo = prestamo.fechaPrestamo ? new Date(prestamo.fechaPrestamo).toLocaleDateString('es-ES') : 'Fecha no disponible';
+                const fechaVencimiento = prestamo.fechaVencimiento ? new Date(prestamo.fechaVencimiento).toLocaleDateString('es-ES') : 'Fecha no disponible';
+
+                html += `
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title text-primary mb-1">
+                                            <i class="fas fa-book me-2"></i>${libroInfo}
+                                        </h6>
+                                        <p class="card-text mb-1">
+                                            <i class="fas fa-user me-2"></i><strong>Usuario:</strong> ${usuarioInfo}
+                                        </p>
+                                        <div class="text-muted small">
+                                            <span class="me-3">
+                                                <i class="fas fa-calendar-plus me-1"></i>
+                                                <strong>Préstamo:</strong> ${fechaPrestamo}
+                                            </span>
+                                            <span>
+                                                <i class="fas fa-calendar-check me-1"></i>
+                                                <strong>Vence:</strong> ${fechaVencimiento}
+                                            </span>
+                                        </div>
+                                        ${prestamo.observaciones ? `
+                                            <div class="mt-2 p-2 bg-light rounded">
+                                                <small><strong>Observaciones:</strong> ${prestamo.observaciones}</small>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <span class="badge bg-success">${prestamo.estado || 'Activo'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+
+            container.innerHTML = html;
+            console.log("Lista actualizada correctamente");
+        }
+
+        // FUNCIONES PARA DEVOLUCIONES API
+        async function cargarPrestamosActivos() {
+            try {
+                const response = await fetch(`${API_BASE}/api/prestamos/activos`);
+                console.log("Cargando préstamos activos desde API...");
+
+                if (response.ok) {
+                    const prestamos = await response.json();
+                    console.log("Préstamos activos recibidos:", prestamos);
+                    mostrarPrestamosActivos(prestamos);
+                } else {
+                    console.error('Error cargando préstamos activos');
+                    document.getElementById('prestamosActivosContainer').innerHTML =
+                        '<div class="alert alert-danger">Error al cargar préstamos activos</div>';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('prestamosActivosContainer').innerHTML =
+                    '<div class="alert alert-danger">Error de conexión: ' + error.message + '</div>';
+            }
+        }
+
+        function mostrarPrestamosActivos(prestamos) {
+            const contenedor = document.getElementById('prestamosActivosContainer');
+
+            if (!prestamos || prestamos.length === 0) {
+                contenedor.innerHTML = '<div class="alert alert-info">No hay préstamos activos</div>';
+                return;
+            }
+
+            let html = `
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Libro</th>
+                                <th>Usuario</th>
+                                <th>Fecha Préstamo</th>
+                                <th>Fecha Vencimiento</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            prestamos.forEach(prestamo => {
+                const fechaPrestamo = new Date(prestamo.fechaPrestamo).toLocaleDateString();
+                const fechaVencimiento = new Date(prestamo.fechaVencimiento).toLocaleDateString();
+                const hoy = new Date();
+                const fechaVence = new Date(prestamo.fechaVencimiento);
+                const tieneRetraso = hoy > fechaVence;
+
+                html += `
+                    <tr class="${tieneRetraso ? 'table-warning' : ''}">
+                        <td>
+                            <strong>${prestamo.libroTitulo || 'N/A'}</strong><br>
+                            <small class="text-muted">ISBN: ${prestamo.libroIsbn || 'N/A'}</small>
+                        </td>
+                        <td>
+                            ${prestamo.usuarioNombre || 'N/A'}<br>
+                            <small class="text-muted">Cédula: ${prestamo.usuarioCedula || 'N/A'}</small>
+                        </td>
+                        <td>${fechaPrestamo}</td>
+                        <td>${fechaVencimiento}</td>
+                        <td>
+                            ${tieneRetraso ?
+                                `<span class="badge bg-danger">En retraso</span>` :
+                                `<span class="badge bg-success">Al día</span>`
+                            }
+                        </td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="registrarDevolucion(${prestamo.idPrestamo})">
+                                <i class="fas fa-check me-1"></i>Registrar Devolución
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            contenedor.innerHTML = html;
+        }
+
+        async function registrarDevolucion(idPrestamo) {
+            if (!confirm('¿Estás seguro de que deseas registrar la devolución de este libro?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/prestamos/devolucion/${idPrestamo}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const resultado = await response.json();
+                    alert(resultado.mensaje || 'Devolución registrada exitosamente');
+
+                    // Recargar todo
+                    cargarPrestamosActivos();
+                    cargarPrestamos();
+
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + (error.message || 'No se pudo registrar la devolución'));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión al registrar la devolución');
+            }
+        }
+
+        function configurarBotonDevolucion() {
+            const btnDevolucionPrincipal = document.getElementById('btnRegistrarDevolucion');
+            if (btnDevolucionPrincipal) {
+                btnDevolucionPrincipal.addEventListener('click', function() {
+                    const seccion = document.getElementById('seccionDevoluciones');
+                    if (seccion.style.display === 'none') {
+                        seccion.style.display = 'block';
+                        cargarPrestamosActivos();
+                    } else {
+                        seccion.style.display = 'none';
+                    }
+                });
+            }
+        }
+
+                // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('formNuevoPrestamo');
 
-            // Defaults de fechas al abrir el modal
-            modalEl.addEventListener('show.bs.modal', () => {
-                const today = new Date();
-                const toISODate = (d) => d.toISOString().split('T')[0];
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    console.log("Enviando formulario a la API...");
 
-                const fechaPrestamo = form.querySelector('input[name="FechaPrestamo"]');
-                const fechaVenc = form.querySelector('input[name="FechaVencimiento"]');
+                    // Obtener los datos del formulario
+                    const formData = {
+                        usuarioId: parseInt(document.getElementById('UsuarioId').value),
+                        libroId: parseInt(document.getElementById('LibroId').value),
+                        fechaPrestamo: document.getElementById('FechaPrestamo').value,
+                        fechaVencimiento: document.getElementById('FechaVencimiento').value,
+                        observaciones: document.getElementById('Observaciones').value || ''
+                    };
 
-                if (!fechaPrestamo.value) {
-                    fechaPrestamo.value = toISODate(today);
-                }
-                if (!fechaVenc.value) {
-                    const due = new Date(today);
-                    due.setDate(due.getDate() + 14); // 14 días por defecto
-                    fechaVenc.value = toISODate(due);
-                }
-            });
+                    console.log("Datos a enviar:", formData);
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
+                    try {
+                        const response = await fetch(`${API_BASE}/api/prestamos`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            },
+                            body: JSON.stringify(formData)
+                        });
 
-                // Validación HTML5 simple
-                if (!form.checkValidity()) {
-                    form.classList.add('was-validated');
-                    return;
-                }
+                        const data = await response.json();
+                        console.log("Respuesta de la API:", data);
 
-                const token = form.querySelector('input[name="__RequestVerificationToken"]')?.value;
-                const formData = new FormData(form);
+                        if (response.ok) {
+                            // 1. Resetear formulario
+                            this.reset();
+                            console.log("Formulario reseteado");
 
-                try {
-                    const res = await fetch(form.action, {
-                        method: 'POST',
-                        headers: {
-                            'RequestVerificationToken': token
-                        },
-                        body: formData
-                    });
+                            // 2. Cerrar modal del formulario
+                            const modal = bootstrap.Modal.getInstance(document.getElementById('modalNuevoPrestamo'));
+                            if (modal) modal.hide();
 
-                    if (!res.ok) {
-                        const error = await res.json().catch(() => ({}));
-                        const msg = error?.message || 'No se pudo registrar el préstamo.';
-                        showError(msg, 'Error al guardar');
-                        return;
+                            // 3. Mostrar éxito y recargar lista
+                            setTimeout(() => {
+                                mostrarModalExito('Préstamo registrado exitosamente');
+                                cargarPrestamos();
+                                cargarPrestamosActivos(); // También recargar préstamos activos
+                            }, 300);
+
+                        } else {
+                            alert('Error: ' + (data.message || 'No se pudo crear el préstamo'));
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error de conexión: ' + error.message);
                     }
+                });
+            }
 
-                    const data = await res.json();
-                    if (data?.success) {
-                        modal.hide();
-                        form.reset();
-                        form.classList.remove('was-validated');
-                        showSuccess(data.message || 'Préstamo registrado correctamente.');
-                        // TODO: refrescar tabla/listado de movimientos recientessss
-                    } else {
-                        showError(data?.message || 'No se pudo registrar el préstamo.', 'Error');
-                    }
-                } catch (err) {
-                    console.error(err);
-                    showError('Ocurrió un error inesperado.', 'Error');
-                }
-            });
-        })();
+            console.log("Inicializando página...");
+            cargarPrestamos();
+            configurarBotonDevolucion();
+        });
     </script>
 }

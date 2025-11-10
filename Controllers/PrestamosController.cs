@@ -11,19 +11,23 @@ namespace AppWebBiblioteca.Controllers
     [Authorize] // Opcional: restringe a usuarios autenticados
     public class PrestamosController : Controller
     {
+        // LISTA TEMPORAL para guardar préstamos
+        private static List<dynamic> _prestamos = new List<dynamic>();
+
+
         // Datos de ejemplo para poblar selects (reemplaza por tus servicios/repositorios)
         private static readonly List<(string Id, string Nombre)> _usuarios = new()
         {
             ("1", "Juan Pérez"),
             ("2", "María Gómez"),
-            ("3", "Luis Rodríguez")
+            ("3", "Miguel de Cervantes")
         };
 
         private static readonly List<(int Id, string Titulo)> _libros = new()
         {
-            (100, "Cien años de soledad"),
-            (101, "Don Quijote de la Mancha"),
-            (102, "El Principito")
+            (112, "Cien años de soledad"),
+            (118, "Don Quijote de la Mancha"),
+            (115, "El Principito")
         };
 
         // GET: /Prestamos
@@ -43,6 +47,9 @@ namespace AppWebBiblioteca.Controllers
             return View();
         }
 
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------
+
+       
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(PrestamoCreateViewModel model)
@@ -59,16 +66,52 @@ namespace AppWebBiblioteca.Controllers
                 return BadRequest(new { success = false, message = "Validación fallida", errors });
             }
 
-            // TODO: Persistir el préstamo en BD aquí
-            // var nuevoPrestamoId = _servicioPrestamos.Crear(model);
-
-            return Ok(new
+            try
             {
-                success = true,
-                message = "Préstamo registrado correctamente."
-                //, id = nuevoPrestamoId
-            });
+                // 1. CREAR PRÉSTAMO
+                var nuevoPrestamo = new
+                {
+                    Id = DateTime.Now.Ticks, // ID único
+                    UsuarioId = model.UsuarioId,
+                    LibroId = model.LibroId,
+                    FechaPrestamo = model.FechaPrestamo,
+                    FechaVencimiento = model.FechaVencimiento,
+                    Observaciones = model.Observaciones,
+                    Estado = "Activo"
+                };
+
+                //Guardar en lista temporal
+                _prestamos.Add(nuevoPrestamo);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Préstamo registrado correctamente."
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Error: " + ex.Message
+                });
+            }
+    
+        }//fin del POST
+
+        //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+        [HttpGet]
+        public IActionResult GetPrestamos()
+        {
+            // Retornar todos los préstamos guardados
+            return Json(_prestamos);
         }
-    }
-}
+
+
+
+    }//fin del public
+}//fin del namespace
+
 
