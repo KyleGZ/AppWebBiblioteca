@@ -1,6 +1,7 @@
 ﻿@model PaginacionResponse<AppWebBiblioteca.Models.SeccionDto>
 
 @{
+    // No Layout: es un partial que se carga dentro de SociosLectores
     var items = Model?.Data ?? new List<AppWebBiblioteca.Models.SeccionDto>();
     var pag = Model?.Pagination ?? new PaginationInfo();
     var termino = ViewBag.TerminoBusqueda as string ?? "";
@@ -31,7 +32,12 @@
     <input type="hidden" name="resultadosPorPagina" id="rppHiddenSecciones" value="@pag.ResultadosPorPagina" />
 </form>
 
-<!-- Tabla -->
+<!-- Info -->
+<div class="text-muted small mb-2">
+    <span>@(pag.TotalResultados)</span>
+    <span>@(string.IsNullOrWhiteSpace(termino) ? "sección(es) registradas" : $"sección(es) encontradas para \"{termino}\"")</span>
+</div>
+
 @if (items.Any())
 {
     <div class="table-responsive">
@@ -51,14 +57,24 @@
                         <td><i class="fas fa-layer-group me-2 text-muted"></i>@s.Nombre</td>
                         <td class="text-center">
                             <div class="btn-actions-group justify-content-center">
-                                <button type="button" class="btn btn-action btn-action-edit"
-                                        data-bs-toggle="modal" data-bs-target="#modalEditarSeccion"
-                                        data-id="@s.IdSeccion" data-nombre="@s.Nombre">
+                                <!-- Editar -->
+                                <button type="button"
+                                        class="btn btn-action btn-action-edit"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEditarSeccion"
+                                        data-id="@s.IdSeccion"
+                                        data-nombre="@s.Nombre"
+                                        title="Editar sección">
                                     <i class="fas fa-edit icon-elegant"></i>
                                 </button>
-                                <button type="button" class="btn btn-action btn-action-deactivate"
-                                        data-bs-toggle="modal" data-bs-target="#modalEliminarSeccion"
-                                        data-id="@s.IdSeccion" data-nombre="@s.Nombre">
+                                <!-- Eliminar -->
+                                <button type="button"
+                                        class="btn btn-action btn-action-deactivate"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEliminarSeccion"
+                                        data-id="@s.IdSeccion"
+                                        data-nombre="@s.Nombre"
+                                        title="Eliminar sección">
                                     <i class="fas fa-trash-alt icon-elegant"></i>
                                 </button>
                             </div>
@@ -74,11 +90,12 @@
     {
         <ul class="pagination pagination-sm mt-3">
             <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
-                <a href="#" class="page-link js-page" data-page="1"><i class="fas fa-angle-double-left"></i></a>
+                <a href="#" class="page-link js-page" data-page="1" title="Primera"><i class="fas fa-angle-double-left"></i></a>
             </li>
             <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
-                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual - 1)"><i class="fas fa-chevron-left"></i></a>
+                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual - 1)" title="Anterior"><i class="fas fa-chevron-left"></i></a>
             </li>
+
             @{
                 var ini = Math.Max(1, pag.PaginaActual - 2);
                 var fin = Math.Min(pag.TotalPaginas, pag.PaginaActual + 2);
@@ -89,11 +106,45 @@
                     <a href="#" class="page-link js-page" data-page="@i">@i</a>
                 </li>
             }
+
             <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
-                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual + 1)"><i class="fas fa-chevron-right"></i></a>
+                <a href="#" class="page-link js-page" data-page="@(pag.PaginaActual + 1)" title="Siguiente"><i class="fas fa-chevron-right"></i></a>
             </li>
             <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
-                <a href="#" class="page-link js-page" data-page="@pag.TotalPaginas"><i class="fas fa-angle-double-right"></i></a>
+                <a href="#" class="page-link js-page" data-page="@pag.TotalPaginas" title="Última"><i class="fas fa-angle-double-right"></i></a>
+            </li>
+
+            <!-- Select RPP sin C# en atributos -->
+            <li class="ms-2">
+                @{
+                    var rpp = pag.ResultadosPorPagina;
+                }
+                <select class="form-select form-select-sm d-inline-block w-auto" name="resultadosPorPagina" id="rppSelectSecciones">
+                    @if (rpp == 20)
+                    {
+                        <option value="20" selected>20</option>
+                    }
+                    else
+                    {
+                        <option value="20">20</option>
+                    }
+                    @if (rpp == 50)
+                    {
+                        <option value="50" selected>50</option>
+                    }
+                    else
+                    {
+                        <option value="50">50</option>
+                    }
+                    @if (rpp == 100)
+                    {
+                        <option value="100" selected>100</option>
+                    }
+                    else
+                    {
+                        <option value="100">100</option>
+                    }
+                </select>
             </li>
         </ul>
     }
@@ -106,5 +157,81 @@ else
     </div>
 }
 
-<!-- Modales agregar, editar, eliminar -->
-<!-- Puedes copiar los mismos modales de Genero cambiando nombres y controladores -->
+<!-- ======================= MODALES ======================= -->
+<!-- Agregar -->
+<div class="modal fade" id="modalAgregarSeccion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-plus me-2"></i>Agregar Sección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Crear" asp-controller="Seccion" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input name="nombre" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-autores-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Editar -->
+<div class="modal fade" id="modalEditarSeccion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Editar Sección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Editar" asp-controller="Seccion" method="post" id="formEditarSeccion">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <input type="hidden" id="editarIdSeccion" name="idSeccion" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input id="editarNombreSeccion" name="nombre" class="form-control" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-autores-primary">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Eliminar -->
+<div class="modal fade" id="modalEliminarSeccion" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i>Eliminar Sección</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-action="Eliminar" asp-controller="Seccion" method="post" id="formEliminarSeccion">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <input type="hidden" id="eliminarIdSeccion" name="idSeccion" />
+                <div class="modal-body text-center">
+                    <p>¿Eliminar la sección <strong id="nombreSeccionEliminar"></strong>?</p>
+                    <p class="text-muted small"><i class="fas fa-info-circle me-1"></i>Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-autores-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-action-deactivate"><i class="fas fa-trash-alt me-2"></i>Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
