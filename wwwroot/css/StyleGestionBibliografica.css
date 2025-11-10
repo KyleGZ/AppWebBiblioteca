@@ -1,0 +1,82 @@
+﻿/* ======= Gestión Bibliográfica: estilos visuales ======= */
+
+/* Card estilo similar a Libros */
+.gb-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 2px 10px rgba(3, 15, 39, 0.04);
+    background: #fff;
+}
+
+.gb-title-icon {
+    color: var(--esparza-blue, #2162ff);
+}
+
+/* Animación sutil */
+.gb-fade-in {
+    animation: gbfade .25s ease-out;
+}
+
+@keyframes gbfade {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== Tabs visibles (corrige “invisibles hasta click”) ===== */
+.gb-tabs {
+    border-bottom: 1px solid #e9ecef;
+}
+
+.gb-tab {
+    border: 1px solid transparent;
+    margin-right: .25rem;
+    color: #495057;
+    background: #f8f9fa; /* inactivas visibles */
+    border-top-left-radius: .5rem;
+    border-top-right-radius: .5rem;
+    transition: all .15s ease-in-out;
+    font-weight: 500;
+}
+
+    .gb-tab:hover {
+        color: #0d6efd;
+        background: #f3f6ff;
+        border-color: #dee2e6 #dee2e6 transparent;
+    }
+
+    .gb-tab.active {
+        color: #0d6efd;
+        background: #ffffff; /* activa blanca */
+        border-color: #dee2e6 #dee2e6 #ffffff;
+        box-shadow: 0 -1px 8px rgba(13,110,253,0.06);
+    }
+
+/* (Opcional) Tablas dentro de parciales */
+.table.table-autores {
+    --bs-table-bg: #fff;
+    --bs-table-striped-bg: #fafbff;
+    --bs-table-striped-color: inherit;
+    border-color: #eef0f4;
+}
+
+.btn-action {
+    padding: .25rem .5rem;
+    border-radius: .5rem;
+}
+
+.btn-action-edit {
+    background: #eef4ff;
+    border: 1px solid #d7e3ff;
+}
+
+.btn-action-deactivate {
+    background: #fff2f2;
+    border: 1px solid #ffd6d6;
+}
