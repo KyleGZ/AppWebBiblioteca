@@ -153,7 +153,7 @@
           async function loadInto(host, url){
             if(!host || !url) return;
             try{
-              host.dataset.urlCurrent = url; // guardar última URL usada por la pestaña
+              host.dataset.urlCurrent = url;
               const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
               const html = await res.text();
               if(!res.ok){
@@ -168,26 +168,13 @@
             }
           }
 
-          // ---------- Función para mostrar notificaciones ----------
-          function showNotification(success, message) {
-            // Crear elemento de notificación
-            const notification = document.createElement('div');
-            notification.className = `alert alert-${success ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
-            notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-            notification.innerHTML = `
-                <i class="fas ${success ? 'fa-check-circle' : 'fa-exclamation-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-
-            document.body.appendChild(notification);
-
-            // Auto-eliminar después de 5 segundos
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 5000);
+          // ---------- Función mejorada para mostrar mensajes ----------
+          function showOperationResult(result) {
+            if (result.success) {
+              showSuccess(result.message);
+            } else {
+              showError(result.message);
+            }
           }
 
           // ---------- Cablear cada contenedor de pestaña ----------
@@ -210,7 +197,7 @@
                 return;
               }
 
-              // Crear / Editar / Eliminar (POST) - MODIFICADO
+              // Crear / Editar / Eliminar (POST) - USANDO MODAL GLOBAL
               const isCrud = action.endsWith('/crear') || action.endsWith('/editar') || action.endsWith('/eliminar');
               if(isCrud && isPost){
                 e.preventDefault();
@@ -229,12 +216,12 @@
                     result = await response.json();
                   } catch (jsonError) {
                     console.error('Error parsing JSON:', jsonError);
-                    showNotification(false, 'Error en la respuesta del servidor');
+                    showError('Error en la respuesta del servidor');
                     return;
                   }
 
-                  // Mostrar notificación
-                  showNotification(result.success, result.message);
+                  // Usar el modal global en lugar de notificaciones
+                  showOperationResult(result);
 
                   // Recargar el contenido de la pestaña si fue exitoso
                   if (result.success) {
@@ -244,20 +231,23 @@
                     }
                   }
 
-                  // Cerrar el modal
+                  // Cerrar el modal del formulario
                   const modalEl = form.closest('.modal');
                   if(modalEl && window.bootstrap){
-                    (bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl)).hide();
+                    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                    if (modalInstance) {
+                      modalInstance.hide();
+                    }
                   }
                 })
                 .catch(err => {
                   console.error('Fetch error:', err);
-                  showNotification(false, 'Ocurrió un error procesando la acción.');
+                  showError('Ocurrió un error procesando la acción.');
                 });
               }
             });
 
-            // Paginación (botones con .js-page y data-page)
+            // [Mantener el resto del código igual: paginación, resultados por página, relleno de modales]
             host.addEventListener('click', (e) => {
               const btn = e.target.closest('.js-page');
               if(!btn) return;
@@ -274,7 +264,6 @@
               loadInto(host, form.action + '?' + qs);
             });
 
-            // Resultados por página
             host.addEventListener('change', (e) => {
               const sel = e.target;
               if(sel && sel.name === 'resultadosPorPagina'){
@@ -289,9 +278,8 @@
               }
             });
 
-            // Relleno de modales (editar / eliminar) — SIEMPRE usando el modal destino
             host.addEventListener('click', (e) => {
-              // Editar
+              // [Mantener el código de relleno de modales igual]
               const btnEdit = e.target.closest('[data-bs-target^="#modalEditar"]');
               if(btnEdit){
                 const target = btnEdit.getAttribute('data-bs-target');
@@ -322,7 +310,6 @@
                 }
               }
 
-              // Eliminar
               const btnDel = e.target.closest('[data-bs-target^="#modalEliminar"]');
               if(btnDel){
                 const target = btnDel.getAttribute('data-bs-target');
@@ -353,7 +340,7 @@
             });
           }
 
-          // ---------- Referencias ----------
+          // ---------- Referencias y inicialización ----------
           const hostEd = document.getElementById('tabEditoriales');
           const hostAu = document.getElementById('tabAutores');
           const hostGe = document.getElementById('tabGeneros');
@@ -361,7 +348,7 @@
 
           [hostEd, hostAu, hostGe, hostSe].forEach(wireTabHost);
 
-          // ---------- Carga inicial: SOLO la pestaña activa ----------
+          // [Mantener el resto del código de inicialización igual]
           document.addEventListener('DOMContentLoaded', () => {
             const activeBtn = document.querySelector('#slTabs .nav-link.active');
             const key = activeBtn ? (activeBtn.getAttribute('data-tabkey') || '').toLowerCase() : '';
@@ -372,7 +359,6 @@
             }
           });
 
-          // ---------- Cargar al cambiar de pestaña (solo si sigue en "loading") ----------
           document.addEventListener('shown.bs.tab', (ev) => {
             const key = (ev.target && ev.target.getAttribute('data-tabkey')) || '';
             const map = { editoriales: hostEd, autores: hostAu, generos: hostGe, secciones: hostSe };

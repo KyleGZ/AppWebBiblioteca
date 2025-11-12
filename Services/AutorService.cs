@@ -157,6 +157,144 @@ namespace AppWebBiblioteca.Services
         //    }
         //}
 
+        //public async Task<ApiResponse> RegistrarAutorAsync(string nombre)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Autor/Registro";
+        //        var payload = new { IdAutor = 0, Nombre = nombre };
+
+        //        var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
+
+        //        // Si el HTTP no es OK, devolvemos error
+        //        if (!response.IsSuccessStatusCode)
+        //            return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
+
+        //        // Si el HTTP es OK, intentamos leer JSON flexible
+        //        var json = await response.Content.ReadAsStringAsync();
+        //        using var doc = JsonDocument.Parse(json);
+        //        var root = doc.RootElement;
+
+        //        // 1) Caso estándar con "success"
+        //        if (root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True)
+        //        {
+        //            return new ApiResponse
+        //            {
+        //                Success = true,
+        //                Message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
+        //                          ? msgProp.GetString()
+        //                          : "Autor creado con éxito.",
+        //                Data = root.TryGetProperty("data", out var dataProp) ? JsonSerializer.Deserialize<object>(dataProp.GetRawText()) : null
+        //            };
+        //        }
+
+        //        // 2) Caso alterno sin "success": si trae idAutor o mensaje y el HTTP fue 200, lo tomamos como éxito
+        //        int idAutor = 0;
+        //        if (root.TryGetProperty("idAutor", out var idProp) && idProp.TryGetInt32(out var id))
+        //            idAutor = id;
+
+        //        var mensaje = root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String
+        //                        ? messageProp.GetString()
+        //                        : (root.TryGetProperty("mensaje", out var mensajeProp) && mensajeProp.ValueKind == JsonValueKind.String
+        //                            ? mensajeProp.GetString()
+        //                            : "Autor creado con éxito.");
+
+        //        // HTTP 200 y hay alguna señal (id o mensaje) => éxito
+        //        return new ApiResponse
+        //        {
+        //            Success = true,
+        //            Message = mensaje,
+        //            Data = idAutor > 0 ? new { idAutor } : null
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new ApiResponse { Success = false, Message = $"Error interno: {ex.Message}" };
+        //    }
+        //}
+
+        //public async Task<ApiResponse> EditarAutorAsync(int idAutor, string nombre)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Autor/Editar";
+        //        var payload = new { IdAutor = idAutor, Nombre = nombre };
+
+        //        var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
+        //        if (!response.IsSuccessStatusCode)
+        //            return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
+
+        //        var json = await response.Content.ReadAsStringAsync();
+
+        //        // Intentar parsear; si no hay "success", asumimos éxito por HTTP 200:
+        //        try
+        //        {
+        //            using var doc = JsonDocument.Parse(json);
+        //            var root = doc.RootElement;
+
+        //            var success = root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True;
+        //            var message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
+        //                            ? msgProp.GetString()
+        //                            : "Autor actualizado correctamente.";
+
+        //            object? data = null;
+        //            if (root.TryGetProperty("data", out var dataProp))
+        //                data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
+
+        //            // Si no viene success, pero HTTP fue OK, lo tratamos como éxito
+        //            return new ApiResponse { Success = success || true, Message = message, Data = data };
+        //        }
+        //        catch
+        //        {
+        //            // Respuesta no JSON estándar, pero HTTP OK => éxito
+        //            return new ApiResponse { Success = true, Message = "Autor actualizado correctamente." };
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new ApiResponse { Success = false, Message = $"Error inesperado: {ex.Message}" };
+        //    }
+        //}
+
+        //public async Task<ApiResponse> EliminarAutorAsync(int idAutor)
+        //{
+        //    try
+        //    {
+        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Autor/Eliminar?id={idAutor}";
+        //        var response = await _httpClient.DeleteAsync(apiUrl);
+        //        if (!response.IsSuccessStatusCode)
+        //            return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
+
+        //        var json = await response.Content.ReadAsStringAsync();
+
+        //        try
+        //        {
+        //            using var doc = JsonDocument.Parse(json);
+        //            var root = doc.RootElement;
+
+        //            var success = root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True;
+        //            var message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
+        //                            ? msgProp.GetString()
+        //                            : "Autor eliminado correctamente.";
+
+        //            object? data = null;
+        //            if (root.TryGetProperty("data", out var dataProp))
+        //                data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
+
+        //            // Si no viene success pero HTTP fue OK => éxito
+        //            return new ApiResponse { Success = success || true, Message = message, Data = data };
+        //        }
+        //        catch
+        //        {
+        //            return new ApiResponse { Success = true, Message = "Autor eliminado correctamente." };
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return new ApiResponse { Success = false, Message = $"Error inesperado: {ex.Message}" };
+        //    }
+        //}
+
         public async Task<ApiResponse> RegistrarAutorAsync(string nombre)
         {
             try
@@ -165,53 +303,37 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdAutor = 0, Nombre = nombre };
 
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-
-                // Si el HTTP no es OK, devolvemos error
-                if (!response.IsSuccessStatusCode)
-                    return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
-
-                // Si el HTTP es OK, intentamos leer JSON flexible
                 var json = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
 
-                // 1) Caso estándar con "success"
-                if (root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True)
+                // Debug opcional
+                // Console.WriteLine($"API Registrar Autor Response - Status: {response.StatusCode}, Body: {json}");
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    return new ApiResponse
-                    {
-                        Success = true,
-                        Message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
-                                  ? msgProp.GetString()
-                                  : "Autor creado con éxito.",
-                        Data = root.TryGetProperty("data", out var dataProp) ? JsonSerializer.Deserialize<object>(dataProp.GetRawText()) : null
-                    };
+                    return await HandleErrorResponse(response, json);
                 }
 
-                // 2) Caso alterno sin "success": si trae idAutor o mensaje y el HTTP fue 200, lo tomamos como éxito
-                int idAutor = 0;
-                if (root.TryGetProperty("idAutor", out var idProp) && idProp.TryGetInt32(out var id))
-                    idAutor = id;
-
-                var mensaje = root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String
-                                ? messageProp.GetString()
-                                : (root.TryGetProperty("mensaje", out var mensajeProp) && mensajeProp.ValueKind == JsonValueKind.String
-                                    ? mensajeProp.GetString()
-                                    : "Autor creado con éxito.");
-
-                // HTTP 200 y hay alguna señal (id o mensaje) => éxito
+                // Procesar respuesta exitosa usando ExtractFromJson
+                return ExtractFromJson(json);
+            }
+            catch (HttpRequestException ex)
+            {
                 return new ApiResponse
                 {
-                    Success = true,
-                    Message = mensaje,
-                    Data = idAutor > 0 ? new { idAutor } : null
+                    Success = false,
+                    Message = $"Error de conexión: {ex.Message}"
                 };
             }
             catch (Exception ex)
             {
-                return new ApiResponse { Success = false, Message = $"Error interno: {ex.Message}" };
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error inesperado: {ex.Message}"
+                };
             }
         }
+
 
         public async Task<ApiResponse> EditarAutorAsync(int idAutor, string nombre)
         {
@@ -221,38 +343,34 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdAutor = idAutor, Nombre = nombre };
 
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
-                if (!response.IsSuccessStatusCode)
-                    return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
-
                 var json = await response.Content.ReadAsStringAsync();
 
-                // Intentar parsear; si no hay "success", asumimos éxito por HTTP 200:
-                try
+                // Debug opcional
+                // Console.WriteLine($"API Editar Autor Response - Status: {response.StatusCode}, Body: {json}");
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
-
-                    var success = root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True;
-                    var message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
-                                    ? msgProp.GetString()
-                                    : "Autor actualizado correctamente.";
-
-                    object? data = null;
-                    if (root.TryGetProperty("data", out var dataProp))
-                        data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
-
-                    // Si no viene success, pero HTTP fue OK, lo tratamos como éxito
-                    return new ApiResponse { Success = success || true, Message = message, Data = data };
+                    return await HandleErrorResponse(response, json);
                 }
-                catch
+
+                // Procesar respuesta exitosa usando ExtractFromJson
+                return ExtractFromJson(json);
+            }
+            catch (HttpRequestException ex)
+            {
+                return new ApiResponse
                 {
-                    // Respuesta no JSON estándar, pero HTTP OK => éxito
-                    return new ApiResponse { Success = true, Message = "Autor actualizado correctamente." };
-                }
+                    Success = false,
+                    Message = $"Error de conexión: {ex.Message}"
+                };
             }
             catch (Exception ex)
             {
-                return new ApiResponse { Success = false, Message = $"Error inesperado: {ex.Message}" };
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error inesperado: {ex.Message}"
+                };
             }
         }
 
@@ -262,39 +380,106 @@ namespace AppWebBiblioteca.Services
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Autor/Eliminar?id={idAutor}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
-                if (!response.IsSuccessStatusCode)
-                    return new ApiResponse { Success = false, Message = $"Error HTTP: {response.StatusCode}" };
-
                 var json = await response.Content.ReadAsStringAsync();
 
-                try
+                // Debug opcional
+                // Console.WriteLine($"API Eliminar Autor Response - Status: {response.StatusCode}, Body: {json}");
+
+                if (!response.IsSuccessStatusCode)
                 {
-                    using var doc = JsonDocument.Parse(json);
-                    var root = doc.RootElement;
-
-                    var success = root.TryGetProperty("success", out var okProp) && okProp.ValueKind == JsonValueKind.True;
-                    var message = root.TryGetProperty("message", out var msgProp) && msgProp.ValueKind == JsonValueKind.String
-                                    ? msgProp.GetString()
-                                    : "Autor eliminado correctamente.";
-
-                    object? data = null;
-                    if (root.TryGetProperty("data", out var dataProp))
-                        data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
-
-                    // Si no viene success pero HTTP fue OK => éxito
-                    return new ApiResponse { Success = success || true, Message = message, Data = data };
+                    return await HandleErrorResponse(response, json);
                 }
-                catch
+
+                // Procesar respuesta exitosa usando ExtractFromJson
+                return ExtractFromJson(json);
+            }
+            catch (HttpRequestException ex)
+            {
+                return new ApiResponse
                 {
-                    return new ApiResponse { Success = true, Message = "Autor eliminado correctamente." };
-                }
+                    Success = false,
+                    Message = $"Error de conexión: {ex.Message}"
+                };
             }
             catch (Exception ex)
             {
-                return new ApiResponse { Success = false, Message = $"Error inesperado: {ex.Message}" };
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error inesperado: {ex.Message}"
+                };
             }
         }
 
+
+
+
+        private async Task<ApiResponse> HandleErrorResponse(HttpResponseMessage response, string json)
+        {
+            try
+            {
+                // Intentar deserializar como ApiResponse
+                var errorResponse = JsonSerializer.Deserialize<ApiResponse>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (errorResponse != null && !string.IsNullOrEmpty(errorResponse.Message))
+                {
+                    return errorResponse;
+                }
+
+                // Fallback: extraer mensaje manualmente
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                var errorMessage = root.TryGetProperty("message", out var msg)
+                    ? msg.GetString()
+                    : root.TryGetProperty("title", out var title)
+                        ? title.GetString()
+                        : $"Error del servidor (HTTP {(int)response.StatusCode})";
+
+                return new ApiResponse { Success = false, Message = errorMessage };
+            }
+            catch
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Error en la comunicación con el API (HTTP {(int)response.StatusCode})"
+                };
+            }
+        }
+
+        private ApiResponse ExtractFromJson(string json)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+
+                bool success = root.TryGetProperty("success", out var s) && s.GetBoolean();
+                string message = root.TryGetProperty("message", out var m)
+                    ? m.GetString()
+                    : (success ? "Operación exitosa" : "Error en la operación");
+
+                object data = null;
+                if (root.TryGetProperty("data", out var d) && d.ValueKind != JsonValueKind.Null)
+                {
+                    data = JsonSerializer.Deserialize<object>(d.GetRawText());
+                }
+
+                return new ApiResponse { Success = success, Message = message, Data = data };
+            }
+            catch
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = "Formato de respuesta inválido"
+                };
+            }
+        }
 
     }
 
