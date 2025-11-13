@@ -114,6 +114,14 @@
                     </a>
                 </div>
 
+                <div class="nav-item">
+                    <a href="@Url.Action("Index", "Reservas")"
+                       class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reservas" ? "active" : "")">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="nav-text">Reservas</span>
+                    </a>
+                </div>
+
                 <!-- Gestión de Usuarios - Solo para Administradores -->
                 @if (User.IsInRole("Admin"))
                 {

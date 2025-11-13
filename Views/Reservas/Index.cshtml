@@ -1,0 +1,695 @@
+﻿@model PaginacionResponse<ReservaResponseDto>
+
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Gestión de Reservas - Biblioteca Esparza";
+    ViewData["PageTitle"] = "Gestión de Reservas";
+
+    var reservas = Model?.Data ?? new List<ReservaResponseDto>();
+    var pag = Model?.Pagination ?? new PaginationInfo();
+    var termino = ViewBag.TerminoBusqueda as string ?? "";
+    var rpp = pag.ResultadosPorPagina <= 0 ? 10 : pag.ResultadosPorPagina;
+
+    // Calcular reservas activas del usuario actual
+    var reservasActivasCount = reservas.Count(r => r.Estado == "Activa");
+
+    string Q(int pagina)
+        => $"?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={rpp}";
+}
+
+<div class="container-fluid p-4">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-4">
+
+                    <!-- Header con título y botón -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-calendar-check me-2"></i>
+                                Reservas
+                            </h2>
+                            <p class="text-muted mb-0">Administra las reservas de libros realizadas por los usuarios.</p>
+                        </div>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalBuscarLibros">
+                            <i class="fas fa-plus me-2"></i>Nueva Reserva
+                        </button>
+                    </div>
+
+                    <!-- Tarjeta de estado de reservas -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h2 class="card-title mb-0" id="contadorReservas">
+                                                @reservasActivasCount/3
+                                            </h2>
+                                            <small>Reservas Activas</small>
+                                        </div>
+                                        <div class="display-6">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de búsqueda y filtros -->
+                    <form asp-action="Index" method="get" id="searchForm" class="mb-4">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-8">
+                                <label class="form-label">Buscar por usuario, libro o estado...</label>
+                                <div class="input-group">
+                                    <input type="text" name="termino" id="searchInput" class="form-control" placeholder="Ej: Juan, Cien años, Activa..." value="@termino" />
+                                    <button class="btn btn-outline-primary" type="submit" id="btnBuscar">
+                                        <i class="fas fa-search me-1"></i>Buscar
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="d-flex align-items-center justify-content-end">
+                                    <small class="text-muted me-2">Mostrar:</small>
+                                    <select class="form-select form-select-sm w-auto" name="resultadosPorPagina" id="rppSelect">
+                                        <option value="10" selected="@(rpp == 10)">10</option>
+                                        <option value="20" selected="@(rpp == 20)">20</option>
+                                        <option value="50" selected="@(rpp == 50)">50</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="pagina" id="paginaHidden" value="@pag.PaginaActual" />
+                    </form>
+
+                    <!-- Alertas -->
+                    @if (TempData["Ok"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["Ok"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- Información de resultados -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="text-muted">
+                            <span class="fw-bold">@pag.TotalResultados</span>
+                            <span>@(string.IsNullOrWhiteSpace(termino) ? " reserva(s) registradas" : $" reserva(s) encontradas para \"{termino}\"")</span>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de reservas -->
+                    @if (reservas.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>ID</th>
+                                        <th>Usuario</th>
+                                        <th>Libro</th>
+                                        <th>Fecha Reserva</th>
+                                        <th>Prioridad</th>
+                                        <th>Estado</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var r in reservas)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold text-muted">#@r.IdReserva</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-user me-2 text-muted"></i>
+                                                    <span>@r.NombreUsuario</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-book me-2 text-muted"></i>
+                                                    <span>@r.TituloLibro</span>
+                                                </div>
+                                            </td>
+                                            <td>@r.FechaReserva.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <span class="badge bg-secondary">@r.Prioridad</span>
+                                            </td>
+                                            <td>
+                                                @if (r.Estado == "Activa")
+                                                {
+                                                    <span class="badge bg-success">
+                                                        <i class="fas fa-check me-1"></i>@r.Estado
+                                                    </span>
+                                                }
+                                                else if (r.Estado == "Pendiente")
+                                                {
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="fas fa-clock me-1"></i>@r.Estado
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-times me-1"></i>@r.Estado
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button"
+                                                            class="btn btn-outline-primary"
+                                                            onclick="verReserva(@r.IdReserva)"
+                                                            title="Ver detalles">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button type="button"
+                                                            class="btn btn-outline-danger"
+                                                            onclick="eliminarReserva(@r.IdReserva)"
+                                                            title="Eliminar reserva">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        @if (pag.TotalPaginas > 1)
+                        {
+                            <nav class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(1)" title="Primera página">
+                                            <i class="fas fa-angle-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.PaginaActual - 1)" title="Página anterior">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+
+                                    @{
+                                        var ini = Math.Max(1, pag.PaginaActual - 2);
+                                        var fin = Math.Min(pag.TotalPaginas, pag.PaginaActual + 2);
+                                    }
+
+                                    @for (int i = ini; i <= fin; i++)
+                                    {
+                                        <li class="page-item @(i == pag.PaginaActual ? "active" : "")">
+                                            <a class="page-link" href="@Q(i)">@i</a>
+                                        </li>
+                                    }
+
+                                    <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.PaginaActual + 1)" title="Página siguiente">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.TotalPaginas)" title="Última página">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="mb-3">
+                                <i class="fas fa-search fa-3x text-muted"></i>
+                            </div>
+                            <h5 class="text-muted">No hay reservas que mostrar</h5>
+                            <p class="text-muted">
+                                @(string.IsNullOrWhiteSpace(termino)
+                                                            ? "No se han encontrado reservas registradas."
+                                                            : "No se encontraron reservas que coincidan con tu búsqueda.")
+                        </p>
+                        @if (!string.IsNullOrWhiteSpace(termino))
+                            {
+                                <a href="@Url.Action("Index")" class="btn btn-outline-primary">
+                                    <i class="fas fa-times me-1"></i>Limpiar búsqueda
+                                </a>
+                            }
+                        </div>
+                    }
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODALES (mantengo los mismos modales que ya funcionan) -->
+<!-- Modal Buscar Libros para Reserva -->
+<div class="modal fade" id="modalBuscarLibros" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-search me-2"></i>Buscar Libro para Reserva
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Barra de búsqueda -->
+                <div class="mb-3">
+                    <label class="form-label">Buscar libro por título, autor o ISBN:</label>
+                    <div class="input-group">
+                        <input type="text" id="buscarLibroInput" class="form-control"
+                               placeholder="Ej: Cien años de soledad, Gabriel García Márquez..." />
+                        <button class="btn btn-primary" type="button" id="btnBuscarLibro">
+                            <i class="fas fa-search me-1"></i>Buscar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resultados de búsqueda -->
+                <div id="resultadosLibros" class="mt-3">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-book fa-2x mb-2"></i>
+                        <p>Ingresa un término de búsqueda para encontrar libros</p>
+                    </div>
+                </div>
+
+                <!-- Paginación de resultados -->
+                <div id="paginacionLibros" class="mt-3 d-none">
+                    <nav>
+                        <ul class="pagination justify-content-center" id="paginationLibrosList">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Reserva -->
+<div class="modal fade" id="modalConfirmarReserva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="formConfirmarReserva">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="libroSeleccionadoId" name="IdLibro" />
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-calendar-check me-2"></i>Confirmar Reserva
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Información:</strong> La reserva se creará a nombre de
+                        <strong>@User.Identity.Name</strong>
+                    </div>
+                    <div id="infoLibroSeleccionado">
+                        <!-- Información del libro seleccionado -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Confirmar Reserva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles -->
+<div class="modal fade" id="modalVerReserva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Detalles de Reserva</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detallesReserva">
+                <!-- Los detalles se cargarán aquí via AJAX -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar Reserva -->
+<div class="modal fade" id="modalEliminarReserva" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="formEliminarReserva">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="eliminarIdReserva" name="id" />
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i>Eliminar Reserva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <p>¿Está seguro que desea eliminar esta reserva?</p>
+                    <h6 id="infoReservaEliminar" class="text-danger"></h6>
+                    <p class="text-muted small"><i class="fas fa-info-circle me-1"></i>Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            // Búsqueda solo con botón y Enter (sin debounce automático)
+            const f = document.getElementById('searchForm');
+            const i = document.getElementById('searchInput');
+            const btn = document.getElementById('btnBuscar');
+            const ph = document.getElementById('paginaHidden');
+            const rpp = document.getElementById('rppSelect');
+
+            function go(){ if(ph) ph.value = 1; f.submit(); }
+
+            if(i){
+                // Solo buscar con Enter
+                i.addEventListener('keypress', e => {
+                    if(e.key === 'Enter') {
+                        e.preventDefault();
+                        go();
+                    }
+                });
+            }
+            if(btn){ btn.addEventListener('click', e => { e.preventDefault(); go(); }); }
+            if(rpp){ rpp.addEventListener('change', ()=> go()); }
+        });
+
+        // Función para ver detalles de reserva
+        function verReserva(id) {
+            fetch('@Url.Action("BuscarReserva")?id=' + id)
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success){
+                        const reserva = data.data;
+                        const detalles = `
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>ID Reserva:</strong><br>
+                                    #${reserva.idReserva}
+                                </div>
+                                <div class="col-6">
+                                    <strong>Fecha Reserva:</strong><br>
+                                    ${new Date(reserva.fechaReserva).toLocaleDateString()}
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Usuario:</strong><br>
+                                    ${reserva.nombreUsuario} (ID: ${reserva.idUsuario})
+                                </div>
+                                <div class="col-6">
+                                    <strong>Libro:</strong><br>
+                                    ${reserva.tituloLibro} (ID: ${reserva.idLibro})
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <strong>Prioridad:</strong><br>
+                                    <span class="badge bg-info">${reserva.prioridad}</span>
+                                </div>
+                                <div class="col-6">
+                                    <strong>Estado:</strong><br>
+                                    <span class="badge ${reserva.estado == 'Activa' ? 'bg-success' : reserva.estado == 'Pendiente' ? 'bg-warning' : 'bg-secondary'}">${reserva.estado}</span>
+                                </div>
+                            </div>
+                            ${reserva.isbn ? `<hr><div class="row"><div class="col-12"><strong>ISBN:</strong><br>${reserva.isbn}</div></div>` : ''}
+                        `;
+                        document.getElementById('detallesReserva').innerHTML = detalles;
+                        new bootstrap.Modal(document.getElementById('modalVerReserva')).show();
+                    } else {
+                        showAlert(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showAlert('Error al cargar los detalles de la reserva', 'error');
+                });
+        }
+
+        // Función para eliminar reserva
+        function eliminarReserva(id) {
+            document.getElementById('eliminarIdReserva').value = id;
+            document.getElementById('infoReservaEliminar').textContent = `Reserva #${id}`;
+            new bootstrap.Modal(document.getElementById('modalEliminarReserva')).show();
+        }
+
+        // Función para mostrar alertas
+        function showAlert(message, type) {
+            // Implementar función de alerta según tu sistema existente
+            alert(message); // Reemplazar con tu sistema de notificaciones
+        }
+
+        // Variables para la búsqueda de libros
+        let paginaActualLibros = 1;
+        const resultadosPorPaginaLibros = 5;
+
+        // Función para buscar libros
+        function buscarLibros(termino = '', pagina = 1) {
+            const resultadosDiv = document.getElementById('resultadosLibros');
+            const paginacionDiv = document.getElementById('paginacionLibros');
+
+            resultadosDiv.innerHTML = `
+                <div class="text-center py-3">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Buscando libros...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Buscando libros...</p>
+                </div>
+            `;
+
+            fetch(`@Url.Action("BuscarLibrosParaReserva")?termino=${encodeURIComponent(termino)}&pagina=${pagina}&resultadosPorPagina=${resultadosPorPaginaLibros}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data && data.data.length > 0) {
+                        mostrarResultadosLibros(data.data);
+                        if (data.pagination && data.pagination.totalPaginas > 1) {
+                            mostrarPaginacionLibros(data.pagination, termino);
+                            paginacionDiv.classList.remove('d-none');
+                        } else {
+                            paginacionDiv.classList.add('d-none');
+                        }
+                    } else {
+                        resultadosDiv.innerHTML = `
+                            <div class="text-center text-muted py-4">
+                                <i class="fas fa-search fa-2x mb-2"></i>
+                                <p>${termino ? 'No se encontraron libros que coincidan con tu búsqueda.' : 'Ingresa un término de búsqueda para encontrar libros.'}</p>
+                            </div>
+                        `;
+                        paginacionDiv.classList.add('d-none');
+                    }
+                })
+                .catch(error => {
+                    resultadosDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Error al buscar libros. Intenta nuevamente.
+                        </div>
+                    `;
+                    paginacionDiv.classList.add('d-none');
+                });
+        }
+
+        // Función para mostrar resultados de libros
+        function mostrarResultadosLibros(libros) {
+            const resultadosDiv = document.getElementById('resultadosLibros');
+
+            const librosHTML = libros.map(libro => `
+                <div class="card mb-3 libro-item">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="card-title">${libro.titulo}</h6>
+                                <p class="card-text text-muted mb-1">
+                                    <small><strong>Autor:</strong> ${libro.autor || 'No especificado'}</small>
+                                </p>
+                                <p class="card-text text-muted mb-1">
+                                    <small><strong>ISBN:</strong> ${libro.isbn || 'No disponible'}</small>
+                                </p>
+                                <p class="card-text text-muted mb-2">
+                                    <small><strong>Estado:</strong>
+                                        <span class="badge ${libro.estado === 'Disponible' ? 'bg-success' : 'bg-warning text-dark'}">
+                                            ${libro.estado || 'No especificado'}
+                                        </span>
+                                    </small>
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <button type="button"
+                                        class="btn btn-primary btn-sm ${libro.estado !== 'Disponible' ? 'disabled' : ''}"
+                                        onclick="seleccionarLibro(${libro.idLibro}, '${libro.titulo}', '${libro.autor || ''}', '${libro.isbn || ''}')"
+                                        ${libro.estado !== 'Disponible' ? 'disabled' : ''}>
+                                    <i class="fas fa-calendar-plus me-1"></i>
+                                    ${libro.estado === 'Disponible' ? 'Reservar' : 'No Disponible'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            resultadosDiv.innerHTML = librosHTML;
+        }
+
+        // Función para seleccionar un libro
+        function seleccionarLibro(idLibro, titulo, autor, isbn) {
+            document.getElementById('libroSeleccionadoId').value = idLibro;
+
+            const infoLibroHTML = `
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">${titulo}</h6>
+                        <p class="card-text mb-1"><strong>Autor:</strong> ${autor || 'No especificado'}</p>
+                        <p class="card-text mb-0"><strong>ISBN:</strong> ${isbn || 'No disponible'}</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('infoLibroSeleccionado').innerHTML = infoLibroHTML;
+
+            // eventos para asegurar el cierre correcto
+            const modalBuscar = bootstrap.Modal.getInstance(document.getElementById('modalBuscarLibros'));
+
+            // Escuchar cuando el modal se termine de ocultar
+            $('#modalBuscarLibros').on('hidden.bs.modal', function () {
+                // Ahora abrir el modal de confirmación
+                const modalConfirmar = new bootstrap.Modal(document.getElementById('modalConfirmarReserva'));
+                modalConfirmar.show();
+            });
+
+            // Ocultar el modal de búsqueda
+            modalBuscar.hide();
+        }
+
+        //  TODOS LOS EVENT LISTENERS EN UN SOLO LUGAR
+        document.addEventListener('DOMContentLoaded', function() {
+            const buscarLibroInput = document.getElementById('buscarLibroInput');
+            const btnBuscarLibro = document.getElementById('btnBuscarLibro');
+
+            if (btnBuscarLibro) {
+                btnBuscarLibro.addEventListener('click', function() {
+                    buscarLibros(buscarLibroInput.value, 1);
+                });
+            }
+
+            if (buscarLibroInput) {
+                buscarLibroInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        buscarLibros(this.value, 1);
+                    }
+                });
+            }
+
+            // Formulario de confirmación de reserva
+            const formConfirmar = document.getElementById('formConfirmarReserva');
+            if (formConfirmar) {
+                formConfirmar.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const idLibro = document.getElementById('libroSeleccionadoId').value;
+
+                    const data = {
+                        IdLibro: parseInt(idLibro)
+                    };
+
+                    fetch('@Url.Action("RegistrarReserva")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('#formConfirmarReserva input[name="__RequestVerificationToken"]').value
+                        },
+                        body: JSON.stringify(data)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const modalConfirmar = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarReserva'));
+                            modalConfirmar.hide();
+                            showAlert(data.message, 'success');
+                            setTimeout(() => window.location.reload(), 1500);
+                        } else {
+                            showAlert(data.message, 'error');
+                            // Cerrar modal incluso en error
+                            const modalConfirmar = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarReserva'));
+                            modalConfirmar.hide();
+                        }
+                    })
+                    .catch(error => {
+                        showAlert('Error al crear la reserva', 'error');
+                        // Cerrar modal incluso en error
+                        const modalConfirmar = bootstrap.Modal.getInstance(document.getElementById('modalConfirmarReserva'));
+                        modalConfirmar.hide();
+                    });
+                });
+            }
+
+            // FORMULARIO DE ELIMINACIÓN
+            const formEliminar = document.getElementById('formEliminarReserva');
+            if (formEliminar) {
+                formEliminar.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const idReserva = document.getElementById('eliminarIdReserva').value;
+
+                    fetch('@Url.Action("Eliminar")/' + idReserva, {
+                        method: 'POST',
+                        headers: {
+                            'RequestVerificationToken': document.querySelector('#formEliminarReserva input[name="__RequestVerificationToken"]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // SIEMPRE CERRAR EL MODAL
+                        const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
+                        modalEliminar.hide();
+
+                        if (modalEliminar.hide() == true) {
+                            showAlert(data.message, 'success');
+                             window.location.reload();
+                        } else {
+                            showAlert(data.message, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        // SIEMPRE CERRAR EL MODAL (incluso con errores)
+                        const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
+                        modalEliminar.hide();
+                        showAlert('Error al eliminar la reserva', 'error');
+                    });
+                });
+            }
+        });
+
+    </script>
+}

@@ -15,6 +15,7 @@ namespace AppWebBiblioteca.Services
         string GetToken();
         string GetUserEmail();
         List<string> GetUserRoles();
+        int? GetUserId();
     }
 
     public class AuthService : IAuthService
@@ -99,6 +100,15 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        public int? GetUserId()
+        {
+            var userIdClaim = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
+            {
+                return userId;
+            }
+            return null;
+        }
 
         //public async Task<AuthResponse> LoginAsync(Login login)
         //{

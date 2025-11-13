@@ -1,4 +1,5 @@
-﻿namespace AppWebBiblioteca.Models
+﻿
+namespace AppWebBiblioteca.Models
 {
     public class PaginacionResponse<T>
     {
@@ -6,6 +7,7 @@
         public string? Message { get; set; }
         public List<T> Data { get; set; } = new List<T>();
         public PaginationInfo Pagination { get; set; } = new PaginationInfo();
+
     }
 
     public class PaginationInfo
