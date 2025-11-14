@@ -175,9 +175,9 @@
                                                     </button>
                                                     <button type="button"
                                                             class="btn btn-outline-danger"
-                                                            onclick="eliminarReserva(@r.IdReserva)"
-                                                            title="Eliminar reserva">
-                                                        <i class="fas fa-trash"></i>
+                                                            onclick="cancelarReserva(@r.IdReserva)"
+                                                            title="Cancelar reserva">
+                                                        <i class="fas fa-times"></i>
                                                     </button>
                                                 </div>
                                             </td>
@@ -355,25 +355,25 @@
     </div>
 </div>
 
-<!-- Modal Eliminar Reserva -->
-<div class="modal fade" id="modalEliminarReserva" tabindex="-1" aria-hidden="true">
+<!-- Modal Cancelar Reserva -->
+<div class="modal fade" id="modalCancelarReserva" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form id="formEliminarReserva">
+            <form id="formCancelarReserva">
                 @Html.AntiForgeryToken()
-                <input type="hidden" id="eliminarIdReserva" name="id" />
+                <input type="hidden" id="cancelarIdReserva" name="id" />
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-trash-alt me-2"></i>Eliminar Reserva</h5>
+                    <h5 class="modal-title"><i class="fas fa-times me-2"></i>Cancelar Reserva</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <p>¿Está seguro que desea eliminar esta reserva?</p>
-                    <h6 id="infoReservaEliminar" class="text-danger"></h6>
-                    <p class="text-muted small"><i class="fas fa-info-circle me-1"></i>Esta acción no se puede deshacer.</p>
+                    <p>¿Está seguro que desea cancelar esta reserva?</p>
+                    <h6 id="infoReservaCancelar" class="text-warning"></h6>
+                    <p class="text-muted small"><i class="fas fa-info-circle me-1"></i>El libro volverá a estar disponible para otros usuarios.</p>
                 </div>
                 <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Volver</button>
+                    <button type="submit" class="btn btn-warning">Confirmar Cancelación</button>
                 </div>
             </form>
         </div>
@@ -458,12 +458,17 @@
                 });
         }
 
-        // Función para eliminar reserva
-        function eliminarReserva(id) {
-            document.getElementById('eliminarIdReserva').value = id;
-            document.getElementById('infoReservaEliminar').textContent = `Reserva #${id}`;
-            new bootstrap.Modal(document.getElementById('modalEliminarReserva')).show();
+        // Función para cancelar reserva
+        function cancelarReserva(id) {
+            document.getElementById('cancelarIdReserva').value = id;
+            document.getElementById('infoReservaCancelar').textContent = `Reserva #${id}`;
+            new bootstrap.Modal(document.getElementById('modalCancelarReserva')).show();
         }
+        // function eliminarReserva(id) {
+        //     document.getElementById('eliminarIdReserva').value = id;
+        //     document.getElementById('infoReservaEliminar').textContent = `Reserva #${id}`;
+        //     new bootstrap.Modal(document.getElementById('modalEliminarReserva')).show();
+        // }
 
         // Función para mostrar alertas
         function showAlert(message, type) {
@@ -655,38 +660,38 @@
             }
 
             // FORMULARIO DE ELIMINACIÓN
-            const formEliminar = document.getElementById('formEliminarReserva');
-            if (formEliminar) {
-                formEliminar.addEventListener('submit', function(e) {
+            const formCancelar = document.getElementById('formCancelarReserva');
+            if (formCancelar) {
+                formCancelar.addEventListener('submit', function(e) {
                     e.preventDefault();
 
-                    const idReserva = document.getElementById('eliminarIdReserva').value;
+                    const idReserva = document.getElementById('cancelarIdReserva').value;
 
                     fetch('@Url.Action("Eliminar")/' + idReserva, {
                         method: 'POST',
                         headers: {
-                            'RequestVerificationToken': document.querySelector('#formEliminarReserva input[name="__RequestVerificationToken"]').value
+                            'RequestVerificationToken': document.querySelector('#formCancelarReserva input[name="__RequestVerificationToken"]').value
                         }
                     })
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
+                            const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalCancelarReserva'));
                             modalEliminar.hide();
                             showAlert(data.message, 'success');
                             setTimeout(() => window.location.reload(), 1500);
                         } else {
                             showAlert(data.message, 'error');
                             // Cerrar modal incluso en error
-                            const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
+                            const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalCancelarReserva'));
                             modalEliminar.hide();
                         }
                     })
                     .catch(error => {
                         // SIEMPRE CERRAR EL MODAL (incluso con errores)
-                        const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
+                        const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalCancelarReserva'));
                         modalEliminar.hide();
-                        showAlert('Error al eliminar la reserva', 'error');
+                        showAlert('Error al cancelar la reserva', 'error');
                     });
                 });
             }

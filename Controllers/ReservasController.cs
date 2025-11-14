@@ -65,6 +65,8 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+
+
         //[HttpGet]
         //public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
         //{
