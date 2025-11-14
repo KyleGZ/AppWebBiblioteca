@@ -11,7 +11,7 @@
     var rpp = pag.ResultadosPorPagina <= 0 ? 10 : pag.ResultadosPorPagina;
 
     // Calcular reservas activas del usuario actual
-    var reservasActivasCount = reservas.Count(r => r.Estado == "Activa");
+    var reservasActivasCount = ViewBag.ReservasActivasCount ?? 0;
 
     string Q(int pagina)
         => $"?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={rpp}";
@@ -670,15 +670,16 @@
                     })
                     .then(response => response.json())
                     .then(data => {
-                        // SIEMPRE CERRAR EL MODAL
-                        const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
-                        modalEliminar.hide();
-
-                        if (modalEliminar.hide() == true) {
+                        if (data.success) {
+                            const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
+                            modalEliminar.hide();
                             showAlert(data.message, 'success');
-                             window.location.reload();
+                            setTimeout(() => window.location.reload(), 1500);
                         } else {
                             showAlert(data.message, 'error');
+                            // Cerrar modal incluso en error
+                            const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalEliminarReserva'));
+                            modalEliminar.hide();
                         }
                     })
                     .catch(error => {
