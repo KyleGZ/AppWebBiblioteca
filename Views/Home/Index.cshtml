@@ -81,30 +81,31 @@
                     <!-- Botones de acción -->
                     <div class="row">
                         <div class="col-12">
-                            <h5 class="mb-3 h6 h5-md">
+                            <h5 class="mb-3 h6 h5-md text-center">
                                 <i class="fas fa-bolt me-2 text-warning"></i>
                                 Acciones Rápidas
                             </h5>
-                            <div class="d-flex flex-wrap gap-2">
-                                <a href="#" class="btn btn-esparza-primary btn-sm btn-md-normal">
+                            <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">
+                                <a href="@Url.Action("Index", "Libro")" class="btn btn-esparza-primary btn-sm btn-md-normal">
                                     <i class="fas fa-search me-1 me-md-2"></i>
                                     <span class="btn-text">Buscar en Catálogo</span>
                                 </a>
-                                <a href="#" class="btn btn-library btn-sm btn-md-normal">
+                                <a href="@Url.Action("Index", "Prestamos")" class="btn btn-library btn-sm btn-md-normal">
                                     <i class="fas fa-hand-holding me-1 me-md-2"></i>
                                     <span class="btn-text">Nuevo Préstamo</span>
                                 </a>
-                                <a href="#" class="btn btn-esparza-outline btn-sm btn-md-normal">
+                                <a href="@Url.Action("Index", "Usuario")" class="btn btn-esparza-outline btn-sm btn-md-normal">
                                     <i class="fas fa-user-plus me-1 me-md-2"></i>
-                                    <span class="btn-text">Registrar Socio</span>
+                                    <span class="btn-text">Registrar Usuario</span>
                                 </a>
-                                @if (User.IsInRole("Admin"))
-                                {
-                                    <a href="@Url.Action("Index", "Usuario")" class="btn btn-esparza-outline btn-sm btn-md-normal">
-                                        <i class="fas fa-users-cog me-1 me-md-2"></i>
-                                        <span class="btn-text">Gestión de Usuarios</span>
-                                    </a>
-                                }
+                                <a href="@Url.Action("Index", "Reservas")" class="btn btn-esparza-outline btn-sm btn-md-normal">
+                                    <i class="fas fa-bookmark me-1 me-md-2"></i>
+                                    <span class="btn-text">Gestionar Reservas</span>
+                                </a>
+                                <a href="@Url.Action("Index", "GestionBibliografica")" class="btn btn-esparza-outline btn-sm btn-md-normal">
+                                    <i class="fas fa-book me-1 me-md-2"></i>
+                                    <span class="btn-text">Gestión Bibliográfica</span>
+                                </a>
                             </div>
                         </div>
                     </div>

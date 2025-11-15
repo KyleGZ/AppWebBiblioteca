@@ -1,6 +1,7 @@
 ﻿@{
     Layout = "_Layout";
     ViewData["Title"] = "Gestión Bibliográfica";
+    ViewData["PageTitle"] = "Gestión Bibliográfica";
 
     string activeTab = (Context.Request.Query["tab"].ToString() ?? string.Empty).ToLowerInvariant();
     if (string.IsNullOrWhiteSpace(activeTab)) activeTab = "editoriales"; // pestaña por defecto
