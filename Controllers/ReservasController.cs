@@ -160,6 +160,61 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RegistrarReservaLibro([FromBody] int idLibro)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
+
+                var userId = _authService.GetUserId();
+                if (userId == null)
+                    return Json(new { success = false, message = "No se pudo identificar al usuario" });
+
+                
+                if (idLibro == null || idLibro <= 0)
+                {
+                    return Json(new { success = false, message = "ID de libro inválido" });
+                }
+
+                var reservaDto = new ReservaDto
+                {
+                    IdUsuario = userId.Value,
+                    IdLibro = idLibro,
+                };
+
+                Console.WriteLine($"🔍 DEBUG Controlador: Enviando a servicio - UsuarioId: {userId.Value}, LibroId: {idLibro}");
+
+                var resultado = await _reservaService.RegistrarReservaAsync(reservaDto);
+
+                if (resultado.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = resultado.Message ?? "Reserva creada exitosamente"
+                    });
+                }
+                else
+                {
+                    return Json(new { success = false, message = resultado.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"🔍 DEBUG Controlador: Excepción - {ex.Message}");
+                return Json(new
+                {
+                    success = false,
+                    message = "Error al crear la reserva: " + ex.Message
+                });
+            }
+        }
+
+
         // AGREGAR ESTA CLASE TEMPORAL
         public class SimpleReserva
         {

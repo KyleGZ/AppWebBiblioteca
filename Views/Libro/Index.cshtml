@@ -139,7 +139,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
                     }
-              
+
 
                     <!-- Grid de Libros -->
                     @if (libros.Any())
@@ -149,7 +149,7 @@
                             {
                                 <div class="col-xxl-3 col-xl-4 col-lg-6 col-md-6 col-sm-12 libro-item">
                                     <div class="card libro-card h-100 zoom-in mb-3">
-                                        <div class="card-body">
+                                        <div class="card-body d-flex flex-column">
                                             <!-- Portada -->
                                             <div class="text-center mb-3">
                                                 <img src="@libro.PortadaUrl"
@@ -161,7 +161,7 @@
                                             <!-- Información del libro -->
                                             <h6 class="card-title libro-titulo">@libro.Titulo</h6>
 
-                                            <div class="libro-info">
+                                            <div class="libro-info flex-grow-1">
                                                 <div class="d-flex align-items-center mb-1">
                                                     <i class="fas fa-barcode me-2 text-muted small"></i>
                                                     <small class="text-muted">@libro.ISBN</small>
@@ -171,7 +171,7 @@
                                                     <i class="fas fa-user-edit me-2 text-muted small"></i>
                                                     @if (libro.Autor != null && libro.Autor.Any())
                                                     {
-                                                        <small>@string.Join(", ", libro.Autor)</small>
+                                                        <small class="text-truncate">@string.Join(", ", libro.Autor)</small>
                                                     }
                                                     else
                                                     {
@@ -184,34 +184,42 @@
                                                     <small>@libro.Editorial</small>
                                                 </div>
 
-                                                <div class="d-flex align-items-center mb-2">
+                                                <div class="d-flex align-items-center mb-1">
                                                     <i class="fas fa-tag me-2 text-muted small"></i>
                                                     @if (libro.Genero != null && libro.Genero.Any())
                                                     {
-                                                        <small>@string.Join(", ", libro.Genero)</small>
+                                                        <small class="text-truncate">@string.Join(", ", libro.Genero)</small>
                                                     }
                                                     else
                                                     {
                                                         <small class="text-muted">Sin género</small>
                                                     }
                                                 </div>
+
+                                                <!-- Estado integrado en la información -->
+                                                <div class="d-flex align-items-center mb-3">
+                                                    <i class="fas fa-toggle-on me-2 text-muted small"></i>
+                                                    <span class="badge badge-estado @GetEstadoBadgeClass(libro.Estado)">
+                                                        <i class="fas @GetEstadoIcon(libro.Estado) me-1"></i>
+                                                        @libro.Estado
+                                                    </span>
+                                                </div>
                                             </div>
 
-                                            <!-- Estado -->
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <span class="badge badge-estado @GetEstadoBadgeClass(libro.Estado)">
-                                                    <i class="fas @GetEstadoIcon(libro.Estado) me-1"></i>
-                                                    @libro.Estado
-                                                </span>
+                                            <!-- Botones - ahora más compactos -->
+                                            <div class="d-flex justify-content-between align-items-center mt-auto pt-2 border-top">
                                                 <button type="button" class="btn btn-sm btn-libro-detalle"
-                                                        onclick="verDetalle(@libro.IdLibro)">
+                                                        onclick="verDetalle(@libro.IdLibro)"
+                                                        title="Ver detalles">
                                                     <i class="fas fa-eye"></i>
-                                                    Ver Detalle
+                                                    <span class="d-none d-sm-inline">Detalle</span>
                                                 </button>
 
                                                 <button type="button" class="btn btn-sm btn-warning"
-                                                        onclick="editarLibro(@libro.IdLibro)">
-                                                    <i class="fas fa-edit"></i> Editar
+                                                        onclick="editarLibro(@libro.IdLibro)"
+                                                        title="Editar libro">
+                                                    <i class="fas fa-edit"></i>
+                                                    <span class="d-none d-sm-inline">Editar</span>
                                                 </button>
                                             </div>
                                         </div>
@@ -1356,8 +1364,120 @@
             }
         }
 
-        function mostrarDetalleLibro(libro) {
+        // function mostrarDetalleLibro(libro) {
+        //     const contenido = `
+        //         <div class="row">
+        //             <div class="col-md-4 text-center mb-4">
+        //                 <img src="${libro.portadaUrl || libro.portada || '/imagenes/portadas/default-book-cover.jpg'}"
+        //                      alt="Portada de ${libro.titulo}"
+        //                      class="img-fluid rounded shadow"
+        //                      style="max-height: 300px;"
+        //                      onerror="this.src='/imagenes/portadas/default-book-cover.jpg'">
+        //             </div>
+        //             <div class="col-md-8">
+        //                 <h4 class="text-primary">${libro.titulo}</h4>
+        //                 <div class="libro-detalle-info">
+        //                     <div class="d-flex align-items-center mb-3">
+        //                         <i class="fas fa-barcode me-3 text-muted fa-lg"></i>
+        //                         <div><strong>ISBN:</strong><span class="ms-2">${libro.isbn}</span></div>
+        //                     </div>
+        //                     <div class="d-flex align-items-start mb-3">
+        //                         <i class="fas fa-user-edit me-3 text-muted fa-lg mt-1"></i>
+        //                         <div>
+        //                             <strong>Autor(es):</strong>
+        //                             <div class="ms-2">
+        //                                 ${libro.autores && Array.isArray(libro.autores) && libro.autores.length > 0 ?
+        //                                     libro.autores.map(autor => `<span class="badge bg-primary me-1 mb-1">${autor.nombre || autor}</span>`).join('') :
+        //                                     (libro.autor && Array.isArray(libro.autor) && libro.autor.length > 0 ?
+        //                                         libro.autor.map(a => `<span class="badge bg-primary me-1 mb-1">${a}</span>`).join('') :
+        //                                         '<span class="text-muted">No especificado</span>')
+        //                                 }
+        //                             </div>
+        //                         </div>
+        //                     </div>
+        //                     <div class="d-flex align-items-start mb-3">
+        //                         <i class="fas fa-tags me-3 text-muted fa-lg mt-1"></i>
+        //                         <div>
+        //                             <strong>Género(s):</strong>
+        //                             <div class="ms-2">
+        //                                 ${libro.generos && Array.isArray(libro.generos) && libro.generos.length > 0 ?
+        //                                     libro.generos.map(genero => `<span class="badge bg-success me-1 mb-1">${genero.nombre || genero}</span>`).join('') :
+        //                                     (libro.genero && Array.isArray(libro.genero) && libro.genero.length > 0 ?
+        //                                         libro.genero.map(g => `<span class="badge bg-success me-1 mb-1">${g}</span>`).join('') :
+        //                                         '<span class="text-muted">No especificado</span>')
+        //                                 }
+        //                             </div>
+        //                         </div>
+        //                     </div>
+        //                     <div class="d-flex align-items-center mb-3">
+        //                         <i class="fas fa-building me-3 text-muted fa-lg"></i>
+        //                         <div><strong>Editorial:</strong><span class="ms-2">${libro.editorial || 'No especificada'}</span></div>
+        //                     </div>
+        //                     <div class="d-flex align-items-center mb-3">
+        //                         <i class="fas fa-layer-group me-3 text-muted fa-lg"></i>
+        //                         <div><strong>Sección:</strong><span class="ms-2">${libro.seccion || 'No especificada'}</span></div>
+        //                     </div>
+        //                     <div class="d-flex align-items-center mb-3">
+        //                         <i class="fas fa-toggle-on me-3 text-muted fa-lg"></i>
+        //                         <div><strong>Estado:</strong><span class="ms-2 badge ${GetEstadoBadgeClass(libro.estado)}">${libro.estado}</span></div>
+        //                     </div>
+        //                     ${libro.descripcion ? `
+        //                         <div class="d-flex align-items-start mb-3">
+        //                             <i class="fas fa-align-left me-3 text-muted fa-lg mt-1"></i>
+        //                             <div class="flex-grow-1">
+        //                                 <strong>Descripción:</strong>
+        //                                 <div class="ms-2 mt-1 text-justify descripcion-contenedor"
+        //                                      style="max-height: 200px; overflow-y: auto; padding: 10px; background: #f8f9fa; border-radius: 5px; border: 1px solid #e9ecef;">
+        //                                     ${libro.descripcion}
+        //                                 </div>
+        //                             </div>
+        //                         </div>
+        //                     ` : ''}
+        //                 </div>
+        //             </div>
+        //         </div>
+        //     `;
+        //     document.getElementById('detalleLibroContent').innerHTML = contenido;
+        // }
+
+                function mostrarDetalleLibro(libro) {
+            console.log('🔍 DEBUG - Datos del libro recibidos:', libro);
+            console.log('🔍 DEBUG - Estado del libro:', libro.estado);
+            console.log('🔍 DEBUG - ID del libro:', libro.idLibro);
+
+            // Normalizar el estado para comparación
+            const estadoNormalizado = String(libro.estado || '').trim().toLowerCase();
+            const esDisponible = estadoNormalizado === 'disponible';
+
+            console.log('🔍 DEBUG - ¿Es disponible?:', esDisponible);
+
+            const botonReserva = esDisponible ? `
+                <div class="d-flex align-items-center mb-4 p-3 bg-light rounded">
+                    <i class="fas fa-calendar-check me-3 text-success fa-lg"></i>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1 text-success">¡Este libro está disponible!</h6>
+                        <p class="mb-2 text-muted small">Puedes reservarlo ahora mismo.</p>
+                    </div>
+                    <button class="btn btn-success btn-lg px-4"
+                            onclick="reservarLibro(${libro.idLibro})"
+                            id="btnReservar-${libro.idLibro}">
+                        <i class="fas fa-bookmark me-2"></i>Reservar
+                    </button>
+                </div>
+            ` : `
+                <div class="d-flex align-items-center mb-4 p-3 bg-light rounded">
+                    <i class="fas fa-info-circle me-3 text-warning fa-lg"></i>
+                    <div>
+                        <h6 class="mb-1 text-warning">No disponible para reserva</h6>
+                        <p class="mb-0 text-muted small">Estado actual: ${libro.estado || 'No disponible'}</p>
+                    </div>
+                </div>
+            `;
+
             const contenido = `
+                <!-- Campo hidden para el ID del libro -->
+                <input type="hidden" id="libroId" value="${libro.idLibro}">
+
                 <div class="row">
                     <div class="col-md-4 text-center mb-4">
                         <img src="${libro.portadaUrl || libro.portada || '/imagenes/portadas/default-book-cover.jpg'}"
@@ -1367,7 +1487,11 @@
                              onerror="this.src='/imagenes/portadas/default-book-cover.jpg'">
                     </div>
                     <div class="col-md-8">
-                        <h4 class="text-primary">${libro.titulo}</h4>
+                        <h4 class="text-primary mb-3">${libro.titulo}</h4>
+
+                        <!-- Botón de reserva -->
+                        ${botonReserva}
+
                         <div class="libro-detalle-info">
                             <div class="d-flex align-items-center mb-3">
                                 <i class="fas fa-barcode me-3 text-muted fa-lg"></i>
@@ -1378,11 +1502,9 @@
                                 <div>
                                     <strong>Autor(es):</strong>
                                     <div class="ms-2">
-                                        ${libro.autores && Array.isArray(libro.autores) && libro.autores.length > 0 ?
-                                            libro.autores.map(autor => `<span class="badge bg-primary me-1 mb-1">${autor.nombre || autor}</span>`).join('') :
-                                            (libro.autor && Array.isArray(libro.autor) && libro.autor.length > 0 ?
-                                                libro.autor.map(a => `<span class="badge bg-primary me-1 mb-1">${a}</span>`).join('') :
-                                                '<span class="text-muted">No especificado</span>')
+                                        ${libro.autor && Array.isArray(libro.autor) && libro.autor.length > 0 ?
+                                            libro.autor.map(a => `<span class="badge bg-primary me-1 mb-1">${a}</span>`).join('') :
+                                            '<span class="text-muted">No especificado</span>'
                                         }
                                     </div>
                                 </div>
@@ -1392,11 +1514,9 @@
                                 <div>
                                     <strong>Género(s):</strong>
                                     <div class="ms-2">
-                                        ${libro.generos && Array.isArray(libro.generos) && libro.generos.length > 0 ?
-                                            libro.generos.map(genero => `<span class="badge bg-success me-1 mb-1">${genero.nombre || genero}</span>`).join('') :
-                                            (libro.genero && Array.isArray(libro.genero) && libro.genero.length > 0 ?
-                                                libro.genero.map(g => `<span class="badge bg-success me-1 mb-1">${g}</span>`).join('') :
-                                                '<span class="text-muted">No especificado</span>')
+                                        ${libro.genero && Array.isArray(libro.genero) && libro.genero.length > 0 ?
+                                            libro.genero.map(g => `<span class="badge bg-success me-1 mb-1">${g}</span>`).join('') :
+                                            '<span class="text-muted">No especificado</span>'
                                         }
                                     </div>
                                 </div>
@@ -1413,7 +1533,7 @@
                                 <i class="fas fa-toggle-on me-3 text-muted fa-lg"></i>
                                 <div><strong>Estado:</strong><span class="ms-2 badge ${GetEstadoBadgeClass(libro.estado)}">${libro.estado}</span></div>
                             </div>
-                            ${libro.descripcion ? `
+                            ${libro.descripcion && libro.descripcion !== 'Desconocida' ? `
                                 <div class="d-flex align-items-start mb-3">
                                     <i class="fas fa-align-left me-3 text-muted fa-lg mt-1"></i>
                                     <div class="flex-grow-1">
@@ -1431,6 +1551,92 @@
             `;
             document.getElementById('detalleLibroContent').innerHTML = contenido;
         }
+
+        // =============================================
+        // FUNCIONES PARA RESERVA DE LIBROS
+        // =============================================
+
+                async function reservarLibro(idLibro) {
+            try {
+                const boton = document.getElementById(`btnReservar-${idLibro}`);
+                const textoOriginal = boton.innerHTML;
+
+                // Mostrar estado de carga
+                boton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reservando...';
+                boton.disabled = true;
+                boton.classList.remove('btn-success');
+                boton.classList.add('btn-secondary');
+
+                const model = {
+                    IdLibro: idLibro
+                };
+
+                const response = await fetch('/Reservas/RegistrarReserva', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: JSON.stringify(model)
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showSuccess(data.message);
+
+                    // Actualizar visualmente el estado en el modal
+                    const estadoBadge = document.querySelector('.libro-detalle-info .badge');
+                    if (estadoBadge) {
+                        estadoBadge.textContent = 'Reservado';
+                        estadoBadge.className = 'ms-2 badge bg-warning';
+                    }
+
+                    // Ocultar botón de reserva y mostrar mensaje de éxito
+                    const reservaSection = boton.closest('.d-flex');
+                    if (reservaSection) {
+                        reservaSection.innerHTML = `
+                            <i class="fas fa-check-circle me-3 text-success fa-lg"></i>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 text-success">¡Reserva exitosa!</h6>
+                                <p class="mb-0 text-muted small">${data.message}</p>
+                            </div>
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-check me-1"></i>Reservado
+                            </span>
+                        `;
+                    }
+
+                    // Cerrar modal después de 2 segundos
+                    setTimeout(() => {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('detalleLibroModal'));
+                        if (modal) modal.hide();
+                    }, 2000);
+
+                } else {
+                    showError(data.message);
+                    // Restaurar botón en caso de error
+                    boton.innerHTML = textoOriginal;
+                    boton.disabled = false;
+                    boton.classList.remove('btn-secondary');
+                    boton.classList.add('btn-success');
+                }
+
+            } catch (error) {
+                console.error('Error al reservar:', error);
+                showError('Error de conexión al procesar la reserva');
+
+                // Restaurar botón en caso de error de conexión
+                const boton = document.getElementById(`btnReservar-${idLibro}`);
+                if (boton) {
+                    boton.innerHTML = '<i class="fas fa-bookmark me-2"></i>Reservar';
+                    boton.disabled = false;
+                    boton.classList.remove('btn-secondary');
+                    boton.classList.add('btn-success');
+                }
+            }
+        }
+
 
         // =============================================
         // FUNCIONES DE IMPORTACIÓN
