@@ -55,6 +55,83 @@
             font-size: 0.9rem;
             color: #6c757d;
         }
+        /* Estilos para el modal de notificaciones */
+        .notificacion-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem;
+        }
+
+            .notificacion-item:hover {
+                background-color: #f8f9fa;
+                transform: translateX(2px);
+            }
+
+        .notificacion-no-leida {
+            border-left-color: #007bff;
+            background-color: #f8fbff;
+        }
+
+        .notificacion-leida {
+            opacity: 0.8;
+            background-color: #fafafa;
+        }
+
+        .notificacion-fecha {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+
+        .notificacion-contenido {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .notificacion-titulo {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #343a40;
+            margin-bottom: 0.25rem;
+        }
+
+        .badge-estado {
+            font-size: 0.7rem;
+            padding: 0.25em 0.6em;
+        }
+
+        .btn-marcar-leida {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Scroll personalizado para la lista de notificaciones */
+        #listaNotificaciones::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #listaNotificaciones::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        #listaNotificaciones::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+            #listaNotificaciones::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+
+        /* Estilos para el header del modal */
+        .modal-header.bg-primary {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        }
+
+
     </style>
 </head>
 <body>
@@ -216,15 +293,15 @@
                                     </li>
                                     <li>
                                         <a class="dropdown-item" href="#">
-                                            <i class="fas fa-envelope me-1"></i>Mensajes
-                                            <span class="badge bg-primary rounded-pill ms-2">3</span>
+                                            <i class="fas fa-bell me-1"></i>Notificaciones
+                                            <span class="badge bg-danger rounded-pill ms-2" id="notificacionCounter">0</span>
                                         </a>
                                     </li>
-                                    <li>
+                                   @*  <li>
                                         <a class="dropdown-item" href="#">
                                             <i class="fas fa-cog me-1"></i>Preferencias
                                         </a>
-                                    </li>
+                                    </li> *@
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
                                         <form asp-controller="Usuario" asp-action="Logout" method="post" class="d-inline">
@@ -287,6 +364,53 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal de Notificaciones -->
+    <div class="modal fade" id="notificacionesModal" tabindex="-1" aria-labelledby="notificacionesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="notificacionesModalLabel">
+                        <i class="fas fa-bell me-2"></i>Mis Notificaciones
+                    </h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-light me-2" id="btnMarcarTodasLeidas">
+                            <i class="fas fa-check-double me-1"></i>Marcar todas como leídas
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+                <div class="modal-body p-0">
+                    <!-- Estado de carga -->
+                    <div id="notificacionesLoading" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando notificaciones...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Cargando notificaciones...</p>
+                    </div>
+
+                    <!-- Lista de notificaciones -->
+                    <div id="notificacionesLista" class="d-none">
+                        <div class="list-group list-group-flush" id="listaNotificaciones" style="max-height: 400px; overflow-y: auto;">
+                            <!-- Las notificaciones se cargarán aquí dinámicamente -->
+                        </div>
+
+                        <!-- Estado vacío -->
+                        <div id="notificacionesVacio" class="text-center py-5 d-none">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No tienes notificaciones</h5>
+                            <p class="text-muted">Cuando tengas nuevas notificaciones, aparecerán aquí.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <small class="text-muted me-auto" id="contadorNotificaciones">Mostrando 0 notificaciones</small>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Container para Toast Notifications -->
     <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
@@ -398,6 +522,270 @@
         window.testModal = function() {
             showSuccess('¡Este es un mensaje de prueba!');
         }
+
+        $(document).ready(function() {
+            let notificaciones = [];
+
+            // Abrir modal de notificaciones
+            $('#btnNotificaciones').on('click', function() {
+                cargarNotificaciones();
+                $('#notificacionesModal').modal('show');
+            });
+
+            // Recargar notificaciones cuando se abre el modal
+            $('#notificacionesModal').on('show.bs.modal', function() {
+                cargarNotificaciones();
+            });
+
+            // Cargar notificaciones
+            function cargarNotificaciones() {
+                mostrarEstadoCarga();
+
+                $.ajax({
+                    url: '@Url.Action("ObtenerNotificaciones", "Notificacion")',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            notificaciones = response.data;
+                            mostrarNotificaciones(notificaciones);
+                            actualizarContadorNotificaciones();
+                        } else {
+                            mostrarError('Error al cargar notificaciones: ' + response.message);
+                            mostrarEstadoVacio();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        mostrarError('Error de conexión: ' + error);
+                        mostrarEstadoVacio();
+                    }
+                });
+            }
+
+            // Mostrar notificaciones en la lista
+            function mostrarNotificaciones(notificaciones) {
+                const $lista = $('#listaNotificaciones');
+                const $estadoVacio = $('#notificacionesVacio');
+
+                $lista.empty();
+
+                if (notificaciones.length === 0) {
+                    mostrarEstadoVacio();
+                    return;
+                }
+
+                // Ocultar estados de carga y vacío
+                $('#notificacionesLoading').addClass('d-none');
+                $estadoVacio.addClass('d-none');
+                $('#notificacionesLista').removeClass('d-none');
+
+                // Ordenar notificaciones por fecha (más recientes primero)
+                notificaciones.sort((a, b) => new Date(b.fechaEnvio) - new Date(a.fechaEnvio));
+
+                notificaciones.forEach((notificacion, index) => {
+                    const fecha = formatearFecha(notificacion.fechaEnvio);
+                    const esNoLeida = notificacion.estado === 'No leida';
+                    const claseEstado = esNoLeida ? 'notificacion-no-leida' : 'notificacion-leida';
+                    const textoEstado = esNoLeida ? 'No leída' : 'Leída';
+                    const badgeColor = esNoLeida ? 'bg-primary' : 'bg-secondary';
+
+                    const $item = $(`
+                        <div class="list-group-item notificacion-item ${claseEstado}" data-id="${notificacion.idNotificacion}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="flex-grow-1">
+                                    <div class="notificacion-titulo">${notificacion.titulo || 'Notificación'}</div>
+                                    <p class="notificacion-contenido mb-2">${notificacion.mensaje || 'Sin contenido específico'}</p>
+                                </div>
+                                <span class="badge ${badgeColor} badge-estado ms-2">${textoEstado}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="notificacion-fecha">
+                                    <i class="fas fa-clock me-1"></i>${fecha}
+                                </small>
+                                ${esNoLeida ? `
+                                <button class="btn btn-sm btn-outline-primary btn-marcar-leida">
+                                    <i class="fas fa-check me-1"></i>Marcar como leída
+                                </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `);
+
+                    // Evento para marcar como leída
+                    if (esNoLeida) {
+                        $item.find('.btn-marcar-leida').on('click', function() {
+                            marcarComoLeida(notificacion.idNotificacion, $item);
+                        });
+                    }
+
+                    $lista.append($item);
+                });
+
+                $('#contadorNotificaciones').text(`Mostrando ${notificaciones.length} notificación(es)`);
+            }
+
+            // Formatear fecha
+            function formatearFecha(fechaString) {
+                const fecha = new Date(fechaString);
+                const ahora = new Date();
+                const diffMs = ahora - fecha;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+
+                if (diffMins < 1) {
+                    return 'Hace un momento';
+                } else if (diffMins < 60) {
+                    return `Hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+                } else if (diffHours < 24) {
+                    return `Hace ${diffHours} hora${diffHours > 1 ? 's' : ''}`;
+                } else if (diffDays < 7) {
+                    return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+                } else {
+                    return fecha.toLocaleDateString('es-ES', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+            }
+
+            // Marcar notificación como leída
+            function marcarComoLeida(idNotificacion, $elemento) {
+                $.ajax({
+                    url: '@Url.Action("MarcarLeida", "Notificaciones")',
+                    type: 'POST',
+                    data: { idNotificacion: idNotificacion },
+                    success: function(response) {
+                        if (response.success) {
+                            // Actualizar UI
+                            $elemento.removeClass('notificacion-no-leida').addClass('notificacion-leida');
+                            $elemento.find('.badge').removeClass('bg-primary').addClass('bg-secondary').text('Leída');
+                            $elemento.find('.btn-marcar-leida').remove();
+
+                            // Actualizar contador global
+                            actualizarContadorNotificaciones();
+                            mostrarMensajeExito(response.message);
+                        } else {
+                            mostrarError('Error al marcar como leída: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        mostrarError('Error de conexión: ' + error);
+                    }
+                });
+            }
+
+            // Marcar todas como leídas
+            $('#btnMarcarTodasLeidas').on('click', function() {
+                const noLeidas = notificaciones.filter(n => n.estado === 'No leida').length;
+
+                if (noLeidas === 0) {
+                    mostrarMensajeExito('No hay notificaciones pendientes por leer');
+                    return;
+                }
+
+                if (!confirm(`¿Estás seguro de que quieres marcar las ${noLeidas} notificación(es) no leída(s) como leídas?`)) {
+                    return;
+                }
+
+                $.ajax({
+                    url: '@Url.Action("MarcarTodasLeidas", "Notificaciones")',
+                    type: 'POST',
+                    success: function(response) {
+                        if (response.success) {
+                            // Recargar notificaciones
+                            cargarNotificaciones();
+                            mostrarMensajeExito(response.message);
+                        } else {
+                            mostrarError('Error: ' + response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        mostrarError('Error de conexión: ' + error);
+                    }
+                });
+            });
+
+            // Actualizar contador de notificaciones no leídas
+            function actualizarContadorNotificaciones() {
+                const noLeidas = notificaciones.filter(n => n.estado === 'No leida').length;
+                const $contador = $('#notificacionCounter');
+
+                $contador.text(noLeidas);
+
+                if (noLeidas > 0) {
+                    $contador.removeClass('d-none');
+                    // Agregar animación al contador
+                    $contador.addClass('pulse-animation');
+                    setTimeout(() => $contador.removeClass('pulse-animation'), 600);
+                } else {
+                    $contador.addClass('d-none');
+                }
+            }
+
+            // Funciones auxiliares
+            function mostrarEstadoCarga() {
+                $('#notificacionesLoading').removeClass('d-none');
+                $('#notificacionesLista').addClass('d-none');
+                $('#notificacionesVacio').addClass('d-none');
+            }
+
+            function mostrarEstadoVacio() {
+                $('#notificacionesLoading').addClass('d-none');
+                $('#notificacionesLista').addClass('d-none');
+                $('#notificacionesVacio').removeClass('d-none');
+            }
+
+            function mostrarError(mensaje) {
+                // Puedes usar Toast de Bootstrap o SweetAlert aquí
+                console.error(mensaje);
+                // Ejemplo simple con alert
+                alert('Error: ' + mensaje);
+            }
+
+            function mostrarMensajeExito(mensaje) {
+                // Puedes usar Toast de Bootstrap o SweetAlert aquí
+                console.log(mensaje);
+                // Ejemplo simple con alert
+                // alert('Éxito: ' + mensaje);
+            }
+
+            // Cargar contador inicial al cargar la página
+            function cargarContadorInicial() {
+                $.ajax({
+                    url: '@Url.Action("ObtenerContador", "Notificaciones")',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            const $contador = $('#notificacionCounter');
+                            $contador.text(response.cantidad);
+
+                            if (response.cantidad > 0) {
+                                $contador.removeClass('d-none');
+                            } else {
+                                $contador.addClass('d-none');
+                            }
+                        }
+                    },
+                    error: function() {
+                        // Silenciar error en carga inicial
+                    }
+                });
+            }
+
+            // Cargar contador cuando la página esté lista
+            $(window).on('load', function() {
+                cargarContadorInicial();
+
+                // Opcional: Actualizar contador cada 2 minutos
+                setInterval(cargarContadorInicial, 120000);
+            });
+
+            
+            document.head.appendChild(style);
+        });
 
 
 
