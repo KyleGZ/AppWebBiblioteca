@@ -46,7 +46,6 @@
         <table class="table table-autores">
             <thead>
                 <tr>
-                    <th style="width:120px;">ID</th>
                     <th>Nombre</th>
                     <th class="text-center" style="width:220px;">Acciones</th>
                 </tr>
@@ -55,7 +54,6 @@
                 @foreach (var a in autores)
                 {
                     <tr>
-                        <td class="fw-bold">#@a.IdAutor</td>
                         <td><i class="fas fa-user-pen me-2 text-muted"></i>@a.Nombre</td>
                         <td class="text-center">
                             <div class="btn-actions-group justify-content-center">
