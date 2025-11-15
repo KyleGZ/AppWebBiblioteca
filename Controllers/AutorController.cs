@@ -9,6 +9,7 @@ namespace AppWebBiblioteca.Controllers
         private readonly IAutorService _autorService;
         private readonly IAuthService _authService;
 
+        //constructor
         public AutorController(IAutorService autorService, IAuthService authService)
         {
             _autorService = autorService;
