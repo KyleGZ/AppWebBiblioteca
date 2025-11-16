@@ -2,57 +2,83 @@
 using System.Collections.Generic;
 using System.Linq;
 using AppWebBiblioteca.Models;
+using AppWebBiblioteca.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace AppWebBiblioteca.Controllers
 {
-    [Authorize] // Opcional: restringe a usuarios autenticados
+    [Authorize]
     public class PrestamosController : Controller
     {
-        // LISTA TEMPORAL para guardar préstamos
-        private static List<dynamic> _prestamos = new List<dynamic>();
+        private readonly IUsuarioService _usuarioService;
+        private readonly ILibroService _libroService;
+        private readonly IAuthService _authService;
+        private readonly HttpClient _httpClient;
+        private readonly IConfiguration _configuration;
 
-
-        // Datos de ejemplo para poblar selects (reemplaza por tus servicios/repositorios)
-        private static readonly List<(string Id, string Nombre)> _usuarios = new()
+        public PrestamosController(IUsuarioService usuarioService, ILibroService libroService, IAuthService authService, HttpClient httpClient, IConfiguration configuration)
         {
-            ("1", "Juan Pérez"),
-            ("2", "María Gómez"),
-            ("3", "Miguel de Cervantes")
-        };
-
-        private static readonly List<(int Id, string Titulo)> _libros = new()
-        {
-            (112, "Cien años de soledad"),
-            (118, "Don Quijote de la Mancha"),
-            (115, "El Principito")
-        };
-
-        // GET: /Prestamos
-        public IActionResult Index()
-        {
-            ViewData["Title"] = "Préstamos y Devoluciones";
-            ViewData["PageTitle"] = "Préstamos y Devoluciones";
-
-            ViewBag.Usuarios = _usuarios
-                .Select(u => new SelectListItem { Value = u.Id, Text = u.Nombre })
-                .ToList();
-
-            ViewBag.Libros = _libros
-                .Select(l => new SelectListItem { Value = l.Id.ToString(), Text = l.Titulo })
-                .ToList();
-
-            return View();
+            _usuarioService = usuarioService;
+            _libroService = libroService;
+            _authService = authService;
+            _httpClient = httpClient;
+            _configuration = configuration;
         }
 
-//-----------------------------------------------------------------------------------------------------------------------------------------------------------
+        // GET: /Prestamos
+        public async Task<IActionResult> Index()
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return RedirectToAction("Login", "Usuario");
 
-       
+                ViewData["Title"] = "Préstamos y Devoluciones";
+                ViewData["PageTitle"] = "Préstamos y Devoluciones";
+
+                // Obtener usuarios reales desde la API
+                var usuarios = await _usuarioService.ObtenerUsuariosAsync();
+                ViewBag.Usuarios = usuarios
+                    .Where(u => u.Estado == "Activo")
+                    .Select(u => new SelectListItem 
+                    { 
+                        Value = u.IdUsuario.ToString(), 
+                        Text = $"{u.Nombre} - {u.Cedula}" 
+                    })
+                    .ToList();
+
+                // Obtener libros reales desde la API
+                var libros = await _libroService.ObtenerLibrosAsync();
+                ViewBag.Libros = libros
+                    ?.Where(l => l.Estado == "Disponible")
+                    .Select(l => new SelectListItem 
+                    { 
+                        Value = l.IdLibro.ToString(), 
+                        Text = $"{l.Titulo} - ISBN: {l.ISBN}"
+                    })
+                    .ToList() ?? new List<SelectListItem>();
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "Error al cargar los datos para préstamos: " + ex.Message;
+                
+                ViewBag.Usuarios = new List<SelectListItem>();
+                ViewBag.Libros = new List<SelectListItem>();
+
+                return View();
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(PrestamoCreateViewModel model)
+        public async Task<IActionResult> Create(PrestamoCreateViewModel model)
         {
             if (!ModelState.IsValid)
             {
@@ -63,55 +89,103 @@ namespace AppWebBiblioteca.Controllers
                         kv => kv.Value!.Errors.Select(e => e.ErrorMessage).ToArray()
                     );
 
-                return BadRequest(new { success = false, message = "Validación fallida", errors });
+                return Json(new { success = false, message = "Validación fallida", errors });
             }
 
             try
             {
-                // 1. CREAR PRÉSTAMO
-                var nuevoPrestamo = new
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos";
+                
+                var prestamoData = new
                 {
-                    Id = DateTime.Now.Ticks, // ID único
-                    UsuarioId = model.UsuarioId,
-                    LibroId = model.LibroId,
-                    FechaPrestamo = model.FechaPrestamo,
-                    FechaVencimiento = model.FechaVencimiento,
-                    Observaciones = model.Observaciones,
-                    Estado = "Activo"
+                    usuarioId = int.Parse(model.UsuarioId),
+                    libroId = model.LibroId,
+                    fechaPrestamo = model.FechaPrestamo,
+                    fechaVencimiento = model.FechaVencimiento,
+                    observaciones = model.Observaciones
                 };
 
-                //Guardar en lista temporal
-                _prestamos.Add(nuevoPrestamo);
-
-                return Ok(new
+                var response = await _httpClient.PostAsJsonAsync(apiUrl, prestamoData);
+                
+                if (response.IsSuccessStatusCode)
                 {
-                    success = true,
-                    message = "Préstamo registrado correctamente."
-                });
+                    return Json(new { success = true, message = "Préstamo registrado correctamente." });
+                }
+                
+                return Json(new { success = false, message = "Error al crear el préstamo" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = "Error: " + ex.Message
-                });
+                return Json(new { success = false, message = "Error: " + ex.Message });
             }
-    
-        }//fin del POST
-
-        //------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-        [HttpGet]
-        public IActionResult GetPrestamos()
-        {
-            // Retornar todos los préstamos guardados
-            return Json(_prestamos);
         }
 
+        // MÉTODOS ACTUALIZADOS PARA USAR LA API REAL
+        [HttpGet]
+        public async Task<IActionResult> GetPrestamos()
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos";
+                var response = await _httpClient.GetAsync(apiUrl);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var prestamos = await response.Content.ReadFromJsonAsync<List<object>>();
+                    return Json(prestamos);
+                }
+                
+                return Json(new List<object>());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
 
+        [HttpGet]
+        public async Task<IActionResult> GetPrestamosActivos()
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/activos";
+                var response = await _httpClient.GetAsync(apiUrl);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var prestamosActivos = await response.Content.ReadFromJsonAsync<List<object>>();
+                    return Json(prestamosActivos);
+                }
+                
+                return Json(new List<object>());
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
+        }
 
-    }//fin del public
-}//fin del namespace
+        [HttpPut]
+        public async Task<IActionResult> RegistrarDevolucion(long id)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/api/Prestamos/devolucion/{id}";
+                var response = await _httpClient.PutAsync(apiUrl, null);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    return Json(new { success = true, mensaje = "Devolución registrada exitosamente" });
+                }
+                
+                return BadRequest(new { success = false, message = "Error al registrar la devolución" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = "Error: " + ex.Message });
+            }
+        }
+    }
+}
 
 

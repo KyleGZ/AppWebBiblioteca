@@ -1,0 +1,181 @@
+.prestamos-card {
+    border: none;
+    border-radius: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.stats-card {
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+}
+
+.stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+}
+
+.stats-icon {
+    font-size: 2.5rem;
+    margin-right: 1rem;
+    opacity: 0.8;
+}
+
+.stats-content {
+    flex: 1;
+}
+
+.stats-number {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stats-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.prestamo-card {
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border-left: 4px solid #007bff;
+}
+
+.prestamo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.prestamo-card.vencido {
+    border-left-color: #dc3545;
+    background-color: #fff8f8;
+}
+
+.prestamo-card.por-vencer {
+    border-left-color: #ffc107;
+    background-color: #fffdf7;
+}
+
+.prestamo-card.devuelto {
+    border-left-color: #28a745;
+    opacity: 0.7;
+}
+
+.prestamo-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.prestamo-info {
+    flex: 1;
+}
+
+.prestamo-titulo {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.prestamo-usuario {
+    color: #6c757d;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+}
+
+.prestamo-fechas {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.prestamo-fecha {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.prestamo-observaciones {
+    background: #f8f9fa;
+    border-radius: 6px;
+    padding: 0.5rem;
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    border-left: 3px solid #007bff;
+}
+
+.prestamo-estado {
+    white-space: nowrap;
+}
+
+.search-container {
+    position: relative;
+}
+
+.view-toggle .btn {
+    border-radius: 6px;
+}
+
+.view-toggle .btn.active {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.fade-in {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.prestamo-table {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.prestamo-table th {
+    background-color: #f8f9fa;
+    border: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.prestamo-table td {
+    border: none;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.prestamo-table tbody tr:hover {
+    background-color: #f8f9fa;
+}

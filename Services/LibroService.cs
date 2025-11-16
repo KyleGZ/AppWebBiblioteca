@@ -24,15 +24,74 @@ namespace AppWebBiblioteca.Services
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var libros = await response.Content.ReadFromJsonAsync<List<LibroListaView>>();
-                    return libros ?? new List<LibroListaView>();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Respuesta de la API: {responseContent}"); // DEBUG
+
+                    // Intenta deserializar como lista directa primero
+                    try
+                    {
+                        var librosDirectos = await response.Content.ReadFromJsonAsync<List<LibroListaView>>();
+                        if (librosDirectos != null && librosDirectos.Any())
+                        {
+                            Console.WriteLine($"Libros deserializados directamente: {librosDirectos.Count}");
+                            return librosDirectos;
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        Console.WriteLine($"Error deserializando como lista directa: {ex.Message}");
+                    }
+
+                    // Si falla, intenta deserializar como ApiResponse
+                    try
+                    {
+                        var apiResponse = JsonSerializer.Deserialize<ApiResponse>(responseContent,
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (apiResponse?.Success == true && apiResponse.Data != null)
+                        {
+                            var jsonElement = (JsonElement)apiResponse.Data;
+                            var librosFromApiResponse = JsonSerializer.Deserialize<List<LibroListaView>>(
+                                jsonElement.GetRawText(),
+                                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                            Console.WriteLine($"Libros desde ApiResponse: {librosFromApiResponse?.Count ?? 0}");
+                            return librosFromApiResponse ?? new List<LibroListaView>();
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        Console.WriteLine($"Error deserializando como ApiResponse: {ex.Message}");
+                    }
+
+                    // Si ambos fallan, intenta deserializar como PaginacionResponse
+                    try
+                    {
+                        var paginatedResponse = JsonSerializer.Deserialize<PaginacionResponse<LibroListaView>>(responseContent,
+                            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                        if (paginatedResponse?.Success == true && paginatedResponse.Data != null)
+                        {
+                            Console.WriteLine($"Libros desde PaginacionResponse: {paginatedResponse.Data.Count}");
+                            return paginatedResponse.Data;
+                        }
+                    }
+                    catch (JsonException ex)
+                    {
+                        Console.WriteLine($"Error deserializando como PaginacionResponse: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Error HTTP: {response.StatusCode} - {response.ReasonPhrase}");
                 }
 
                 return new List<LibroListaView>();
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al obtener libros: {ex.Message}");
+                Console.WriteLine($"Error general al obtener libros: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return new List<LibroListaView>();
             }
         }
