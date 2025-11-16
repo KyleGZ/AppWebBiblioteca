@@ -16,11 +16,11 @@ namespace AppWebBiblioteca.Controllers
             _authService = authService;
         }
 
+        [HttpGet]
         public async Task<IActionResult> ObtenerNotificaciones()
         {
             try
             {
-
                 if (!_authService.IsAuthenticated())
                     return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
 
@@ -28,17 +28,67 @@ namespace AppWebBiblioteca.Controllers
                 if (idUsuario == null)
                     return Json(new { success = false, message = "Usuario no encontrado" });
 
+                // Ahora ObtenerNotificacionesAsync devuelve List<NotificacionView>
                 var notificaciones = await _notificacionService.ObtenerNotificacionesAsync(idUsuario.Value);
 
-                if (notificaciones == null)
-                    return Json(new { success = false, message = "No se pudieron obtener las notificaciones" });
+                // Retornar la lista dentro de data
+                return Json(new { success = true, data = notificaciones });
+            }
+            catch (Exception ex)
+            {
+                // Considera loguear el error en lugar de ex.Message en producción
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
 
-                return Json(new { success = true, data = notificaciones});
+        [HttpPost]
+        public async Task<IActionResult> MarcarComoLeida(int idNotificacion)
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return Json(new { success = false, message = "Debe iniciar sesión" });
+
+                var resultado = await _notificacionService.MarcarComoLeidaAsync(idNotificacion);
+
+                return Json(new
+                {
+                    success = resultado.Success,
+                    message = resultado.Message
+                });
             }
             catch (Exception ex)
             {
                 return Json(new { success = false, message = ex.Message });
             }
         }
+
+        [HttpPost]
+        public async Task<IActionResult> MarcarTodasComoLeidas()
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return Json(new { success = false, message = "Debe iniciar sesión" });
+
+                var idUsuario = _authService.GetUserId();
+                if (idUsuario == null)
+                    return Json(new { success = false, message = "Usuario no encontrado" });
+
+                var resultado = await _notificacionService.MarcarTodasComoLeidasAsync(idUsuario.Value);
+
+                return Json(new
+                {
+                    success = resultado.Success,
+                    message = resultado.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+
     }
 }

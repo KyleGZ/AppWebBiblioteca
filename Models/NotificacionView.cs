@@ -1,6 +1,6 @@
 ﻿namespace AppWebBiblioteca.Models
 {
-    public class Notificacion
+    public class NotificacionView
     {
         public int IdNotificacion { get; set; }
 
