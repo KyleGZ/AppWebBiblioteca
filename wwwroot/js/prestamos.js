@@ -41,8 +41,8 @@ class PrestamosManager {
         document.getElementById('vista-tabla').addEventListener('click', () => this.cambiarVista('tabla'));
 
         // Configurar búsqueda y filtros
-        document.getElementById('searchInput').addEventListener('input', (e) => this.filtrarPrestamos());
-        document.getElementById('filtroEstado').addEventListener('change', (e) => this.filtrarPrestamos());
+        document.getElementById('searchInput').addEventListener('input', () => this.filtrarPrestamos());
+        document.getElementById('filtroEstado').addEventListener('change', () => this.filtrarPrestamos());
         document.getElementById('btnLimpiarFiltros').addEventListener('click', () => this.limpiarFiltros());
     }
 
@@ -76,7 +76,7 @@ class PrestamosManager {
             }).length,
             devueltosHoy: prestamos.filter(p => {
                 const fechaDev = new Date(p.FechaDevolucion || p.fechaDevolucion);
-                return (p.Estado === 'Devuelto' || p.estado === 'Devuelto') && 
+                return (p.Estado === 'Devuelto' || p.estado === 'Devuelto') &&
                        fechaDev.toDateString() === hoy.toDateString();
             }).length
         };
@@ -89,12 +89,8 @@ class PrestamosManager {
 
     cambiarVista(vista) {
         this.vistaActual = vista;
-        
-        // Actualizar botones
         document.getElementById('vista-tarjetas').classList.toggle('active', vista === 'tarjetas');
         document.getElementById('vista-tabla').classList.toggle('active', vista === 'tabla');
-        
-        // Mostrar préstamos en la nueva vista
         this.mostrarPrestamos(this.prestamosData);
     }
 
@@ -349,6 +345,12 @@ class PrestamosManager {
         }
     }
 
+    // Obtiene el ID del préstamo soportando distintos esquemas de la API
+    getPrestamoId(prestamo) {
+        const raw = prestamo.Id ?? prestamo.id ?? prestamo.IdPrestamo ?? prestamo.idPrestamo ?? prestamo.PrestamoId ?? prestamo.prestamoId ?? null;
+        return raw != null ? String(raw) : null; // siempre como string (GUID o numérico)
+    }
+
     mostrarPrestamosActivos(prestamos) {
         const contenedor = document.getElementById('prestamosActivosContainer');
         if (!prestamos || prestamos.length === 0) {
@@ -379,6 +381,13 @@ class PrestamosManager {
             const fechaVence = new Date(prestamo.FechaVencimiento || prestamo.fechaVencimiento);
             const tieneRetraso = hoy > fechaVence;
 
+            const idPrestamo = this.getPrestamoId(prestamo);
+            const accionesHtml = idPrestamo
+                ? `<button class="btn btn-success btn-sm" onclick="prestamosManager.registrarDevolucion('${idPrestamo}')">
+                        <i class="fas fa-check me-1"></i>Registrar Devolución
+                   </button>`
+                : `<span class="text-muted">ID inválido</span>`;
+
             html += `
                 <tr class="${tieneRetraso ? 'table-warning' : ''}">
                     <td>
@@ -397,11 +406,7 @@ class PrestamosManager {
                             `<span class="badge bg-success">Al día</span>`
                         }
                     </td>
-                    <td>
-                        <button class="btn btn-success btn-sm" onclick="prestamosManager.registrarDevolucion(${prestamo.Id || prestamo.id})">
-                            <i class="fas fa-check me-1"></i>Registrar Devolución
-                        </button>
-                    </td>
+                    <td>${accionesHtml}</td>
                 </tr>
             `;
         });
@@ -416,32 +421,28 @@ class PrestamosManager {
     }
 
     async registrarDevolucion(idPrestamo) {
-        if (!confirm('¿Estás seguro de que deseas registrar la devolución de este libro?')) {
+        const id = Number(idPrestamo);
+        if (!Number.isFinite(id) || id <= 0) {
+            showError('ID de préstamo inválido.');
             return;
         }
+        if (!confirm('¿Confirmar devolución?')) return;
 
         try {
-            const response = await fetch(PRESTAMOS_CONFIG.urls.devolucion + `?id=${idPrestamo}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            const url = `/Prestamos/RegistrarDevolucion?idPrestamo=${id}`;
+            const response = await fetch(url, { method: 'PUT' });
+            const text = await response.text();
+            let data; try { data = JSON.parse(text); } catch {}
 
-            if (response.ok) {
-                const resultado = await response.json();
-                showSuccess(resultado.mensaje || 'Devolución registrada exitosamente');
-                
-                // Recargar todo
+            if (response.ok && data?.success) {
+                showSuccess(data.mensaje || 'Devolución registrada.');
                 this.cargarPrestamosActivos();
                 this.cargarPrestamos();
             } else {
-                const error = await response.json();
-                showError(error.message || 'No se pudo registrar la devolución');
+                showError(data?.message || text || 'Error al registrar la devolución');
             }
-        } catch (error) {
-            console.error('Error:', error);
-            showError('Error de conexión al registrar la devolución');
+        } catch (e) {
+            showError('Error de conexión: ' + e.message);
         }
     }
 

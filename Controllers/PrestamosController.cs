@@ -6,7 +6,6 @@ using AppWebBiblioteca.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
 
@@ -41,7 +40,6 @@ namespace AppWebBiblioteca.Controllers
                 ViewData["Title"] = "Préstamos y Devoluciones";
                 ViewData["PageTitle"] = "Préstamos y Devoluciones";
 
-                // Obtener usuarios reales desde la API
                 var usuarios = await _usuarioService.ObtenerUsuariosAsync();
                 ViewBag.Usuarios = usuarios
                     .Where(u => u.Estado == "Activo")
@@ -52,7 +50,6 @@ namespace AppWebBiblioteca.Controllers
                     })
                     .ToList();
 
-                // Obtener libros reales desde la API
                 var libros = await _libroService.ObtenerLibrosAsync();
                 ViewBag.Libros = libros
                     ?.Where(l => l.Estado == "Disponible")
@@ -68,10 +65,8 @@ namespace AppWebBiblioteca.Controllers
             catch (Exception ex)
             {
                 ViewBag.Error = "Error al cargar los datos para préstamos: " + ex.Message;
-                
                 ViewBag.Usuarios = new List<SelectListItem>();
                 ViewBag.Libros = new List<SelectListItem>();
-
                 return View();
             }
         }
@@ -95,10 +90,11 @@ namespace AppWebBiblioteca.Controllers
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos";
-                
+
+                // Usar el ID del lector seleccionado (no el admin) y los nombres originales que funcionaban
                 var prestamoData = new
                 {
-                    usuarioId = int.Parse(model.UsuarioId),
+                    usuarioId = int.Parse(model.UsuarioId), // lector
                     libroId = model.LibroId,
                     fechaPrestamo = model.FechaPrestamo,
                     fechaVencimiento = model.FechaVencimiento,
@@ -106,21 +102,19 @@ namespace AppWebBiblioteca.Controllers
                 };
 
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, prestamoData);
-                
+
                 if (response.IsSuccessStatusCode)
-                {
                     return Json(new { success = true, message = "Préstamo registrado correctamente." });
-                }
-                
-                return Json(new { success = false, message = "Error al crear el préstamo" });
+
+                var apiError = await response.Content.ReadAsStringAsync();
+                return BadRequest(new { success = false, message = string.IsNullOrWhiteSpace(apiError) ? "Error al crear el préstamo" : apiError });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Error: " + ex.Message });
+                return BadRequest(new { success = false, message = "Error: " + ex.Message });
             }
         }
 
-        // MÉTODOS ACTUALIZADOS PARA USAR LA API REAL
         [HttpGet]
         public async Task<IActionResult> GetPrestamos()
         {
@@ -166,26 +160,34 @@ namespace AppWebBiblioteca.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> RegistrarDevolucion(long id)
+        public async Task<IActionResult> RegistrarDevolucion(int idPrestamo)
         {
+            if (idPrestamo <= 0)
+                return BadRequest(new { success = false, message = "ID inválido." });
+
             try
             {
-                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/api/Prestamos/devolucion/{id}";
-                var response = await _httpClient.PutAsync(apiUrl, null);
-                
-                if (response.IsSuccessStatusCode)
-                {
-                    return Json(new { success = true, mensaje = "Devolución registrada exitosamente" });
-                }
-                
-                return BadRequest(new { success = false, message = "Error al registrar la devolución" });
+                var baseApi = _configuration["ApiSettings:BaseUrl"];
+                var url = $"{baseApi}/api/Prestamos/devolucion/{idPrestamo}"; // API: ruta /devolucion/{idPrestamo}
+
+                var response = await _httpClient.PutAsync(url, null);
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, new { success = false, message = body });
+
+                // Opcional: deserializar si desea datos, aquí se retorna mensaje genérico
+                return Json(new { success = true, mensaje = "Devolución registrada exitosamente" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = "Error: " + ex.Message });
+                return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
     }
 }
+
+
+
 
 
