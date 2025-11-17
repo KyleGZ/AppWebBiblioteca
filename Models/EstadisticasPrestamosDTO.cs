@@ -9,6 +9,14 @@
         public int LibrosPrestados { get; set; }
         public List<PrestamosPorDiaDTO> PrestamosPorDia { get; set; } = new();
         public List<LibrosMasPrestadosDTO> LibrosMasPrestados { get; set; } = new();
+        public DateTime FechaInicio { get; set; }
+        public DateTime FechaFin { get; set; }
+    }
+
+    public class FiltroEstadisticasDTO
+    {
+        public DateTime? FechaInicio { get; set; }
+        public DateTime? FechaFin { get; set; }
     }
 
     public class PrestamosPorDiaDTO

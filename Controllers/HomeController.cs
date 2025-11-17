@@ -41,6 +41,53 @@ namespace AppWebBiblioteca.Controllers
             return View();
         }
 
+        [HttpPost]
+        public async Task<IActionResult> FiltrarEstadisticas(DateTime? fechaInicio, DateTime? fechaFin)
+        {
+            try
+            {
+                var filtro = new FiltroEstadisticasDTO
+                {
+                    FechaInicio = fechaInicio,
+                    FechaFin = fechaFin
+                };
+
+                var estadisticas = await _estadisticaService.ObtenerEstadisticasPorFiltroAsync(filtro);
+                return PartialView("_EstadisticasPartial", estadisticas);
+            }
+            catch (Exception ex)
+            {
+               
+                return StatusCode(500, "Error al filtrar estadísticas");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DescargarReporte(DateTime? fechaInicio, DateTime? fechaFin)
+        {
+            try
+            {
+                var filtro = new FiltroEstadisticasDTO
+                {
+                    FechaInicio = fechaInicio,
+                    FechaFin = fechaFin
+                };
+
+                var excelBytes = await _estadisticaService.DescargarReporteExcelAsync(filtro);
+
+                var fileName = $"ReportePrestamos_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+                return File(excelBytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName);
+            }
+            catch (Exception ex)
+            {
+                
+                TempData["Error"] = "Error al generar el reporte Excel";
+                return RedirectToAction("Index");
+            }
+        }
+
         public IActionResult AccessDenied()
         {
             return View();
