@@ -234,8 +234,39 @@
     </div>
 </div>
 
-
+<!-- Modal: Renovar Préstamo -->
+<div class="modal fade" id="modalRenovarPrestamo" tabindex="-1" aria-labelledby="modalRenovarPrestamoLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <form id="formRenovarPrestamo">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalRenovarPrestamoLabel">
+            <i class="fas fa-redo me-2"></i>Renovar Préstamo
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="renovarIdPrestamo" name="idPrestamo" />
+          <div class="mb-3">
+            <label for="renovarFechaVencimiento" class="form-label">
+              <i class="fas fa-calendar-plus me-1"></i>Nueva fecha de vencimiento
+            </label>
+            <input type="date" class="form-control" id="renovarFechaVencimiento" name="nuevaFechaVencimiento" required />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i>Cancelar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
 @section Scripts {
-    <script src="~/js/prestamos.js"></script>
+    <script src="~/js/prestamos.js" asp-append-version="true"></script>
 }

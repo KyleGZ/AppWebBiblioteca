@@ -43,19 +43,19 @@ namespace AppWebBiblioteca.Controllers
                 var usuarios = await _usuarioService.ObtenerUsuariosAsync();
                 ViewBag.Usuarios = usuarios
                     .Where(u => u.Estado == "Activo")
-                    .Select(u => new SelectListItem 
-                    { 
-                        Value = u.IdUsuario.ToString(), 
-                        Text = $"{u.Nombre} - {u.Cedula}" 
+                    .Select(u => new SelectListItem
+                    {
+                        Value = u.IdUsuario.ToString(),
+                        Text = $"{u.Nombre} - {u.Cedula}"
                     })
                     .ToList();
 
                 var libros = await _libroService.ObtenerLibrosAsync();
                 ViewBag.Libros = libros
                     ?.Where(l => l.Estado == "Disponible")
-                    .Select(l => new SelectListItem 
-                    { 
-                        Value = l.IdLibro.ToString(), 
+                    .Select(l => new SelectListItem
+                    {
+                        Value = l.IdLibro.ToString(),
                         Text = $"{l.Titulo} - ISBN: {l.ISBN}"
                     })
                     .ToList() ?? new List<SelectListItem>();
@@ -90,11 +90,9 @@ namespace AppWebBiblioteca.Controllers
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos";
-
-                // Usar el ID del lector seleccionado (no el admin) y los nombres originales que funcionaban
                 var prestamoData = new
                 {
-                    usuarioId = int.Parse(model.UsuarioId), // lector
+                    usuarioId = int.Parse(model.UsuarioId),
                     libroId = model.LibroId,
                     fechaPrestamo = model.FechaPrestamo,
                     fechaVencimiento = model.FechaVencimiento,
@@ -122,13 +120,13 @@ namespace AppWebBiblioteca.Controllers
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos";
                 var response = await _httpClient.GetAsync(apiUrl);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var prestamos = await response.Content.ReadFromJsonAsync<List<object>>();
                     return Json(prestamos);
                 }
-                
+
                 return Json(new List<object>());
             }
             catch (Exception ex)
@@ -144,13 +142,13 @@ namespace AppWebBiblioteca.Controllers
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/activos";
                 var response = await _httpClient.GetAsync(apiUrl);
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     var prestamosActivos = await response.Content.ReadFromJsonAsync<List<object>>();
                     return Json(prestamosActivos);
                 }
-                
+
                 return Json(new List<object>());
             }
             catch (Exception ex)
@@ -168,7 +166,7 @@ namespace AppWebBiblioteca.Controllers
             try
             {
                 var baseApi = _configuration["ApiSettings:BaseUrl"];
-                var url = $"{baseApi}/api/Prestamos/devolucion/{idPrestamo}"; // API: ruta /devolucion/{idPrestamo}
+                var url = $"{baseApi}/api/Prestamos/devolucion/{idPrestamo}";
 
                 var response = await _httpClient.PutAsync(url, null);
                 var body = await response.Content.ReadAsStringAsync();
@@ -176,8 +174,45 @@ namespace AppWebBiblioteca.Controllers
                 if (!response.IsSuccessStatusCode)
                     return StatusCode((int)response.StatusCode, new { success = false, message = body });
 
-                // Opcional: deserializar si desea datos, aquí se retorna mensaje genérico
                 return Json(new { success = true, mensaje = "Devolución registrada exitosamente" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        // NUEVO: Renovar préstamo (extender fecha de vencimiento)
+        [HttpPut]
+        public async Task<IActionResult> Renovar(int idPrestamo, DateTime nuevaFechaVencimiento)
+        {
+            if (idPrestamo <= 0)
+                return BadRequest(new { success = false, message = "ID inválido." });
+            if (nuevaFechaVencimiento.Date <= DateTime.Today)
+                return BadRequest(new { success = false, message = "La nueva fecha debe ser posterior a hoy." });
+
+            try
+            {
+                var baseApi = _configuration["ApiSettings:BaseUrl"];
+                var url = $"{baseApi}/api/Prestamos/fecha-vencimiento/{idPrestamo}";
+
+                // Su API put podría esperar un nombre de propiedad específico. Probamos ambas opciones.
+                var payload = new { fechaVencimiento = nuevaFechaVencimiento };
+                var response = await _httpClient.PutAsJsonAsync(url, payload);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Intento alterno con otro nombre por si el binder lo requiere
+                    var payloadAlt = new { nuevaFechaVencimiento = nuevaFechaVencimiento };
+                    response = await _httpClient.PutAsJsonAsync(url, payloadAlt);
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, new { success = false, message = body });
+
+                return Json(new { success = true, mensaje = "Préstamo renovado correctamente", nuevaFecha = nuevaFechaVencimiento.ToString("yyyy-MM-dd") });
             }
             catch (Exception ex)
             {
