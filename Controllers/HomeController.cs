@@ -12,17 +12,25 @@ namespace AppWebBiblioteca.Controllers
     public class HomeController : Controller
     {
         private readonly IAuthService _authService;
+        private readonly IEstadisticaService _estadisticaService;
 
-        public HomeController(IAuthService authService)
+        public HomeController(IAuthService authService, IEstadisticaService estadisticaService)
         {
             _authService = authService;
+            _estadisticaService = estadisticaService;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+
             if (!_authService.IsAuthenticated())
                 return RedirectToAction("Login", "Usuario");
 
+            var estadisticas = await _estadisticaService.ObtenerEstadisticasAsync();
+
+            ViewBag.Estadisticas = estadisticas;
+            //ViewBag.UserEmail = User.Identity?.Name ?? "Usuario";
+            //ViewBag.UserRoles = new List<string> { "Bibliotecario" }; // Ajusta según tu sistema de roles
             ViewBag.UserEmail = _authService.GetUserEmail();
            
             ViewBag.UserRoles = User.Claims

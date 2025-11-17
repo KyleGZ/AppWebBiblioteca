@@ -4,6 +4,7 @@
     ViewData["PageTitle"] = "Dashboard Biblioteca";
     var userEmail = ViewBag.UserEmail as string;
     var userRoles = ViewBag.UserRoles as List<string> ?? new List<string>();
+    var estadisticas = ViewBag.Estadisticas as AppWebBiblioteca.Models.EstadisticasPrestamosDTO;
 }
 
 <!-- Contenido específico de Home -->
@@ -20,30 +21,30 @@
                         <p class="mb-0 small small-md">Biblioteca Pública de Esparza - Sistema integrado de gestión bibliotecaria</p>
                     </div>
 
-                    <!-- Estadísticas rápidas -->
+                    <!-- Estadísticas rápidas ACTUALIZADAS -->
                     <div class="row mb-4 g-2 g-md-3">
                         <div class="col-6 col-md-3">
                             <div class="stats-card text-center h-100">
-                                <div class="stats-number">1,247</div>
+                                <div class="stats-number" id="librosDisponibles">@(estadisticas?.LibrosDisponibles ?? 0)</div>
                                 <div class="stats-label">Libros Disponibles</div>
                             </div>
                         </div>
                         <div class="col-6 col-md-3">
                             <div class="stats-card text-center h-100">
-                                <div class="stats-number">89</div>
+                                <div class="stats-number" id="prestamosActivos">@(estadisticas?.PrestamosActivos ?? 0)</div>
                                 <div class="stats-label">Préstamos Activos</div>
                             </div>
                         </div>
                         <div class="col-6 col-md-3">
                             <div class="stats-card text-center h-100">
-                                <div class="stats-number">324</div>
-                                <div class="stats-label">Socios Registrados</div>
+                                <div class="stats-number" id="prestamosMes">@(estadisticas?.PrestamosMes ?? 0)</div>
+                                <div class="stats-label">Préstamos del Mes</div>
                             </div>
                         </div>
                         <div class="col-6 col-md-3">
                             <div class="stats-card text-center h-100">
-                                <div class="stats-number">5</div>
-                                <div class="stats-label">Eventos del Mes</div>
+                                <div class="stats-number" id="prestamosDevueltos">@(estadisticas?.PrestamosDevueltos ?? 0)</div>
+                                <div class="stats-label">Devueltos del Mes</div>
                             </div>
                         </div>
                     </div>
@@ -70,9 +71,48 @@
                                         <i class="fas fa-chart-line me-2 book-icon"></i>
                                         Estado del Sistema
                                     </h5>
-                                    <p class="mb-1 small small-md"><i class="fas fa-circle text-success me-2"></i>Catálogo digital activo</p>
-                                    <p class="mb-1 small small-md"><i class="fas fa-circle text-success me-2"></i>Sistema de préstamos online</p>
-                                    <p class="mb-0 small small-md"><i class="fas fa-circle text-success me-2"></i>Base de datos sincronizada</p>
+                                    <p class="mb-1 small small-md">
+                                        <i class="fas fa-circle text-success me-2"></i>
+                                        Libros disponibles: @(estadisticas?.LibrosDisponibles ?? 0)
+                                    </p>
+                                    <p class="mb-1 small small-md">
+                                        <i class="fas fa-circle text-warning me-2"></i>
+                                        Préstamos activos: @(estadisticas?.PrestamosActivos ?? 0)
+                                    </p>
+                                    <p class="mb-0 small small-md">
+                                        <i class="fas fa-circle text-info me-2"></i>
+                                        Préstamos este mes: @(estadisticas?.PrestamosMes ?? 0)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos de estadísticas -->
+                    <div class="row mb-4 g-3">
+                        <div class="col-12 col-lg-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title h6 h5-md">
+                                        <i class="fas fa-chart-pie me-2"></i>
+                                        Distribución de Libros
+                                    </h5>
+                                    <div class="chart-container" style="height: 200px;">
+                                        <canvas id="estadoLibrosChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title h6 h5-md">
+                                        <i class="fas fa-chart-bar me-2"></i>
+                                        Préstamos por Día (Este Mes)
+                                    </h5>
+                                    <div class="chart-container" style="height: 200px;">
+                                        <canvas id="prestamosDiaChart"></canvas>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -114,3 +154,97 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Datos desde el modelo
+            const estadisticas = @Html.Raw(Json.Serialize(estadisticas));
+
+            if (estadisticas) {
+                crearGraficoEstadoLibros(estadisticas);
+                crearGraficoPrestamosDia(estadisticas.prestamosPorDia);
+            }
+        });
+
+        function crearGraficoEstadoLibros(data) {
+            const ctx = document.getElementById('estadoLibrosChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Disponibles', 'Prestados'],
+                    datasets: [{
+                        data: [data.librosDisponibles, data.librosPrestados],
+                        backgroundColor: ['#4BC0C0', '#FF6384'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function crearGraficoPrestamosDia(datosPorDia) {
+            const ctx = document.getElementById('prestamosDiaChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datosPorDia.map(d => d.fecha),
+                    datasets: [{
+                        label: 'Préstamos por Día',
+                        data: datosPorDia.map(d => d.cantidad),
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Actualizar estadísticas cada 2 minutos
+        setInterval(async () => {
+            try {
+                const response = await fetch('/Home/RefreshEstadisticas');
+                if (response.ok) {
+                    location.reload();
+                }
+            } catch (error) {
+                console.log('Error actualizando estadísticas:', error);
+            }
+        }, 120000);
+    </script>
+}

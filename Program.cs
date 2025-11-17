@@ -71,7 +71,7 @@ builder.Services.AddScoped<IEditorialService, EditorialService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
-
+builder.Services.AddScoped<IEstadisticaService, EstadisticaService>();
 /*
  * Servicio para manejo de imágenes
  */
