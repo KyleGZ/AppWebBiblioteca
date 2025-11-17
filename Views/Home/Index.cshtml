@@ -21,133 +21,47 @@
                         <p class="mb-0 small small-md">Biblioteca Pública de Esparza - Sistema integrado de gestión bibliotecaria</p>
                     </div>
 
-                    <!-- Estadísticas rápidas ACTUALIZADAS -->
-                    <div class="row mb-4 g-2 g-md-3">
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number" id="librosDisponibles">@(estadisticas?.LibrosDisponibles ?? 0)</div>
-                                <div class="stats-label">Libros Disponibles</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number" id="prestamosActivos">@(estadisticas?.PrestamosActivos ?? 0)</div>
-                                <div class="stats-label">Préstamos Activos</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number" id="prestamosMes">@(estadisticas?.PrestamosMes ?? 0)</div>
-                                <div class="stats-label">Préstamos del Mes</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number" id="prestamosDevueltos">@(estadisticas?.PrestamosDevueltos ?? 0)</div>
-                                <div class="stats-label">Devueltos del Mes</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Información del usuario -->
-                    <div class="row mb-4 g-3">
-                        <div class="col-12 col-lg-6">
-                            <div class="card feature-card library h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title h6 h5-md">
-                                        <i class="fas fa-user-circle me-2 user-icon"></i>
-                                        Información del Bibliotecario
-                                    </h5>
-                                    <p class="mb-1 small small-md"><strong>Email:</strong> @userEmail</p>
-                                    <p class="mb-1 small small-md"><strong>Roles:</strong> @string.Join(", ", userRoles)</p>
-                                    <p class="mb-0 small small-md"><strong>Último acceso:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-6">
-                            <div class="card feature-card users h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title h6 h5-md">
-                                        <i class="fas fa-chart-line me-2 book-icon"></i>
-                                        Estado del Sistema
-                                    </h5>
-                                    <p class="mb-1 small small-md">
-                                        <i class="fas fa-circle text-success me-2"></i>
-                                        Libros disponibles: @(estadisticas?.LibrosDisponibles ?? 0)
-                                    </p>
-                                    <p class="mb-1 small small-md">
-                                        <i class="fas fa-circle text-warning me-2"></i>
-                                        Préstamos activos: @(estadisticas?.PrestamosActivos ?? 0)
-                                    </p>
-                                    <p class="mb-0 small small-md">
-                                        <i class="fas fa-circle text-info me-2"></i>
-                                        Préstamos este mes: @(estadisticas?.PrestamosMes ?? 0)
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Gráficos de estadísticas -->
-                    <div class="row mb-4 g-3">
-                        <div class="col-12 col-lg-6">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title h6 h5-md">
-                                        <i class="fas fa-chart-pie me-2"></i>
-                                        Distribución de Libros
-                                    </h5>
-                                    <div class="chart-container" style="height: 200px;">
-                                        <canvas id="estadoLibrosChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-12 col-lg-6">
-                            <div class="card h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title h6 h5-md">
-                                        <i class="fas fa-chart-bar me-2"></i>
-                                        Préstamos por Día (Este Mes)
-                                    </h5>
-                                    <div class="chart-container" style="height: 200px;">
-                                        <canvas id="prestamosDiaChart"></canvas>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Botones de acción -->
-                    <div class="row">
+                    <!-- Filtros y controles -->
+                    <div class="row mb-4">
                         <div class="col-12">
-                            <h5 class="mb-3 h6 h5-md text-center">
-                                <i class="fas fa-bolt me-2 text-warning"></i>
-                                Acciones Rápidas
-                            </h5>
-                            <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">
-                                <a href="@Url.Action("Index", "Libro")" class="btn btn-esparza-primary btn-sm btn-md-normal">
-                                    <i class="fas fa-search me-1 me-md-2"></i>
-                                    <span class="btn-text">Buscar en Catálogo</span>
-                                </a>
-                                <a href="@Url.Action("Index", "Prestamos")" class="btn btn-library btn-sm btn-md-normal">
-                                    <i class="fas fa-hand-holding me-1 me-md-2"></i>
-                                    <span class="btn-text">Nuevo Préstamo</span>
-                                </a>
-                                <a href="@Url.Action("Index", "Usuario")" class="btn btn-esparza-outline btn-sm btn-md-normal">
-                                    <i class="fas fa-user-plus me-1 me-md-2"></i>
-                                    <span class="btn-text">Registrar Usuario</span>
-                                </a>
-                                <a href="@Url.Action("Index", "Reservas")" class="btn btn-esparza-outline btn-sm btn-md-normal">
-                                    <i class="fas fa-bookmark me-1 me-md-2"></i>
-                                    <span class="btn-text">Gestionar Reservas</span>
-                                </a>
-                                <a href="@Url.Action("Index", "GestionBibliografica")" class="btn btn-esparza-outline btn-sm btn-md-normal">
-                                    <i class="fas fa-book me-1 me-md-2"></i>
-                                    <span class="btn-text">Gestión Bibliográfica</span>
-                                </a>
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title h6 h5-md">
+                                        <i class="fas fa-filter me-2"></i>
+                                        Filtros de Estadísticas
+                                    </h5>
+                                    <form id="filtroForm" class="row g-3 align-items-end">
+                                        <div class="col-md-3">
+                                            <label for="fechaInicio" class="form-label small">Fecha Inicio</label>
+                                            <input type="date" class="form-control form-control-sm" id="fechaInicio"
+                                                   value="@DateTime.Now.ToString("yyyy-MM-01")">
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label for="fechaFin" class="form-label small">Fecha Fin</label>
+                                            <input type="date" class="form-control form-control-sm" id="fechaFin"
+                                                   value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <button type="button" id="btnFiltrar" class="btn btn-esparza-primary btn-sm">
+                                                <i class="fas fa-search me-1"></i>Filtrar
+                                            </button>
+                                            <button type="button" id="btnDescargar" class="btn btn-success btn-sm">
+                                                <i class="fas fa-file-excel me-1"></i>Descargar Excel
+                                            </button>
+                                            <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-sync me-1"></i>Reset
+                                            </button>
+                                        </div>
+                                    </form>
+                                    
+                                </div>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Estadísticas rápidas ACTUALIZADAS -->
+                    <div id="estadisticasContainer">
+                        @await Html.PartialAsync("_EstadisticasPartial", estadisticas)
                     </div>
                 </div>
             </div>
@@ -159,19 +73,127 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Datos desde el modelo
+            // Inicializar gráficos con datos iniciales
             const estadisticas = @Html.Raw(Json.Serialize(estadisticas));
-
             if (estadisticas) {
-                crearGraficoEstadoLibros(estadisticas);
-                crearGraficoPrestamosDia(estadisticas.prestamosPorDia);
+                crearGraficos(estadisticas);
             }
+
+            // Evento para filtrar
+            document.getElementById('btnFiltrar').addEventListener('click', filtrarEstadisticas);
+
+            // Evento para descargar Excel
+            document.getElementById('btnDescargar').addEventListener('click', descargarExcel);
+
+            // Evento para reset
+            document.getElementById('btnReset').addEventListener('click', resetFiltros);
+
+            // Enter en los filtros también ejecuta la búsqueda
+            document.getElementById('fechaInicio').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') filtrarEstadisticas();
+            });
+            document.getElementById('fechaFin').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') filtrarEstadisticas();
+            });
         });
 
-        function crearGraficoEstadoLibros(data) {
-            const ctx = document.getElementById('estadoLibrosChart').getContext('2d');
+        async function filtrarEstadisticas() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
 
-            new Chart(ctx, {
+            try {
+                const formData = new FormData();
+                formData.append('fechaInicio', fechaInicio);
+                formData.append('fechaFin', fechaFin);
+
+                const response = await fetch('/Home/FiltrarEstadisticas', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                if (response.ok) {
+                    const html = await response.text();
+                    document.getElementById('estadisticasContainer').innerHTML = html;
+
+                    // Extraer datos del HTML para los gráficos
+                    const estadisticasScript = document.getElementById('estadisticasData');
+                    if (estadisticasScript) {
+                        const estadisticas = JSON.parse(estadisticasScript.textContent);
+                        crearGraficos(estadisticas);
+                    }
+                } else {
+                    alert('Error al filtrar estadísticas');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al filtrar estadísticas');
+            }
+        }
+
+        async function descargarExcel() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+
+            try {
+                const formData = new FormData();
+                formData.append('fechaInicio', fechaInicio);
+                formData.append('fechaFin', fechaFin);
+
+                const response = await fetch('/Home/DescargarReporte', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `ReportePrestamos_${new Date().toISOString().slice(0,16).replace(/[-T:]/g,'')}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert('Error al descargar el reporte');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al descargar el reporte');
+            }
+        }
+
+        function resetFiltros() {
+            const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const today = new Date();
+
+            document.getElementById('fechaInicio').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('fechaFin').value = today.toISOString().split('T')[0];
+
+            filtrarEstadisticas();
+        }
+
+        function crearGraficos(estadisticas) {
+            crearGraficoEstadoLibros(estadisticas);
+            crearGraficoPrestamosDia(estadisticas.prestamosPorDia);
+        }
+
+        function crearGraficoEstadoLibros(data) {
+            const ctx = document.getElementById('estadoLibrosChart');
+            if (!ctx) return;
+
+            // Destruir gráfico existente
+            if (window.estadoLibrosChartInstance) {
+                window.estadoLibrosChartInstance.destroy();
+            }
+
+            window.estadoLibrosChartInstance = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Disponibles', 'Prestados'],
@@ -187,17 +209,6 @@
                     plugins: {
                         legend: {
                             position: 'bottom'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
                         }
                     }
                 }
@@ -205,9 +216,15 @@
         }
 
         function crearGraficoPrestamosDia(datosPorDia) {
-            const ctx = document.getElementById('prestamosDiaChart').getContext('2d');
+            const ctx = document.getElementById('prestamosDiaChart');
+            if (!ctx) return;
 
-            new Chart(ctx, {
+            // Destruir gráfico existente
+            if (window.prestamosDiaChartInstance) {
+                window.prestamosDiaChartInstance.destroy();
+            }
+
+            window.prestamosDiaChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: datosPorDia.map(d => d.fecha),
@@ -234,17 +251,5 @@
                 }
             });
         }
-
-        // Actualizar estadísticas cada 2 minutos
-        setInterval(async () => {
-            try {
-                const response = await fetch('/Home/RefreshEstadisticas');
-                if (response.ok) {
-                    location.reload();
-                }
-            } catch (error) {
-                console.log('Error actualizando estadísticas:', error);
-            }
-        }, 120000);
     </script>
 }

@@ -1,0 +1,75 @@
+﻿@model AppWebBiblioteca.Models.EstadisticasPrestamosDTO
+
+<!-- Script para pasar datos a JavaScript -->
+<script id="estadisticasData" type="application/json">
+    @Html.Raw(Json.Serialize(Model))
+</script>
+
+<!-- Estadísticas rápidas -->
+<div class="row mb-4 g-2 g-md-3">
+    <div class="col-6 col-md-3">
+        <div class="stats-card text-center h-100">
+            <div class="stats-number">@(Model?.LibrosDisponibles ?? 0)</div>
+            <div class="stats-label">Libros Disponibles</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stats-card text-center h-100">
+            <div class="stats-number">@(Model?.PrestamosActivos ?? 0)</div>
+            <div class="stats-label">Préstamos Activos</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stats-card text-center h-100">
+            <div class="stats-number">@(Model?.PrestamosMes ?? 0)</div>
+            <div class="stats-label">Préstamos del Período</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stats-card text-center h-100">
+            <div class="stats-number">@(Model?.PrestamosDevueltos ?? 0)</div>
+            <div class="stats-label">Devueltos del Período</div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos de estadísticas -->
+<div class="row mb-4 g-3">
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title h6 h5-md">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Distribución de Libros
+                </h5>
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="estadoLibrosChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title h6 h5-md">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Préstamos por Día
+                </h5>
+                <div class="chart-container" style="height: 200px;">
+                    <canvas id="prestamosDiaChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información del período -->
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info small">
+            <i class="fas fa-info-circle me-2"></i>
+            Período mostrado: <strong>@(Model?.FechaInicio.ToString("dd/MM/yyyy") ?? "N/A")</strong> al
+            <strong>@(Model?.FechaFin.ToString("dd/MM/yyyy") ?? "N/A")</strong>
+        </div>
+    </div>
+</div>
