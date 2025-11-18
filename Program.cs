@@ -72,6 +72,7 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
 builder.Services.AddScoped<IEstadisticaService, EstadisticaService>();
+builder.Services.AddScoped<IBitacoraService, BitacoraService>();
 /*
  * Servicio para manejo de imágenes
  */
