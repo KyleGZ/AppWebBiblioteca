@@ -83,17 +83,13 @@
                         </div>
                     </div>
 
-                    <!-- El resto de tu código (búsqueda, tabla, etc.) se mantiene igual -->
-                    <!-- Solo cambia el título dinámico según la vista -->
                     <!-- Barra de búsqueda y filtros -->
                     <form asp-action="Index" method="get" id="searchForm" class="mb-4">
-                        <input type="hidden" name="tipoVista" value="@tipoVista" />
                         <div class="row g-3 align-items-end">
                             <div class="col-md-8">
                                 <label class="form-label">Buscar por usuario, libro o estado...</label>
                                 <div class="input-group">
-                                    <input type="text" name="termino" id="searchInput" class="form-control"
-                                           placeholder="Ej: Juan, Cien años, Activa..." value="@termino" />
+                                    <input type="text" name="termino" id="searchInput" class="form-control" placeholder="Ej: Juan, Cien años, Activa..." value="@termino" />
                                     <button class="btn btn-outline-primary" type="submit" id="btnBuscar">
                                         <i class="fas fa-search me-1"></i>Buscar
                                     </button>
@@ -113,19 +109,31 @@
                         <input type="hidden" name="pagina" id="paginaHidden" value="@pag.PaginaActual" />
                     </form>
 
+                    <!-- Alertas -->
+                    @if (TempData["Ok"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["Ok"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
                     <!-- Información de resultados -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div class="text-muted">
                             <span class="fw-bold">@pag.TotalResultados</span>
-                            <span>
-                                @(string.IsNullOrWhiteSpace(termino) ?
-                                                                $" reserva(s) {(tipoVista == "activas" ? "activas" : "históricas")}" :
-                                                                $" reserva(s) encontradas para \"{termino}\"")
-                            </span>
+                            <span>@(string.IsNullOrWhiteSpace(termino) ? " reserva(s) registradas" : $" reserva(s) encontradas para \"{termino}\"")</span>
                         </div>
                     </div>
 
-                    <!-- TABLA DE RESERVAS (se mantiene igual) -->
+                    <!-- Tabla de reservas -->
                     @if (reservas.Any())
                     {
                         <div class="table-responsive">
@@ -211,7 +219,7 @@
                             </table>
                         </div>
 
-                        <!-- Paginación (se mantiene igual, solo actualiza la función Q) -->
+                        <!-- Paginación -->
                         @if (pag.TotalPaginas > 1)
                         {
                             <nav class="mt-4">
@@ -221,7 +229,34 @@
                                             <i class="fas fa-angle-double-left"></i>
                                         </a>
                                     </li>
-                                    <!-- ... resto de la paginación ... -->
+                                    <li class="page-item @(pag.PaginaActual == 1 ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.PaginaActual - 1)" title="Página anterior">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+
+                                    @{
+                                        var ini = Math.Max(1, pag.PaginaActual - 2);
+                                        var fin = Math.Min(pag.TotalPaginas, pag.PaginaActual + 2);
+                                    }
+
+                                    @for (int i = ini; i <= fin; i++)
+                                    {
+                                        <li class="page-item @(i == pag.PaginaActual ? "active" : "")">
+                                            <a class="page-link" href="@Q(i)">@i</a>
+                                        </li>
+                                    }
+
+                                    <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.PaginaActual + 1)" title="Página siguiente">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item @(pag.PaginaActual >= pag.TotalPaginas ? "disabled" : "")">
+                                        <a class="page-link" href="@Q(pag.TotalPaginas)" title="Última página">
+                                            <i class="fas fa-angle-double-right"></i>
+                                        </a>
+                                    </li>
                                 </ul>
                             </nav>
                         }
@@ -235,12 +270,12 @@
                             <h5 class="text-muted">No hay reservas que mostrar</h5>
                             <p class="text-muted">
                                 @(string.IsNullOrWhiteSpace(termino)
-                                                            ? $"No se han encontrado reservas {(tipoVista == "activas" ? "activas" : "históricas")}."
+                                                            ? "No se han encontrado reservas registradas."
                                                             : "No se encontraron reservas que coincidan con tu búsqueda.")
                         </p>
                         @if (!string.IsNullOrWhiteSpace(termino))
                             {
-                                <a href="@Url.Action("Index", new { tipoVista = tipoVista })" class="btn btn-outline-primary">
+                                <a href="@Url.Action("Index")" class="btn btn-outline-primary">
                                     <i class="fas fa-times me-1"></i>Limpiar búsqueda
                                 </a>
                             }
@@ -253,7 +288,6 @@
     </div>
 </div>
 
-<!-- MODALES (mantengo los mismos modales que ya funcionan) -->
 <!-- Modal Buscar Libros para Reserva -->
 <div class="modal fade" id="modalBuscarLibros" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -461,16 +495,10 @@
             document.getElementById('infoReservaCancelar').textContent = `Reserva #${id}`;
             new bootstrap.Modal(document.getElementById('modalCancelarReserva')).show();
         }
-        // function eliminarReserva(id) {
-        //     document.getElementById('eliminarIdReserva').value = id;
-        //     document.getElementById('infoReservaEliminar').textContent = `Reserva #${id}`;
-        //     new bootstrap.Modal(document.getElementById('modalEliminarReserva')).show();
-        // }
 
         // Función para mostrar alertas
         function showAlert(message, type) {
-            // Implementar función de alerta según tu sistema existente
-            alert(message); // Reemplazar con tu sistema de notificaciones
+            alert(message); // Reemplazar sistema de notificaciones
         }
 
         // Variables para la búsqueda de libros
@@ -594,7 +622,7 @@
             modalBuscar.hide();
         }
 
-        //  TODOS LOS EVENT LISTENERS EN UN SOLO LUGAR
+        //  TODOS LOS EVENT LISTENERS
         document.addEventListener('DOMContentLoaded', function() {
             const buscarLibroInput = document.getElementById('buscarLibroInput');
             const btnBuscarLibro = document.getElementById('btnBuscarLibro');
@@ -679,13 +707,13 @@
                             setTimeout(() => window.location.reload(), 1500);
                         } else {
                             showAlert(data.message, 'error');
-                            // Cerrar modal incluso en error
+                            // Cerrar modal 
                             const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalCancelarReserva'));
                             modalEliminar.hide();
                         }
                     })
                     .catch(error => {
-                        // SIEMPRE CERRAR EL MODAL (incluso con errores)
+                        // SIEMPRE CERRAR EL MODAL
                         const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalCancelarReserva'));
                         modalEliminar.hide();
                         showAlert('Error al cancelar la reserva', 'error');

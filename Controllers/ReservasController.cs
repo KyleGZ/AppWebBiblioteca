@@ -79,94 +79,6 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-
-        //Este es el que sirve
-        //[HttpGet]
-        //public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //            return RedirectToAction("Login", "Usuario");
-
-        //        // OBTENER ID DEL USUARIO LOGUEADO
-        //        var userId = _authService.GetUserId();
-        //        if (userId == null)
-        //            return RedirectToAction("Login", "Usuario");
-
-        //        // ✅ MODIFICADO: Pasar el userId al servicio
-        //        PaginacionResponse<ReservaResponseDto> resultado =
-        //            await _reservaService.ObtenerReservasAsync(termino, pagina, resultadosPorPagina, userId.Value);
-
-        //        // ✅ NUEVO: Obtener conteo de reservas activas del usuario
-        //        var reservasActivasCount = await _reservaService.ObtenerConteoReservasActivasAsync(userId.Value);
-        //        ViewBag.ReservasActivasCount = reservasActivasCount;
-
-        //        ViewBag.TerminoBusqueda = termino ?? string.Empty;
-        //        ViewBag.PaginaActual = pagina;
-        //        ViewBag.ResultadosPorPagina = resultadosPorPagina;
-
-        //        return View(resultado);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ViewBag.Error = "Error al cargar la lista de reservas";
-        //        ViewBag.ReservasActivasCount = 0; // Valor por defecto en caso de error
-        //        return View(new PaginacionResponse<ReservaResponseDto>
-        //        {
-        //            Success = false,
-        //            Message = "Error al cargar las reservas",
-        //            Data = new List<ReservaResponseDto>(),
-        //            Pagination = new PaginationInfo
-        //            {
-        //                PaginaActual = pagina,
-        //                ResultadosPorPagina = resultadosPorPagina,
-        //                TotalResultados = 0,
-        //                TotalPaginas = 0
-        //            }
-        //        });
-        //    }
-        //}
-
-
-
-        //[HttpGet]
-        //public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //            return RedirectToAction("Login", "Usuario");
-
-        //        PaginacionResponse<ReservaResponseDto> resultado =
-        //            await _reservaService.ObtenerReservasAsync(termino, pagina, resultadosPorPagina);
-
-        //        ViewBag.TerminoBusqueda = termino ?? string.Empty;
-        //        ViewBag.PaginaActual = pagina;
-        //        ViewBag.ResultadosPorPagina = resultadosPorPagina;
-
-        //        return View(resultado);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ViewBag.Error = "Error al cargar la lista de reservas";
-        //        return View(new PaginacionResponse<ReservaResponseDto>
-        //        {
-        //            Success = false,
-        //            Message = "Error al cargar las reservas",
-        //            Data = new List<ReservaResponseDto>(),
-        //            Pagination = new PaginationInfo
-        //            {
-        //                PaginaActual = pagina,
-        //                ResultadosPorPagina = resultadosPorPagina,
-        //                TotalResultados = 0,
-        //                TotalPaginas = 0
-        //            }
-        //        });
-        //    }
-        //}
-
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistrarReserva([FromBody] SimpleReserva model, string? returnUrl = null)
@@ -181,9 +93,6 @@ namespace AppWebBiblioteca.Controllers
                 if (userId == null)
                     return Json(new { success = false, message = "No se pudo identificar al usuario" });
 
-                // DEBUG: Verificar qué estamos recibiendo
-                Console.WriteLine($"🔍 DEBUG Controlador: Recibido IdLibro: {model?.IdLibro}");
-
                 if (model == null || model.IdLibro <= 0)
                 {
                     return Json(new { success = false, message = "ID de libro inválido" });
@@ -194,8 +103,6 @@ namespace AppWebBiblioteca.Controllers
                     IdUsuario = userId.Value,
                     IdLibro = model.IdLibro,
                 };
-
-                Console.WriteLine($"🔍 DEBUG Controlador: Enviando a servicio - UsuarioId: {userId.Value}, LibroId: {model.IdLibro}");
 
                 var resultado = await _reservaService.RegistrarReservaAsync(reservaDto);
 
@@ -214,7 +121,6 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"🔍 DEBUG Controlador: Excepción - {ex.Message}");
                 return Json(new
                 {
                     success = false,
@@ -222,8 +128,7 @@ namespace AppWebBiblioteca.Controllers
                 });
             }
         }
-
-
+        //Metodo que registra reservas
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistrarReservaLibro([FromBody] int idLibro)
@@ -249,8 +154,6 @@ namespace AppWebBiblioteca.Controllers
                     IdLibro = idLibro,
                 };
 
-                Console.WriteLine($"🔍 DEBUG Controlador: Enviando a servicio - UsuarioId: {userId.Value}, LibroId: {idLibro}");
-
                 var resultado = await _reservaService.RegistrarReservaAsync(reservaDto);
 
                 if (resultado.Success)
@@ -268,7 +171,6 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"🔍 DEBUG Controlador: Excepción - {ex.Message}");
                 return Json(new
                 {
                     success = false,
@@ -277,8 +179,6 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-
-        // AGREGAR ESTA CLASE TEMPORAL
         public class SimpleReserva
         {
             public int IdLibro { get; set; }
@@ -296,7 +196,7 @@ namespace AppWebBiblioteca.Controllers
                 if (resultado.Success && resultado.Data != null)
                 {
                     var librosDisponibles = resultado.Data
-                        .Where(l => l.Estado == "Disponible")  // Solo disponibles
+                        .Where(l => l.Estado == "Disponible")
                         .ToList();
 
                     resultado.Data = librosDisponibles;
