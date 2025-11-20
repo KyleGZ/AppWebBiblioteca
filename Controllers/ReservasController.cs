@@ -17,9 +17,8 @@ namespace AppWebBiblioteca.Controllers
             _libroService = libroService;
         }
 
-
         [HttpGet]
-        public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
+        public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10, string tipoVista = "activas")
         {
             try
             {
@@ -31,11 +30,23 @@ namespace AppWebBiblioteca.Controllers
                 if (userId == null)
                     return RedirectToAction("Login", "Usuario");
 
-                // ✅ MODIFICADO: Pasar el userId al servicio
-                PaginacionResponse<ReservaResponseDto> resultado =
-                    await _reservaService.ObtenerReservasAsync(termino, pagina, resultadosPorPagina, userId.Value);
+                PaginacionResponse<ReservaResponseDto> resultado;
 
-                // ✅ NUEVO: Obtener conteo de reservas activas del usuario
+                // DECIDIR QUÉ DATOS CARGAR SEGÚN EL TIPO DE VISTA
+                if (tipoVista == "historicas")
+                {
+                    resultado = await _reservaService.ObtenerReservasHistoricasAsync(termino, pagina, resultadosPorPagina, userId.Value);
+                    ViewBag.TipoVista = "historicas";
+                    ViewBag.TituloSeccion = "Reservas Históricas";
+                }
+                else
+                {
+                    resultado = await _reservaService.ObtenerReservasActivasAsync(termino, pagina, resultadosPorPagina, userId.Value);
+                    ViewBag.TipoVista = "activas";
+                    ViewBag.TituloSeccion = "Reservas Activas";
+                }
+
+                // Obtener conteo de reservas activas del usuario
                 var reservasActivasCount = await _reservaService.ObtenerConteoReservasActivasAsync(userId.Value);
                 ViewBag.ReservasActivasCount = reservasActivasCount;
 
@@ -48,7 +59,10 @@ namespace AppWebBiblioteca.Controllers
             catch (Exception ex)
             {
                 ViewBag.Error = "Error al cargar la lista de reservas";
-                ViewBag.ReservasActivasCount = 0; // Valor por defecto en caso de error
+                ViewBag.ReservasActivasCount = 0;
+                ViewBag.TipoVista = "activas";
+                ViewBag.TituloSeccion = "Reservas Activas";
+
                 return View(new PaginacionResponse<ReservaResponseDto>
                 {
                     Success = false,
@@ -64,6 +78,55 @@ namespace AppWebBiblioteca.Controllers
                 });
             }
         }
+
+
+        //Este es el que sirve
+        //[HttpGet]
+        //public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        // OBTENER ID DEL USUARIO LOGUEADO
+        //        var userId = _authService.GetUserId();
+        //        if (userId == null)
+        //            return RedirectToAction("Login", "Usuario");
+
+        //        // ✅ MODIFICADO: Pasar el userId al servicio
+        //        PaginacionResponse<ReservaResponseDto> resultado =
+        //            await _reservaService.ObtenerReservasAsync(termino, pagina, resultadosPorPagina, userId.Value);
+
+        //        // ✅ NUEVO: Obtener conteo de reservas activas del usuario
+        //        var reservasActivasCount = await _reservaService.ObtenerConteoReservasActivasAsync(userId.Value);
+        //        ViewBag.ReservasActivasCount = reservasActivasCount;
+
+        //        ViewBag.TerminoBusqueda = termino ?? string.Empty;
+        //        ViewBag.PaginaActual = pagina;
+        //        ViewBag.ResultadosPorPagina = resultadosPorPagina;
+
+        //        return View(resultado);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ViewBag.Error = "Error al cargar la lista de reservas";
+        //        ViewBag.ReservasActivasCount = 0; // Valor por defecto en caso de error
+        //        return View(new PaginacionResponse<ReservaResponseDto>
+        //        {
+        //            Success = false,
+        //            Message = "Error al cargar las reservas",
+        //            Data = new List<ReservaResponseDto>(),
+        //            Pagination = new PaginationInfo
+        //            {
+        //                PaginaActual = pagina,
+        //                ResultadosPorPagina = resultadosPorPagina,
+        //                TotalResultados = 0,
+        //                TotalPaginas = 0
+        //            }
+        //        });
+        //    }
+        //}
 
 
 
