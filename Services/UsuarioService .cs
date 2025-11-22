@@ -30,12 +30,28 @@ namespace AppWebBiblioteca.Services
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<UsuarioService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public UsuarioService(HttpClient httpClient, IConfiguration configuration, ILogger<UsuarioService> logger)
+        public UsuarioService(HttpClient httpClient, IConfiguration configuration, ILogger<UsuarioService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
         }
 
         public async Task<List<UsuarioListaViewModel>> ObtenerUsuariosAsync()
@@ -330,6 +346,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Editar";
 
                 var json = JsonSerializer.Serialize(usuario);

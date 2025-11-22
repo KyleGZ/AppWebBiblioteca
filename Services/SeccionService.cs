@@ -7,11 +7,28 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public SeccionService(HttpClient httpClient, IConfiguration configuration)
+        public SeccionService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+                if (!string.IsNullOrEmpty(token))
+                {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                }
+            
         }
 
         public async Task<List<SeccionDto>> ObtenerSeccionesAsync(string? nombre)
@@ -87,6 +104,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Registro";
                 var payload = new { IdSeccion = 0, Nombre = nombre, Ubicacion = ubicacion };
 
