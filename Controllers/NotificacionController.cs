@@ -41,27 +41,61 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+        //[HttpPost]
+        //public async Task<IActionResult> MarcarComoLeida(int idNotificacion)
+        //{
+        //    try
+        //    {
+        //        if (!_authService.IsAuthenticated())
+        //            return Json(new { success = false, message = "Debe iniciar sesión" });
+
+        //        var resultado = await _notificacionService.MarcarComoLeidaAsync(idNotificacion);
+
+        //        return Json(new
+        //        {
+        //            success = resultado.Success,
+        //            message = resultado.Message
+        //        });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return Json(new { success = false, message = ex.Message });
+        //    }
+        //}
+
         [HttpPost]
         public async Task<IActionResult> MarcarComoLeida(int idNotificacion)
         {
             try
             {
                 if (!_authService.IsAuthenticated())
-                    return Json(new { success = false, message = "Debe iniciar sesión" });
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Debe iniciar sesión"
+                    });
+                }
 
                 var resultado = await _notificacionService.MarcarComoLeidaAsync(idNotificacion);
 
+                // NORMALIZAR el retorno para que SIEMPRE use camelCase
                 return Json(new
                 {
-                    success = resultado.Success,
-                    message = resultado.Message
+                    success = resultado.Success,   // <-- aquí lo convertimos a camelCase
+                    message = resultado.Message ?? "Operación completada"
                 });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = $"Error inesperado: {ex.Message}"
+                });
             }
         }
+
 
         [HttpPost]
         public async Task<IActionResult> MarcarTodasComoLeidas()
@@ -77,6 +111,32 @@ namespace AppWebBiblioteca.Controllers
 
                 var resultado = await _notificacionService.MarcarTodasComoLeidasAsync(idUsuario.Value);
 
+                return Json(new
+                {
+                    success = resultado.Success,
+                    message = resultado.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Metodo para eliminar todas las notificaciones de un usuario
+
+        public async Task<IActionResult> EliminarTodasNotificaciones()
+        {
+            try
+            {
+                if (!_authService.IsAuthenticated())
+                    return Json(new { success = false, message = "Debe iniciar sesión" });
+
+                var idUsuario = _authService.GetUserId();
+                if (idUsuario == null)
+                    return Json(new { success = false, message = "Usuario no encontrado" });
+                var resultado = await _notificacionService.EliminarTodasAsync(idUsuario.Value);
                 return Json(new
                 {
                     success = resultado.Success,

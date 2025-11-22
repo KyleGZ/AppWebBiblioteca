@@ -26,147 +26,9 @@
     <link rel="stylesheet" href="~/css/StyleLibros.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/StylePerfil.css" asp-append-version="true" />
 
+    @RenderSection("Styles", required: false)
 
-    @await RenderSectionAsync("Styles", required: false)
-
-    <style>
-        /* Estilos para el nuevo menú de usuario */
-        .user-menu-dropdown .dropdown-menu {
-            min-width: 200px;
-            padding: 0.5rem 0;
-        }
-
-        .user-menu-dropdown .dropdown-item {
-            padding: 0.5rem 1rem;
-            display: flex;
-            align-items: center;
-        }
-
-            .user-menu-dropdown .dropdown-item i {
-                width: 20px;
-                margin-right: 8px;
-            }
-
-        .user-menu-dropdown .dropdown-divider {
-            margin: 0.3rem 0;
-        }
-
-        .user-info-text {
-            font-size: 0.9rem;
-            color: #6c757d;
-        }
-        /* Estilos para el modal de notificaciones */
-        .notificacion-item {
-            transition: all 0.3s ease;
-            border-left: 4px solid transparent;
-            border-bottom: 1px solid #e9ecef;
-            padding: 1rem;
-        }
-
-            .notificacion-item:hover {
-                background-color: #f8f9fa;
-                transform: translateX(2px);
-            }
-
-        .notificacion-no-leida {
-            border-left-color: #007bff;
-            background-color: #f8fbff;
-        }
-
-        .notificacion-leida {
-            opacity: 0.8;
-            background-color: #fafafa;
-        }
-
-        .notificacion-fecha {
-            font-size: 0.75rem;
-            color: #6c757d;
-        }
-
-        .notificacion-contenido {
-            font-size: 0.9rem;
-            line-height: 1.4;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-
-        .notificacion-titulo {
-            font-size: 1rem;
-            font-weight: 600;
-            color: #343a40;
-            margin-bottom: 0.25rem;
-        }
-
-        .badge-estado {
-            font-size: 0.7rem;
-            padding: 0.25em 0.6em;
-        }
-
-        .btn-marcar-leida {
-            font-size: 0.8rem;
-            padding: 0.25rem 0.5rem;
-        }
-
-        /* Scroll personalizado para la lista de notificaciones */
-        #listaNotificaciones::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        #listaNotificaciones::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 3px;
-        }
-
-        #listaNotificaciones::-webkit-scrollbar-thumb {
-            background: #c1c1c1;
-            border-radius: 3px;
-        }
-
-            #listaNotificaciones::-webkit-scrollbar-thumb:hover {
-                background: #a8a8a8;
-            }
-
-        /* Estilos para el header del modal */
-        .modal-header.bg-primary {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-        }
-
-
-        /* Mejoras para el modal de notificaciones */
-        #notificacionesLoading,
-        #notificacionesLista,
-        #notificacionesVacio {
-            transition: opacity 0.3s ease;
-        }
-
-        .notificacion-item {
-            border-radius: 0;
-            border-left: 4px solid transparent;
-            margin-bottom: 0;
-        }
-
-        .notificacion-no-leida {
-            border-left-color: #007bff;
-            background-color: #f8fbff;
-        }
-
-        .notificacion-leida {
-            border-left-color: #6c757d;
-            background-color: #fafafa;
-        }
-
-        /* Mejorar el scroll */
-        #listaNotificaciones {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        /* Asegurar que los estados se muestren correctamente */
-        .d-none {
-            display: none !important;
-        }
-
-    </style>
+    
 </head>
 <body>
     <div class="main-container">
@@ -303,7 +165,12 @@
                         <h4 class="mb-0 text-dark">
                             @ViewData["PageTitle"]
                         </h4>
+                        <button class="btn position-relative" id="btnNotificaciones" data-bs-toggle="modal" data-bs-target="#notificacionesModal">
+                            <i class="fas fa-bell fs-5"></i>
+                            <span class="badge bg-danger rounded-pill position-absolute top-0 start-100 translate-middle" id="notificacionCounter">0</span>
+                        </button>
                     </div>
+
                     <div class="user-info">
                         @if (User.Identity.IsAuthenticated)
                         {
@@ -325,17 +192,7 @@
                                             <i class="fas fa-user me-1"></i>Perfil
                                         </a>
                                     </li>
-                                    <li>
-                                        <a class="dropdown-item"
-                                           href="javascript:void(0)"
-                                           data-bs-toggle="modal"
-                                           data-bs-target="#notificacionesModal">
-                                            <i class="fas fa-bell me-1"></i>
-                                            Notificaciones
-                                            <span class="badge bg-danger rounded-pill ms-2" id="notificacionCounter">0</span>
-                                        </a>
-
-                                    </li>
+                                    
                                    @*  <li>
                                         <a class="dropdown-item" href="#">
                                             <i class="fas fa-cog me-1"></i>Preferencias
@@ -408,13 +265,16 @@
     <div class="modal fade" id="notificacionesModal" tabindex="-1" aria-labelledby="notificacionesModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header modal-header-esparza">
                     <h5 class="modal-title" id="notificacionesModalLabel">
                         <i class="fas fa-bell me-2"></i>Mis Notificaciones
                     </h5>
-                    <div>
-                        <button type="button" class="btn btn-sm btn-outline-light me-2" id="btnMarcarTodasLeidas">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-esparza-outline-light me-2" id="btnMarcarTodasLeidas">
                             <i class="fas fa-check-double me-1"></i>Marcar todas como leídas
+                        </button>
+                        <button id="btnEliminarTodas" class="btn btn-sm btn-esparza-danger">
+                            <i class="fas fa-trash me-1"></i>Eliminar todas
                         </button>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
@@ -422,7 +282,7 @@
                 <div class="modal-body p-0">
                     <!-- Estado de carga -->
                     <div id="notificacionesLoading" class="text-center py-5">
-                        <div class="spinner-border text-primary" role="status">
+                        <div class="spinner-border text-esparza-blue" role="status">
                             <span class="visually-hidden">Cargando notificaciones...</span>
                         </div>
                         <p class="mt-2 text-muted">Cargando notificaciones...</p>
@@ -430,7 +290,7 @@
 
                     <!-- Lista de notificaciones -->
                     <div id="notificacionesLista" class="d-none">
-                        <div class="list-group list-group-flush" id="listaNotificaciones" style="max-height: 400px; overflow-y: auto;">
+                        <div class="list-group list-group-flush" id="listaNotificaciones">
                             <!-- Las notificaciones se cargarán aquí dinámicamente -->
                         </div>
 
@@ -444,7 +304,7 @@
                 </div>
                 <div class="modal-footer">
                     <small class="text-muted me-auto" id="contadorNotificaciones">Mostrando 0 notificaciones</small>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-esparza-secondary" data-bs-dismiss="modal">Cerrar</button>
                 </div>
             </div>
         </div>
@@ -606,6 +466,8 @@
             notificacionesState.modal.addEventListener('show.bs.modal', function() {
                 console.log('Modal abierto, cargando notificaciones...');
                 cargarNotificaciones();
+                inicializarBotonEliminarTodas();
+                
             });
         }
 
@@ -679,7 +541,7 @@
             item.classList.add("list-group-item", "notificacion-item");
 
             // Agregar clase según el estado
-            const esNoLeida = notificacion.estado === 'No leida' || notificacion.estado === 'Pendiente';
+            const esNoLeida = notificacion.estado === 'No leída' || notificacion.estado === 'Pendiente';
             if (esNoLeida) {
                 item.classList.add("notificacion-no-leida");
             } else {
@@ -743,7 +605,7 @@
             }
 
             const noLeidas = notificaciones.filter(n =>
-                n.estado === 'No leida' || n.estado === 'Pendiente'
+                n.estado === 'No leída' || n.estado === 'Pendiente'
             ).length;
 
             notificacionesState.notificacionCounter.textContent = noLeidas;
@@ -763,13 +625,17 @@
                     btnMarcarTodasLeidas.disabled = true;
                     btnMarcarTodasLeidas.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
 
-                    fetch("/Notificacion/MarcarTodasComoLeidas", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                        }
-                    })
+                    // fetch("/Notificacion/MarcarTodasComoLeidas", {
+                    //     method: 'POST',
+                    //     headers: {
+                    //         'Content-Type': 'application/json',
+                    //         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                    //     }
+                    // })
+                            fetch("/Notificacion/MarcarTodasComoLeidas", {
+            method: 'POST'
+        })
+
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`Error HTTP: ${response.status}`);
@@ -802,6 +668,56 @@
             }
         }
 
+         function inicializarBotonEliminarTodas() {
+            const btnEliminarTodas = document.getElementById('btnEliminarTodas');
+
+            if (btnEliminarTodas) {
+                btnEliminarTodas.addEventListener("click", function () {
+
+                    // Confirmación opcional
+                    if (!confirm("¿Seguro que deseas eliminar TODAS las notificaciones?")) {
+                        return;
+                    }
+
+                    console.log('Eliminando todas las notificaciones...');
+
+                    const originalText = btnEliminarTodas.innerHTML;
+                    btnEliminarTodas.disabled = true;
+                    btnEliminarTodas.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
+
+                    fetch("/Notificacion/EliminarTodasNotificaciones", {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Error HTTP: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(res => {
+                        console.log('Respuesta eliminar todas:', res);
+
+                        if (res.success) {
+                            mostrarToastExito(res.message || "Notificaciones eliminadas correctamente");
+                            cargarNotificaciones();
+                            cargarContadorNotificacionesGlobal();
+                        } else {
+                            mostrarToastError(res.message || "No se pudieron eliminar las notificaciones");
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error:', err);
+                        mostrarToastError("Error inesperado al eliminar notificaciones");
+                    })
+                    .finally(() => {
+                        btnEliminarTodas.disabled = false;
+                        btnEliminarTodas.innerHTML = originalText;
+                    });
+                });
+            }
+        }
+
+
         // 3. Función GLOBAL para marcar una notificación como leída
         window.marcarComoLeida = function(idNotificacion) {
             console.log('✅ marcarComoLeida llamada con ID:', idNotificacion);
@@ -813,13 +729,11 @@
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
             }
 
-            fetch(`/Notificacion/MarcarComoLeida?idNotificacion=${idNotificacion}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                }
-            })
+            
+                    fetch(`/Notificacion/MarcarComoLeida?idNotificacion=${idNotificacion}`, {
+            method: 'POST'
+        })
+
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`Error HTTP: ${response.status}`);
@@ -838,7 +752,7 @@
                     // Actualizar contador global
                     cargarContadorNotificacionesGlobal();
                 } else {
-                    mostrarToastError(res.message || "Error al marcar como leída");
+                    mostrarToastError(res.message || "Error al marcar como leída"); //Muestra esto
                     // Revertir estado del botón en caso de error
                     if (btn) {
                         btn.disabled = false;
@@ -866,7 +780,7 @@
                         const notificacionCounter = document.getElementById('notificacionCounter');
                         if (notificacionCounter) {
                             const noLeidas = res.data.filter(n =>
-                                n.estado === 'No leida' || n.estado === 'Pendiente'
+                                n.estado === 'No leída' || n.estado === 'Pendiente'
                             ).length;
                             notificacionCounter.textContent = noLeidas;
                             notificacionCounter.style.display = noLeidas === 0 ? 'none' : 'inline';

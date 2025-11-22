@@ -445,3 +445,296 @@ body {
 .modal.fade .modal-dialog {
     animation: fadeInUp 0.3s ease-out;
 }
+
+
+/* ========== ESTILOS PARA MENÚ DE USUARIO ========== */
+.user-menu-dropdown .dropdown-menu {
+    min-width: 200px;
+    padding: 0.5rem 0;
+}
+
+.user-menu-dropdown .dropdown-item {
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+}
+
+    .user-menu-dropdown .dropdown-item i {
+        width: 20px;
+        margin-right: 8px;
+    }
+
+.user-menu-dropdown .dropdown-divider {
+    margin: 0.3rem 0;
+}
+
+.user-info-text {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* ========== ESTILOS PARA MODAL DE NOTIFICACIONES ========== */
+.notificacion-item {
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+    border-bottom: 1px solid #e9ecef;
+    padding: 1rem;
+}
+
+    .notificacion-item:hover {
+        background-color: #f8f9fa;
+        transform: translateX(2px);
+    }
+
+.notificacion-no-leida {
+    border-left-color: var(--esparza-blue);
+    background-color: #f8fbff;
+}
+
+.notificacion-leida {
+    opacity: 0.8;
+    background-color: #fafafa;
+}
+
+.notificacion-fecha {
+    font-size: 0.75rem;
+    color: #6c757d;
+}
+
+.notificacion-contenido {
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.notificacion-titulo {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #343a40;
+    margin-bottom: 0.25rem;
+}
+
+.badge-estado {
+    font-size: 0.7rem;
+    padding: 0.25em 0.6em;
+}
+
+.btn-marcar-leida {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Scroll personalizado para la lista de notificaciones */
+#listaNotificaciones::-webkit-scrollbar {
+    width: 6px;
+}
+
+#listaNotificaciones::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#listaNotificaciones::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+}
+
+    #listaNotificaciones::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+/* Estilos para el header del modal */
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, var(--esparza-blue) 0%, #0056b3 100%);
+}
+
+/* Mejoras para el modal de notificaciones */
+#notificacionesLoading,
+#notificacionesLista,
+#notificacionesVacio {
+    transition: opacity 0.3s ease;
+}
+
+.notificacion-item {
+    border-radius: 0;
+    border-left: 4px solid transparent;
+    margin-bottom: 0;
+}
+
+.notificacion-no-leida {
+    border-left-color: var(--esparza-blue);
+    background-color: #f8fbff;
+}
+
+.notificacion-leida {
+    border-left-color: #6c757d;
+    background-color: #fafafa;
+}
+
+/* Mejorar el scroll */
+#listaNotificaciones {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Asegurar que los estados se muestren correctamente */
+.d-none {
+    display: none !important;
+}
+
+/* ========== ESTILOS PARA TOAST NOTIFICATIONS ========== */
+#toastContainer {
+    z-index: 9999;
+}
+
+.toast-custom {
+    background: white;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    border-left: 4px solid var(--info-color);
+}
+
+    .toast-custom.success {
+        border-left-color: var(--success-color);
+    }
+
+    .toast-custom.error {
+        border-left-color: var(--error-color);
+    }
+
+    .toast-custom.warning {
+        border-left-color: var(--warning-color);
+    }
+
+    .toast-custom .toast-header {
+        background: white;
+        border-bottom: 1px solid var(--esparza-cream);
+        border-radius: 8px 8px 0 0;
+    }
+
+    .toast-custom.success .toast-header {
+        color: var(--success-color);
+    }
+
+    .toast-custom.error .toast-header {
+        color: var(--error-color);
+    }
+
+    .toast-custom.warning .toast-header {
+        color: var(--warning-color);
+    }
+
+    .toast-custom .toast-body {
+        color: var(--esparza-dark);
+        font-weight: 500;
+    }
+
+/* ========== RESPONSIVE PARA NOTIFICACIONES ========== */
+@media (max-width: 768px) {
+    .notificacion-item {
+        padding: 0.75rem;
+    }
+
+    .notificacion-titulo {
+        font-size: 0.9rem;
+    }
+
+    .notificacion-contenido {
+        font-size: 0.85rem;
+    }
+
+    .user-menu-dropdown .dropdown-menu {
+        min-width: 180px;
+    }
+}
+
+/* ========== ESTILOS ESPECÍFICOS PARA MODAL DE NOTIFICACIONES ========== */
+.modal-header-esparza {
+    background: linear-gradient(135deg, var(--esparza-blue) 0%, var(--esparza-dark) 100%);
+    color: white;
+    border-bottom: 2px solid var(--esparza-gold);
+}
+
+.btn-esparza-outline-light {
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    background: transparent;
+}
+
+    .btn-esparza-outline-light:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: white;
+    }
+
+.btn-esparza-danger {
+    background: linear-gradient(135deg, var(--esparza-red) 0%, #a50e24 100%);
+    color: white;
+    border: none;
+}
+
+    .btn-esparza-danger:hover {
+        background: linear-gradient(135deg, #a50e24 0%, #8a0b1f 100%);
+        color: white;
+    }
+
+.btn-esparza-secondary {
+    background: var(--esparza-dark);
+    color: white;
+    border: none;
+}
+
+    .btn-esparza-secondary:hover {
+        background: #1e2a3a;
+        color: white;
+    }
+
+.text-esparza-blue {
+    color: var(--esparza-blue) !important;
+}
+
+/* Mejoras para items de notificación con colores institucionales */
+.notificacion-no-leida {
+    border-left-color: var(--esparza-blue);
+    background: linear-gradient(135deg, #f8fbff 0%, #e3f2fd 100%);
+}
+
+.notificacion-leida {
+    border-left-color: var(--esparza-brown);
+    background-color: var(--esparza-cream);
+}
+
+.badge-estado.bg-warning {
+    background: linear-gradient(135deg, var(--esparza-gold) 0%, #e6b400 100%) !important;
+    color: var(--esparza-dark) !important;
+}
+
+.badge-estado.bg-secondary {
+    background: linear-gradient(135deg, var(--esparza-brown) 0%, #6d4c41 100%) !important;
+}
+
+.btn-marcar-leida {
+    background: linear-gradient(135deg, var(--esparza-green) 0%, #1b5e20 100%);
+    color: white;
+    border: none;
+}
+
+    .btn-marcar-leida:hover {
+        background: linear-gradient(135deg, #1b5e20 0%, #144017 100%);
+        color: white;
+    }
+
+/* Responsive para modal de notificaciones */
+@media (max-width: 768px) {
+    .modal-header-esparza .d-flex {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start !important;
+    }
+
+        .modal-header-esparza .d-flex .btn {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+        }
+}
