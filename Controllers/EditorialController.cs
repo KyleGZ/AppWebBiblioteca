@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppWebBiblioteca.Controllers
@@ -52,6 +53,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         // POST: /Editorial/Crear
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(string nombre, string? returnUrl = null)
@@ -94,6 +96,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         // POST: /Editorial/Editar
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int idEditorial, string nombre, string? returnUrl = null)
@@ -136,6 +139,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         // POST: /Editorial/Eliminar
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Eliminar(int idEditorial, string? returnUrl = null)

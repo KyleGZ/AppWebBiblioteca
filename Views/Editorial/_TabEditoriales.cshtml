@@ -14,9 +14,12 @@
         <i class="fas fa-building me-2"></i> Editoriales
     </h5>
 
-    <button type="button" class="btn btn-autores-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarEditorial">
-        <i class="fas fa-plus"></i> Nueva Editorial
-    </button>
+    @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+    {
+        <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarEditorial">
+            <i class="fas fa-plus"></i> Nueva Editorial
+        </button>
+    }
 </div>
 
 <!-- Búsqueda -->
@@ -47,7 +50,10 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
-                    <th class="text-center" style="width:220px;">Acciones</th>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                    {
+                        <th class="text-center" style="width:220px;">Acciones</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -58,23 +64,26 @@
                             <i class="fas fa-building me-2 text-muted"></i>@e.Nombre
                         </td>
                         <td class="text-center">
-                            <div class="btn-actions-group justify-content-center">
-                                <!-- Editar -->
-                                <button type="button" class="btn btn-action btn-action-edit"
-                                        data-bs-toggle="modal" data-bs-target="#modalEditarEditorial"
-                                        data-id="@e.IdEditorial" data-nombre="@e.Nombre"
-                                        title="Editar Editorial">
-                                    <i class="fas fa-edit icon-elegant"></i>
-                                </button>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                            {
+                                <div class="btn-actions-group justify-content-center">
+                                    <!-- Editar -->
+                                    <button type="button" class="btn btn-action btn-action-edit"
+                                            data-bs-toggle="modal" data-bs-target="#modalEditarEditorial"
+                                            data-id="@e.IdEditorial" data-nombre="@e.Nombre"
+                                            title="Editar Editorial">
+                                        <i class="fas fa-edit icon-elegant"></i>
+                                    </button>
 
-                                <!-- Eliminar -->
-                                <button type="button" class="btn btn-action btn-action-deactivate"
-                                        data-bs-toggle="modal" data-bs-target="#modalEliminarEditorial"
-                                        data-id="@e.IdEditorial" data-nombre="@e.Nombre"
-                                        title="Eliminar Editorial">
-                                    <i class="fas fa-trash-alt icon-elegant"></i>
-                                </button>
-                            </div>
+                                    <!-- Eliminar -->
+                                    <button type="button" class="btn btn-action btn-action-deactivate"
+                                            data-bs-toggle="modal" data-bs-target="#modalEliminarEditorial"
+                                            data-id="@e.IdEditorial" data-nombre="@e.Nombre"
+                                            title="Eliminar Editorial">
+                                        <i class="fas fa-trash-alt icon-elegant"></i>
+                                    </button>
+                                </div>
+                            }
                         </td>
                     </tr>
                 }

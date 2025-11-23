@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
@@ -52,6 +53,8 @@ namespace AppWebBiblioteca.Controllers
                 });
             }
         }
+
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(string nombre, string? ubicacion, string? returnUrl = null)
@@ -188,6 +191,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * Metodo para editar sección que devuelve JSON
          */
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int idSeccion, string nombre, string? ubicacion, string? returnUrl = null)
@@ -232,6 +236,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * Metodo para eliminar sección que devuelve JSON
          */
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Eliminar(int idSeccion, string? returnUrl = null)

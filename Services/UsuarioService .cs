@@ -58,6 +58,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Listar";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -87,6 +88,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 if (string.IsNullOrWhiteSpace(termino))
                 {
                     // Listar todos los usuarios con paginación
@@ -240,6 +242,7 @@ namespace AppWebBiblioteca.Services
 
         public async Task<ApiResponse> CrearUsuarioAsync(RegistroUsuarioDto usuario)
         {
+            AgregarTokenAutenticacion();
             try
             {
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Registro";
@@ -466,6 +469,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/Desactivar?id={id}";
 
                 var response = await _httpClient.DeleteAsync(apiUrl);
@@ -481,6 +485,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/Activar?id={id}";
 
                 var response = await _httpClient.PatchAsync(apiUrl, null);

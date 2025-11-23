@@ -41,8 +41,8 @@
                                             <i class="fas fa-search text-muted"></i>
                                         </span>
                                         <input type="text" class="form-control" name="termino" id="searchInput"
-                                               placeholder="Buscar por nombre o cédula..."
-                                               value="@terminoBusqueda">
+                                        placeholder="Buscar por nombre o cédula..."
+                                        value="@terminoBusqueda">
                                         <button class="btn btn-esparza-primary" type="submit" id="btnBuscar">
                                             <i class="fas fa-search me-1"></i>Buscar
                                         </button>
@@ -172,37 +172,40 @@
                                                 <div class="btn-actions-group justify-content-center">
                                                     <!-- Botón Editar -->
                                                     <button type="button" class="btn btn-action btn-action-edit"
-                                                            data-bs-toggle="modal" data-bs-target="#modalEditarUsuario"
-                                                            data-id="@usuario.IdUsuario"
-                                                            data-nombre="@usuario.Nombre"
-                                                            data-email="@usuario.Email"
-                                                            data-cedula="@usuario.Cedula"
-                                                            data-estado="@usuario.Estado"
-                                                            data-rol-id="@((usuario.RolesIds != null && usuario.RolesIds.Any()) ? usuario.RolesIds.First() : 0)"
-                                                            title="Editar Usuario">
+                                                    data-bs-toggle="modal" data-bs-target="#modalEditarUsuario"
+                                                    data-id="@usuario.IdUsuario"
+                                                    data-nombre="@usuario.Nombre"
+                                                    data-email="@usuario.Email"
+                                                    data-cedula="@usuario.Cedula"
+                                                    data-estado="@usuario.Estado"
+                                                    data-rol-id="@((usuario.RolesIds != null && usuario.RolesIds.Any()) ? usuario.RolesIds.First() : 0)"
+                                                    title="Editar Usuario">
                                                         <i class="fas fa-user-edit icon-elegant"></i>
                                                     </button>
 
                                                     <!-- Botón Desactivar/Activar -->
-                                                    @if (usuario.Estado == "Activo")
+                                                    @if (User.IsInRole("Admin"))
                                                     {
-                                                        <button type="button" class="btn btn-action btn-action-deactivate"
-                                                                data-bs-toggle="modal" data-bs-target="#modalDesactivarUsuario"
-                                                                data-id="@usuario.IdUsuario"
-                                                                data-nombre="@usuario.Nombre"
-                                                                title="Desactivar Usuario">
-                                                            <i class="fas fa-user-slash icon-elegant"></i>
-                                                        </button>
-                                                    }
-                                                    else
-                                                    {
-                                                        <button type="button" class="btn btn-action btn-action-activate"
-                                                                data-bs-toggle="modal" data-bs-target="#modalActivarUsuario"
-                                                                data-id="@usuario.IdUsuario"
-                                                                data-nombre="@usuario.Nombre"
-                                                                title="Activar Usuario">
-                                                            <i class="fas fa-user-check icon-elegant"></i>
-                                                        </button>
+                                                        if (usuario.Estado == "Activo")
+                                                        {
+                                                            <button type="button" class="btn btn-action btn-action-deactivate"
+                                                                    data-bs-toggle="modal" data-bs-target="#modalDesactivarUsuario"
+                                                                    data-id="@usuario.IdUsuario"
+                                                                    data-nombre="@usuario.Nombre"
+                                                                    title="Desactivar Usuario">
+                                                                <i class="fas fa-user-slash icon-elegant"></i>
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <button type="button" class="btn btn-action btn-action-activate"
+                                                                    data-bs-toggle="modal" data-bs-target="#modalActivarUsuario"
+                                                                    data-id="@usuario.IdUsuario"
+                                                                    data-nombre="@usuario.Nombre"
+                                                                    title="Activar Usuario">
+                                                                <i class="fas fa-user-check icon-elegant"></i>
+                                                            </button>
+                                                        }
                                                     }
                                                 </div>
                                             </td>
@@ -414,16 +417,25 @@
                         <label for="rolAgregar" class="form-label-usuarios">
                             <i class="fas fa-user-shield"></i> Asignar Rol
                         </label>
+
                         <select id="rolAgregar" name="idRol" class="form-control form-control-usuarios">
                             <option value="0">— Seleccione un rol —</option>
-                            @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesAgregar && rolesAgregar.Any())
+
+                            @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesAgregar
+                            && rolesAgregar.Any())
                             {
                                 foreach (var r in rolesAgregar)
                                 {
-                                    if (r.Value != "0") // Excluir la opción por defecto si existe
-                                    {
-                                        <option value="@r.Value">@r.Text</option>
-                                    }
+                                    // Ignorar la opción por defecto
+                                    if (r.Value == "0")
+                                        continue;
+
+                                    // SI EL USUARIO LOGUEADO ES SUPERVISOR → OCULTAR EL ROL ADMIN
+                                    if (User.IsInRole("Supervisor") && r.Text == "Admin")
+                                        continue;
+
+                                    // Renderizar los roles permitidos
+                                    <option value="@r.Value">@r.Text</option>
                                 }
                             }
                             else
@@ -431,8 +443,12 @@
                                 <option disabled>— No hay roles disponibles —</option>
                             }
                         </select>
-                        <small class="text-muted">Opcional: si eliges un rol, se asignará después de crear el usuario.</small>
+
+                        <small class="text-muted">
+                            Opcional: si eliges un rol, se asignará después de crear el usuario.
+                        </small>
                     </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-usuarios-secondary" data-bs-dismiss="modal">
@@ -526,7 +542,9 @@
 
             <!-- Gestión de roles -->
             <div class="border-top px-4 pt-3 pb-4">
-                <h6 class="mb-3"><i class="fas fa-user-shield me-2"></i>Gestión de Roles</h6>
+                <h6 class="mb-3">
+                    <i class="fas fa-user-shield me-2"></i>Gestión de Roles
+                </h6>
 
                 <div class="row g-2 align-items-end">
                     <div class="col-md-8">
@@ -535,14 +553,21 @@
                         </label>
                         <select id="rolEditar" class="form-control form-control-usuarios">
                             <option value="">— Seleccione un rol —</option>
-                            @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesEditar && rolesEditar.Any())
+
+                            @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesEditar
+                            && rolesEditar.Any())
                             {
                                 foreach (var r in rolesEditar)
                                 {
-                                    if (r.Value != "0") // Excluir opción por defecto
-                                    {
-                                        <option value="@r.Value">@r.Text</option>
-                                    }
+                                    // Excluir opción por defecto
+                                    if (r.Value == "0")
+                                        continue;
+
+                                    // SI EL USUARIO LOGUEADO ES SUPERVISOR → NO PUEDE VER EL ROL ADMIN
+                                    if (User.IsInRole("Supervisor") && r.Text == "Admin")
+                                        continue;
+
+                                    <option value="@r.Value">@r.Text</option>
                                 }
                             }
                             else
@@ -550,8 +575,11 @@
                                 <option disabled>— No hay roles disponibles —</option>
                             }
                         </select>
-                        <small class="text-muted">Selecciona un rol para asignarlo o quitarlo del usuario.</small>
+                        <small class="text-muted">
+                            Selecciona un rol para asignarlo o quitarlo del usuario.
+                        </small>
                     </div>
+
                     <div class="col-md-4 d-flex gap-2">
                         <!-- Form Asignar Rol -->
                         <form asp-action="AsignarRol" method="post" class="d-inline flex-fill" id="formAsignarRol">
@@ -575,6 +603,7 @@
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 </div>

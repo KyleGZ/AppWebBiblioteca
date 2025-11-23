@@ -7,11 +7,27 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public GeneroService(HttpClient httpClient, IConfiguration configuration)
+        public GeneroService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
         }
 
         public async Task<List<GeneroDto>> ObtenerGenerosAsync(string? nombre)
@@ -72,6 +88,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Genero/Registro";
                 var payload = new { IdGenero = 0, Nombre = nombre };
 
@@ -195,6 +212,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Genero/Editar";
                 var payload = new { IdGenero = idGenero, Nombre = nombre };
 
@@ -302,6 +320,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Genero/Eliminar?id={idGenero}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 var json = await response.Content.ReadAsStringAsync();

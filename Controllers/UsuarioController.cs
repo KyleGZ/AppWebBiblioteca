@@ -34,7 +34,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
 
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize(Policy = "StaffOnly")]
         [HttpGet]
         public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 20)
         {
@@ -134,7 +134,7 @@ namespace AppWebBiblioteca.Controllers
 
 
         // ======== CREAR ========
-
+        [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpGet]
         public async Task<IActionResult> Crear()
         {
@@ -230,6 +230,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
+        [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CrearUsuario(RegistroUsuarioDto usuario, int? idRol)
@@ -341,6 +342,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
 
+        [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpGet]
         public async Task<IActionResult> Editar(int id)
         {
@@ -433,6 +435,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
+        [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditarUsuario(EditarUsuarioDto usuario)
@@ -551,6 +554,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DesactivarUsuario(int id)
@@ -618,6 +622,8 @@ namespace AppWebBiblioteca.Controllers
 
         //    }
         //}
+
+        [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ActivarUsuario(int id)
@@ -692,6 +698,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
+        [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AsignarRol([FromBody] AsignacionRolDto dto)
@@ -771,6 +778,7 @@ namespace AppWebBiblioteca.Controllers
         //}
 
 
+        [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> QuitarRol([FromBody] AsignacionRolDto dto)
@@ -910,6 +918,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditarPerfil(PerfilUsuarioDto perfilUsuario, bool DebeReautenticar)
@@ -974,7 +983,7 @@ namespace AppWebBiblioteca.Controllers
 
 
         // ======== LOGOUT ========
-
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
@@ -1041,6 +1050,7 @@ namespace AppWebBiblioteca.Controllers
             var model = new ResetPasswordRequest { Token = token };
             return View(model);
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest model)

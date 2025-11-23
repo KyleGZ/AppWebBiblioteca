@@ -14,9 +14,12 @@
         <i class="fas fa-tag me-2"></i> Géneros
     </h5>
 
-    <button type="button" class="btn btn-autores-primary btn-sm" data-bs-toggle="modal" data-bs-target="#modalAgregarGenero">
-        <i class="fas fa-plus"></i> Nuevo Género
-    </button>
+    @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+    {
+        <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarGenero">
+            <i class="fas fa-plus"></i> Nuevo Género
+        </button>
+    }
 </div>
 
 <!-- Búsqueda -->
@@ -47,7 +50,10 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
-                    <th class="text-center" style="width:220px;">Acciones</th>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                    {
+                        <th class="text-center" style="width:220px;">Acciones</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -56,23 +62,27 @@
                     <tr>
                         <td><i class="fas fa-tag me-2 text-muted"></i>@g.Nombre</td>
                         <td class="text-center">
-                            <div class="btn-actions-group justify-content-center">
-                                <!-- Editar -->
-                                <button type="button" class="btn btn-action btn-action-edit"
-                                        data-bs-toggle="modal" data-bs-target="#modalEditarGenero"
-                                        data-id="@g.IdGenero" data-nombre="@g.Nombre"
-                                        title="Editar Género">
-                                    <i class="fas fa-edit icon-elegant"></i>
-                                </button>
-
-                                <!-- Eliminar -->
-                                <button type="button" class="btn btn-action btn-action-deactivate"
-                                        data-bs-toggle="modal" data-bs-target="#modalEliminarGenero"
-                                        data-id="@g.IdGenero" data-nombre="@g.Nombre"
-                                        title="Eliminar Género">
-                                    <i class="fas fa-trash-alt icon-elegant"></i>
-                                </button>
-                            </div>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                            {
+                                <div class="btn-actions-group justify-content-center">
+                                    <button type="button"
+                                            class="btn btn-action btn-action-edit"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalEditarGenero"
+                                            data-id="@g.IdGenero"
+                                            data-nombre="@g.Nombre">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-action btn-action-deactivate"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#modalEliminarGenero"
+                                            data-id="@g.IdGenero"
+                                            data-nombre="@g.Nombre">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </div>
+                            }
                         </td>
                     </tr>
                 }

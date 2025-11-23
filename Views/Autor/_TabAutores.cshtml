@@ -13,11 +13,13 @@
         <i class="fas fa-feather-alt me-2"></i> Autores
     </h5>
 
-    <button type="button"
-            class="btn btn-autores-primary btn-sm"
-            data-bs-toggle="modal" data-bs-target="#modalAgregarAutor">
-        <i class="fas fa-user-plus"></i> Nuevo Autor
-    </button>
+    @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+    {
+        <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarAutor">
+            <i class="fas fa-user-plus"></i>
+            Nuevo Autor
+        </button>
+    }
 </div>
 
 <!-- Búsqueda -->
@@ -47,7 +49,10 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
-                    <th class="text-center" style="width:220px;">Acciones</th>
+                    @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                    {
+                        <th class="text-center" style="width:220px;">Acciones</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -56,20 +61,28 @@
                     <tr>
                         <td><i class="fas fa-user-pen me-2 text-muted"></i>@a.Nombre</td>
                         <td class="text-center">
-                            <div class="btn-actions-group justify-content-center">
-                                <button type="button" class="btn btn-action btn-action-edit"
-                                        data-bs-toggle="modal" data-bs-target="#modalEditarAutor"
-                                        data-id="@a.IdAutor" data-nombre="@a.Nombre"
-                                        title="Editar Autor">
-                                    <i class="fas fa-edit icon-elegant"></i>
-                                </button>
-                                <button type="button" class="btn btn-action btn-action-deactivate"
-                                        data-bs-toggle="modal" data-bs-target="#modalEliminarAutor"
-                                        data-id="@a.IdAutor" data-nombre="@a.Nombre"
-                                        title="Eliminar Autor">
-                                    <i class="fas fa-trash-alt icon-elegant"></i>
-                                </button>
-                            </div>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                            {
+                                <div class="btn-actions-group justify-content-center">
+                                    <!-- Editar -->
+                                    <button type="button" class="btn btn-action btn-action-edit"
+                                            data-bs-toggle="modal" data-bs-target="#modalEditarAutor"
+                                            data-id="@a.IdAutor"
+                                            data-nombre="@a.Nombre"
+                                            title="Editar Autor">
+                                        <i class="fas fa-edit icon-elegant"></i>
+                                    </button>
+
+                                    <!-- Eliminar -->
+                                    <button type="button" class="btn btn-action btn-action-deactivate"
+                                            data-bs-toggle="modal" data-bs-target="#modalEliminarAutor"
+                                            data-id="@a.IdAutor"
+                                            data-nombre="@a.Nombre"
+                                            title="Eliminar Autor">
+                                        <i class="fas fa-trash-alt icon-elegant"></i>
+                                    </button>
+                                </div>
+                            }
                         </td>
                     </tr>
                 }

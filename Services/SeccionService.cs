@@ -247,6 +247,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Editar";
                 var payload = new { IdSeccion = idSeccion, Nombre = nombre, Ubicacion = ubicacion };
 
@@ -355,6 +356,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Seccion/Eliminar?id={idSeccion}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 var json = await response.Content.ReadAsStringAsync();
@@ -395,6 +397,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 string apiUrl;
                 if (string.IsNullOrWhiteSpace(termino))
                 {

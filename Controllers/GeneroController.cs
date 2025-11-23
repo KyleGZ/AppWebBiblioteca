@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppWebBiblioteca.Controllers
@@ -53,6 +54,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         //Metodo para crear
+        [Authorize(Policy = ("StaffOnly"))]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(string nombre, string? returnUrl = null)
@@ -95,6 +97,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         //Metodo para editar
+        [Authorize(Policy = ("StaffOnly"))]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int idGenero, string nombre, string? returnUrl = null)
@@ -137,6 +140,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         //Metodo para eliminar
+        [Authorize(Policy = ("StaffOnly"))]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Eliminar(int idGenero, string? returnUrl = null)

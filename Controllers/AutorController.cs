@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppWebBiblioteca.Controllers
@@ -15,7 +16,6 @@ namespace AppWebBiblioteca.Controllers
             _autorService = autorService;
             _authService = authService;
         }
-
 
         [HttpGet]
         public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
@@ -162,7 +162,7 @@ namespace AppWebBiblioteca.Controllers
         //}
 
         // ================== CRUD JSON PARA TABS (como Sección) ==================
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(string nombre, string? returnUrl = null)
@@ -196,6 +196,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int idAutor, string nombre, string? returnUrl = null)
@@ -229,6 +230,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Eliminar(int idAutor, string? returnUrl = null)

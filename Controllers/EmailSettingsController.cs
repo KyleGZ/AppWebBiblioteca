@@ -18,6 +18,7 @@ namespace AppWebBiblioteca.Controllers
             _logger = logger;
             _authService = authService;
         }
+
         [Authorize(Policy = "AdminOnly")]
         [HttpGet]
         public async Task<IActionResult> Index()
@@ -87,6 +88,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(UpdateEmailSettings settings)
         {
             try
@@ -132,6 +134,7 @@ namespace AppWebBiblioteca.Controllers
 
 
         // GET: /EmailSettings/TestConnection
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet]
         public async Task<IActionResult> TestConnection()
         {
@@ -149,6 +152,7 @@ namespace AppWebBiblioteca.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [Authorize(Policy = "AdminOnly")]
         [HttpGet("TestConnectionAjax")]
         public async Task<IActionResult> TestConnectionAjax()
         {

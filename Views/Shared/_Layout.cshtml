@@ -28,7 +28,7 @@
 
     @RenderSection("Styles", required: false)
 
-    
+
 </head>
 <body>
     <div class="main-container">
@@ -81,7 +81,7 @@
 
                 <div class="nav-item">
                     <a href="@Url.Action("Index", "Prestamos")"
-                       class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Prestamos" ? "active" : "")">
+                    class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Prestamos" ? "active" : "")">
                         <i class="fas fa-exchange-alt"></i>
                         <span class="nav-text">Préstamos y Devoluciones</span>
                     </a>
@@ -89,25 +89,27 @@
 
                 <div class="nav-item">
                     <a href="@Url.Action("Index", "Reservas")"
-                       class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reservas" ? "active" : "")">
+                    class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Reservas" ? "active" : "")">
                         <i class="fas fa-calendar-check"></i>
                         <span class="nav-text">Reservas</span>
                     </a>
                 </div>
 
-                <!-- Gestión de Usuarios - Solo para Administradores -->
-                @if (User.IsInRole("Admin"))
+                <!-- Gestión de Usuarios - Solo para Administradores o Supervisores-->
+                @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
                 {
                     <div class="nav-item">
                         <a href="@Url.Action("Index", "Usuario")" class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Usuario" ? "active" : "")">
                             <i class="fas fa-users-cog"></i>
                             <span class="nav-text">Gestión de Usuarios</span>
-                            <span class="badge badge-admin ms-2">Admin</span>
                         </a>
                     </div>
 
+                }
 
-                    <!-- Actividades Culturales - Para todos -->
+                @if (User.IsInRole("Admin"))
+                {
+                    <!-- Configuracion -->
                     <div class="nav-item">
                         <a href="@Url.Action("Index", "EmailSettings")" class="nav-link">
                             <i class="fas fa-server"></i>
