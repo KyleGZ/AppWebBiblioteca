@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Json;
@@ -62,6 +63,7 @@ namespace AppWebBiblioteca.Controllers
 
         //}
 
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpGet] // Cambiar a GET
         public async Task<IActionResult> Index(string termino = "", bool buscarPorDescripcion = false, int pagina = 1, int resultadosPorPagina = 20)
         {
@@ -106,7 +108,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         // Puedes eliminar el método [HttpPost] Buscar ya que ahora todo se maneja en el Index
-
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpPost]
         public async Task<IActionResult> Buscar(string termino, bool buscarPorDescripcion = false, int pagina = 1)
         {
@@ -246,7 +248,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistroLibro(CrearLibroFrontDto model)
@@ -338,7 +340,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * Metodo para cargar datos del libro a editar
          */
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpGet]
         public async Task<IActionResult> ObtenerLibroParaEditar(int id)
         {
@@ -552,7 +554,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int idLibro, CrearLibroFrontDto model)
@@ -640,7 +642,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * Metodo para ver el detalle de un libro
          */
-
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpGet]
         public async Task<IActionResult> ObtenerDetalleLibro(int id)
         {
@@ -731,6 +733,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * 
          */
+        [Authorize(Policy = "StaffOnly")]
         [HttpGet]
         public async Task<IActionResult> DescargarPlantillaImportacion()
         {
@@ -752,7 +755,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
 
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         public async Task<IActionResult> ImportarLibrosExcel(IFormFile archivo)
         {
