@@ -492,6 +492,12 @@
             <form id="formEditarUsuario" asp-action="EditarUsuario" method="post" class="mb-2">
                 @Html.AntiForgeryToken()
                 <input type="hidden" id="editarIdUsuario" name="idUsuario">
+
+                @{
+                    // Solo los usuarios con rol Admin pueden modificar la contraseña y el estado
+                    bool esAdmin = User.IsInRole("Admin");
+                }
+
                 <div class="modal-body pb-2">
                     <div class="row">
                         <div class="col-md-6">
@@ -511,29 +517,62 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="form-group-usuarios">
                         <label for="editarEmail" class="form-label-usuarios">
                             <i class="fas fa-envelope"></i>Email
                         </label>
                         <input type="email" class="form-control form-control-usuarios" id="editarEmail" name="email" required>
                     </div>
+
                     <div class="form-group-usuarios">
                         <label for="editarPassword" class="form-label-usuarios">
                             <i class="fas fa-lock"></i>Contraseña
                         </label>
-                        <input type="password" class="form-control form-control-usuarios" id="editarPassword" name="password" placeholder="Dejar vacío para no cambiar">
-                        <small class="form-text text-muted">Solo complete si desea cambiar la contraseña</small>
+
+                        <input type="password"
+                               class="form-control form-control-usuarios"
+                               id="editarPassword"
+                               name="password"
+                               placeholder="Dejar vacío para no cambiar"
+                        @(esAdmin ? null : "disabled") />
+
+                        @if (esAdmin)
+                        {
+                            <small class="form-text text-muted">
+                                Solo complete si desea cambiar la contraseña.
+                            </small>
+                        }
+                        else
+                        {
+                            <small class="form-text text-muted text-danger">
+                                Solo los usuarios con rol Admin pueden cambiar las contraseñas.
+                            </small>
+                        }
                     </div>
+
                     <div class="form-group-usuarios">
                         <label for="editarEstado" class="form-label-usuarios">
                             <i class="fas fa-toggle-on"></i>Estado
                         </label>
-                        <select class="form-control form-control-usuarios" id="editarEstado" name="estado" required>
+                        <select class="form-control form-control-usuarios"
+                                id="editarEstado"
+                                name="estado"
+                                required
+                        @(esAdmin ? null : "disabled")>
                             <option value="Activo">Activo</option>
                             <option value="Inactivo">Inactivo</option>
                         </select>
+
+                        @if (!esAdmin)
+                        {
+                            <small class="form-text text-muted text-danger">
+                                Solo los usuarios con rol Admin pueden activar o desactivar cuentas.
+                            </small>
+                        }
                     </div>
                 </div>
+
                 <div class="modal-footer pt-0">
                     <button type="button" class="btn btn-usuarios-secondary" data-bs-dismiss="modal">
                         <i class="fas fa-times me-2"></i>Cancelar
@@ -543,6 +582,8 @@
                     </button>
                 </div>
             </form>
+
+
 
             <!-- Gestión de roles -->
             <div class="border-top px-4 pt-3 pb-4">
