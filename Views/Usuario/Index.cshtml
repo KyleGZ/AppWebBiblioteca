@@ -424,14 +424,17 @@
                             @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesAgregar
                             && rolesAgregar.Any())
                             {
+                                // Determinar si el usuario logueado es solamente Supervisor (sin ser Admin)
+                                bool esSupervisorSinSerAdmin = User.IsInRole("Supervisor") && !User.IsInRole("Admin");
+
                                 foreach (var r in rolesAgregar)
                                 {
                                     // Ignorar la opción por defecto
                                     if (r.Value == "0")
                                         continue;
 
-                                    // SI EL USUARIO LOGUEADO ES SUPERVISOR → OCULTAR EL ROL ADMIN
-                                    if (User.IsInRole("Supervisor") && r.Text == "Admin")
+                                    // Si es SOLO Supervisor (no Admin), NO puede ver el rol Admin
+                                    if (esSupervisorSinSerAdmin && r.Text == "Admin")
                                         continue;
 
                                     // Renderizar los roles permitidos
@@ -443,11 +446,12 @@
                                 <option disabled>— No hay roles disponibles —</option>
                             }
                         </select>
-
-                        <small class="text-muted">
-                            Opcional: si eliges un rol, se asignará después de crear el usuario.
-                        </small>
                     </div>
+
+
+
+
+
 
                 </div>
                 <div class="modal-footer">
@@ -557,14 +561,17 @@
                             @if (ViewBag.Roles is IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> rolesEditar
                             && rolesEditar.Any())
                             {
+                                // Determinar si el usuario logueado es solamente Supervisor (sin ser Admin)
+                                bool esSupervisorSinSerAdmin = User.IsInRole("Supervisor") && !User.IsInRole("Admin");
+
                                 foreach (var r in rolesEditar)
                                 {
                                     // Excluir opción por defecto
                                     if (r.Value == "0")
                                         continue;
 
-                                    // SI EL USUARIO LOGUEADO ES SUPERVISOR → NO PUEDE VER EL ROL ADMIN
-                                    if (User.IsInRole("Supervisor") && r.Text == "Admin")
+                                    // Si es SOLO Supervisor (no Admin), NO puede ver el rol Admin
+                                    if (esSupervisorSinSerAdmin && r.Text == "Admin")
                                         continue;
 
                                     <option value="@r.Value">@r.Text</option>
@@ -603,6 +610,7 @@
                     </div>
                 </div>
             </div>
+
 
         </div>
     </div>
