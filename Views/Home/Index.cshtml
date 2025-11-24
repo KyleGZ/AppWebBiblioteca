@@ -152,188 +152,199 @@
         </div>
     </div>
 </div>
-
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Inicializar gráficos con datos iniciales
-            const estadisticas = @Html.Raw(Json.Serialize(estadisticas));
-            if (estadisticas) {
-                crearGraficos(estadisticas);
-            }
-
-            // Evento para filtrar
-            document.getElementById('btnFiltrar').addEventListener('click', filtrarEstadisticas);
-
-            // Evento para descargar Excel
-            document.getElementById('btnDescargar').addEventListener('click', descargarExcel);
-
-            // Evento para reset
-            document.getElementById('btnReset').addEventListener('click', resetFiltros);
-
-            // Enter en los filtros también ejecuta la búsqueda
-            document.getElementById('fechaInicio').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') filtrarEstadisticas();
-            });
-            document.getElementById('fechaFin').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') filtrarEstadisticas();
-            });
-        });
-
-        async function filtrarEstadisticas() {
-            const fechaInicio = document.getElementById('fechaInicio').value;
-            const fechaFin = document.getElementById('fechaFin').value;
-
-            try {
-                const formData = new FormData();
-                formData.append('fechaInicio', fechaInicio);
-                formData.append('fechaFin', fechaFin);
-
-                const response = await fetch('/Home/FiltrarEstadisticas', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    }
-                });
-
-                if (response.ok) {
-                    const html = await response.text();
-                    document.getElementById('estadisticasContainer').innerHTML = html;
-
-                    // Extraer datos del HTML para los gráficos
-                    const estadisticasScript = document.getElementById('estadisticasData');
-                    if (estadisticasScript) {
-                        const estadisticas = JSON.parse(estadisticasScript.textContent);
+            // Solo ejecutar para Admin/Supervisor
+            @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+            {
+                    <text>
+                    // Inicializar gráficos con datos iniciales
+                    const estadisticas = @Html.Raw(Json.Serialize(estadisticas));
+                    if (estadisticas) {
                         crearGraficos(estadisticas);
                     }
-                } else {
-                    alert('Error al filtrar estadísticas');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error al filtrar estadísticas');
+
+                    // Evento para filtrar
+                    document.getElementById('btnFiltrar').addEventListener('click', filtrarEstadisticas);
+
+                    // Evento para descargar Excel
+                    document.getElementById('btnDescargar').addEventListener('click', descargarExcel);
+
+                    // Evento para reset
+                    document.getElementById('btnReset').addEventListener('click', resetFiltros);
+
+                    // Enter en los filtros también ejecuta la búsqueda
+                    document.getElementById('fechaInicio').addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') filtrarEstadisticas();
+                    });
+                    document.getElementById('fechaFin').addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') filtrarEstadisticas();
+                    });
+                    </text>
             }
-        }
+        });
 
-        async function descargarExcel() {
-            const fechaInicio = document.getElementById('fechaInicio').value;
-            const fechaFin = document.getElementById('fechaFin').value;
+        // Mover las funciones fuera del DOMContentLoaded pero mantenerlas condicionadas
+        @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+        {
+                <text>
+                async function filtrarEstadisticas() {
+                    const fechaInicio = document.getElementById('fechaInicio').value;
+                    const fechaFin = document.getElementById('fechaFin').value;
 
-            try {
-                const formData = new FormData();
-                formData.append('fechaInicio', fechaInicio);
-                formData.append('fechaFin', fechaFin);
+                    try {
+                        const formData = new FormData();
+                        formData.append('fechaInicio', fechaInicio);
+                        formData.append('fechaFin', fechaFin);
 
-                const response = await fetch('/Home/DescargarReporte', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
-                    }
-                });
+                        const response = await fetch('/Home/FiltrarEstadisticas', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        });
 
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.style.display = 'none';
-                    a.href = url;
-                    a.download = `ReportePrestamos_${new Date().toISOString().slice(0,16).replace(/[-T:]/g,'')}.xlsx`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                } else {
-                    alert('Error al descargar el reporte');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error al descargar el reporte');
-            }
-        }
+                        if (response.ok) {
+                            const html = await response.text();
+                            document.getElementById('estadisticasContainer').innerHTML = html;
 
-        function resetFiltros() {
-            const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-            const today = new Date();
-
-            document.getElementById('fechaInicio').value = firstDay.toISOString().split('T')[0];
-            document.getElementById('fechaFin').value = today.toISOString().split('T')[0];
-
-            filtrarEstadisticas();
-        }
-
-        function crearGraficos(estadisticas) {
-            crearGraficoEstadoLibros(estadisticas);
-            crearGraficoPrestamosDia(estadisticas.prestamosPorDia);
-        }
-
-        function crearGraficoEstadoLibros(data) {
-            const ctx = document.getElementById('estadoLibrosChart');
-            if (!ctx) return;
-
-            // Destruir gráfico existente
-            if (window.estadoLibrosChartInstance) {
-                window.estadoLibrosChartInstance.destroy();
-            }
-
-            window.estadoLibrosChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Disponibles', 'Prestados'],
-                    datasets: [{
-                        data: [data.librosDisponibles, data.librosPrestados],
-                        backgroundColor: ['#4BC0C0', '#FF6384'],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
+                            // Extraer datos del HTML para los gráficos
+                            const estadisticasScript = document.getElementById('estadisticasData');
+                            if (estadisticasScript) {
+                                const estadisticas = JSON.parse(estadisticasScript.textContent);
+                                crearGraficos(estadisticas);
+                            }
+                        } else {
+                            alert('Error al filtrar estadísticas');
                         }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error al filtrar estadísticas');
                     }
                 }
-            });
-        }
 
-        function crearGraficoPrestamosDia(datosPorDia) {
-            const ctx = document.getElementById('prestamosDiaChart');
-            if (!ctx) return;
+                async function descargarExcel() {
+                    const fechaInicio = document.getElementById('fechaInicio').value;
+                    const fechaFin = document.getElementById('fechaFin').value;
 
-            // Destruir gráfico existente
-            if (window.prestamosDiaChartInstance) {
-                window.prestamosDiaChartInstance.destroy();
-            }
+                    try {
+                        const formData = new FormData();
+                        formData.append('fechaInicio', fechaInicio);
+                        formData.append('fechaFin', fechaFin);
 
-            window.prestamosDiaChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: datosPorDia.map(d => d.fecha),
-                    datasets: [{
-                        label: 'Préstamos por Día',
-                        data: datosPorDia.map(d => d.cantidad),
-                        borderColor: '#36A2EB',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
+                        const response = await fetch('/Home/DescargarReporte', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                            }
+                        });
+
+                        if (response.ok) {
+                            const blob = await response.blob();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = `ReportePrestamos_${new Date().toISOString().slice(0,16).replace(/[-T:]/g,'')}.xlsx`;
+                            document.body.appendChild(a);
+                            a.click();
+                            window.URL.revokeObjectURL(url);
+                        } else {
+                            alert('Error al descargar el reporte');
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        alert('Error al descargar el reporte');
+                    }
+                }
+
+                function resetFiltros() {
+                    const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+                    const today = new Date();
+
+                    document.getElementById('fechaInicio').value = firstDay.toISOString().split('T')[0];
+                    document.getElementById('fechaFin').value = today.toISOString().split('T')[0];
+
+                    filtrarEstadisticas();
+                }
+
+                function crearGraficos(estadisticas) {
+                    crearGraficoEstadoLibros(estadisticas);
+                    crearGraficoPrestamosDia(estadisticas.prestamosPorDia);
+                }
+
+                function crearGraficoEstadoLibros(data) {
+                    const ctx = document.getElementById('estadoLibrosChart');
+                    if (!ctx) return;
+
+                    // Destruir gráfico existente
+                    if (window.estadoLibrosChartInstance) {
+                        window.estadoLibrosChartInstance.destroy();
+                    }
+
+                    window.estadoLibrosChartInstance = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Disponibles', 'Prestados'],
+                            datasets: [{
+                                data: [data.librosDisponibles, data.librosPrestados],
+                                backgroundColor: ['#4BC0C0', '#FF6384'],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
                             }
                         }
-                    }
+                    });
                 }
-            });
+
+                function crearGraficoPrestamosDia(datosPorDia) {
+                    const ctx = document.getElementById('prestamosDiaChart');
+                    if (!ctx) return;
+
+                    // Destruir gráfico existente
+                    if (window.prestamosDiaChartInstance) {
+                        window.prestamosDiaChartInstance.destroy();
+                    }
+
+                    window.prestamosDiaChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: datosPorDia.map(d => d.fecha),
+                            datasets: [{
+                                label: 'Préstamos por Día',
+                                data: datosPorDia.map(d => d.cantidad),
+                                borderColor: '#36A2EB',
+                                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
         }
     </script>
 }
