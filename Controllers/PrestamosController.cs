@@ -197,27 +197,50 @@ namespace AppWebBiblioteca.Controllers
                 var baseApi = _configuration["ApiSettings:BaseUrl"];
                 var url = $"{baseApi}/api/Prestamos/fecha-vencimiento/{idPrestamo}";
 
-                // Su API put podría esperar un nombre de propiedad específico. Probamos ambas opciones.
-                var payload = new { fechaVencimiento = nuevaFechaVencimiento };
-                var response = await _httpClient.PutAsJsonAsync(url, payload);
-
-                if (!response.IsSuccessStatusCode)
+                // ✅ CORRECCIÓN: Enviar como objeto JSON en el body
+                var payload = new
                 {
-                    // Intento alterno con otro nombre por si el binder lo requiere
-                    var payloadAlt = new { nuevaFechaVencimiento = nuevaFechaVencimiento };
-                    response = await _httpClient.PutAsJsonAsync(url, payloadAlt);
-                }
+                    fechaVencimiento = nuevaFechaVencimiento
+                };
 
+                var response = await _httpClient.PutAsJsonAsync(url, payload);
                 var body = await response.Content.ReadAsStringAsync();
 
                 if (!response.IsSuccessStatusCode)
-                    return StatusCode((int)response.StatusCode, new { success = false, message = body });
+                {
+                    try
+                    {
+                        var errorResponse = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(body);
+                        var errorMessage = errorResponse?.ContainsKey("message") == true
+                            ? errorResponse["message"].ToString()
+                            : body;
+                        return StatusCode((int)response.StatusCode, new { success = false, message = errorMessage });
+                    }
+                    catch
+                    {
+                        return StatusCode((int)response.StatusCode, new { success = false, message = body });
+                    }
+                }
 
-                return Json(new { success = true, mensaje = "Préstamo renovado correctamente", nuevaFecha = nuevaFechaVencimiento.ToString("yyyy-MM-dd") });
+                // ✅ Parsear respuesta exitosa
+                try
+                {
+                    var resultado = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(body);
+                    return Json(new
+                    {
+                        success = true,
+                        mensaje = "Préstamo renovado correctamente",
+                        data = resultado
+                    });
+                }
+                catch
+                {
+                    return Json(new { success = true, mensaje = "Préstamo renovado correctamente" });
+                }
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = ex.Message });
+                return StatusCode(500, new { success = false, message = "Error de conexión: " + ex.Message });
             }
         }
 

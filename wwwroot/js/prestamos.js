@@ -19,7 +19,7 @@ class PrestamosManager {
 
     init() {
         this.setupEventListeners();
-        const formRenovar = document.getElementById('formRenovarPremostamo');
+        const formRenovar = document.getElementById('formRenovarPrestamo');
         if (formRenovar) formRenovar.addEventListener('submit', (e) => this.renovarPrestamoSubmit(e));
         this.cargarPrestamos();
     }
@@ -463,29 +463,85 @@ class PrestamosManager {
         modal.show();
     }
 
+    // ✅ MEJORAR: Método de renovación con mejor manejo de errores
     async renovarPrestamoSubmit(e) {
         e.preventDefault();
-        const id = document.getElementById('renovarIdPrestamo').value;
+        
+        const idPrestamo = document.getElementById('renovarIdPrestamo').value;
         const nuevaFecha = document.getElementById('renovarFechaVencimiento').value;
-        if (!id || !nuevaFecha) {
+        
+        if (!idPrestamo || !nuevaFecha) {
             showError('Datos incompletos.');
             return;
         }
+
+        // Validar que la fecha sea futura
+        const fechaSeleccionada = new Date(nuevaFecha);
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        
+        if (fechaSeleccionada <= hoy) {
+            showError('La nueva fecha debe ser posterior a hoy');
+            return;
+        }
+
+        // Deshabilitar botón durante la operación
+        const btnSubmit = e.target.querySelector('button[type="submit"]');
+        const textoOriginal = btnSubmit ? btnSubmit.innerHTML : '';
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Renovando...';
+        }
+
         try {
-            const url = `${PRESTAMOS_CONFIG.urls.renovar}?idPrestamo=${encodeURIComponent(id)}&nuevaFechaVencimiento=${encodeURIComponent(nuevaFecha)}`;
-            const response = await fetch(url, { method: 'PUT' });
+            // ✅ Enviar con query parameters como antes
+            const url = `${PRESTAMOS_CONFIG.urls.renovar}?idPrestamo=${encodeURIComponent(idPrestamo)}&nuevaFechaVencimiento=${encodeURIComponent(nuevaFecha)}`;
+            
+            const response = await fetch(url, { 
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            
             const text = await response.text();
-            let data; try { data = JSON.parse(text); } catch {}
+            console.log('Respuesta del servidor:', text); // ✅ Para debugging
+            
+            let data;
+            try { 
+                data = JSON.parse(text); 
+            } catch (parseError) {
+                console.error('Error al parsear JSON:', parseError);
+                showError('Error en la respuesta del servidor');
+                return;
+            }
+
             if (response.ok && data?.success) {
-                showSuccess(data.mensaje || 'Préstamo renovado.');
-                bootstrap.Modal.getInstance(document.getElementById('modalRenovarPrestamo'))?.hide();
-                this.cargarPrestamosActivos();
-                this.cargarPrestamos();
+                showSuccess(data.mensaje || 'Préstamo renovado correctamente');
+                
+                // Cerrar modal
+                const modalElement = document.getElementById('modalRenovarPrestamo');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+                if (modal) modal.hide();
+                
+                // Recargar datos
+                await this.cargarPrestamosActivos();
+                await this.cargarPrestamos();
             } else {
-                showError(data?.message || text || 'Error al renovar préstamo');
+                // Mostrar mensaje de error específico
+                const errorMsg = data?.message || data?.mensaje || text || 'Error al renovar préstamo';
+                showError(errorMsg);
             }
         } catch (err) {
+            console.error('Error de conexión:', err);
             showError('Error de conexión: ' + err.message);
+        } finally {
+            // Rehabilitar botón
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = textoOriginal;
+            }
         }
     }
 }
