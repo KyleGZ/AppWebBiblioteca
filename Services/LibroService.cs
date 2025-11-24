@@ -594,6 +594,33 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        public async Task<int> ObtenerIdLibro(string isbn)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/Get-libro?isbn={Uri.EscapeDataString(isbn)}";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                // Leer contenido como string
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Intentar convertir directamente a int
+                if (int.TryParse(content, out int idLibro))
+                    return idLibro;
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID del libro por ISBN: {ex.Message}");
+                return 0;
+            }
+        }
+
+
 
     }
 
@@ -611,6 +638,7 @@ namespace AppWebBiblioteca.Services
 
         Task<byte[]> DescargarPlantillaImportacionAsync();
         Task<ApiResponse> ImportarLibrosDesdeExcelAsync(IFormFile archivo);
+        Task<int> ObtenerIdLibro(string isbn);
 
     }
 }

@@ -16,10 +16,10 @@ namespace AppWebBiblioteca.Controllers
         private readonly ISeccionService _seccionService;
         private readonly IEditorialService _editorialService;
         private readonly IImageService _imageService;
+        private readonly IBitacoraService _bitacoraService;
 
 
-
-        public LibroController(IAuthService authService, ILibroService libroService, IAutorService autorService, IGeneroService generoService, ISeccionService seccionService, IEditorialService editorialService, IImageService imageService)
+        public LibroController(IAuthService authService, ILibroService libroService, IAutorService autorService, IGeneroService generoService, ISeccionService seccionService, IEditorialService editorialService, IImageService imageService, IBitacoraService bitacoraService)
         {
             _authService = authService;
             _libroService = libroService;
@@ -28,6 +28,7 @@ namespace AppWebBiblioteca.Controllers
             _seccionService = seccionService;
             _editorialService = editorialService;
             _imageService = imageService;
+            _bitacoraService = bitacoraService;
         }
 
         //[HttpGet]
@@ -258,6 +259,7 @@ namespace AppWebBiblioteca.Controllers
                 if (!_authService.IsAuthenticated())
                     return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
 
+                var idUsuario = _authService.GetUserId();
                 // Validaciones básicas
                 if (!ModelState.IsValid)
                 {
@@ -316,13 +318,20 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+
+                    var libroId = await _libroService.ObtenerIdLibro(model.ISBN);
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value,"CREAR_LIBRO", "LIBRO", libroId);
+
                     return Json(new
                     {
                         success = true,
                         message = "Libro creado exitosamente",
                         // Opcional: si necesitas datos adicionales para el frontend
                         data = new { libroId = resultado.Data } // ajusta según tu respuesta
+
+                        
                     });
+
                 }
                 else
                 {
@@ -618,6 +627,8 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "EDITAR_LIBRO", "LIBRO", idLibro);
                     return Json(new
                     {
                         success = true,
