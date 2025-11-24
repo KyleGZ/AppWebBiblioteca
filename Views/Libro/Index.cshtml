@@ -931,12 +931,12 @@
                     const autoresSeleccionados = autoresManager?.selectedItems.size || 0;
 
                     if (generosSeleccionados === 0) {
-                        showAlert('Por favor seleccione al menos un género', 'error');
+                        showError('Por favor seleccione al menos un género', 'error');
                         return;
                     }
 
                     if (autoresSeleccionados === 0) {
-                        showAlert('Por favor seleccione al menos un autor', 'error');
+                        showError('Por favor seleccione al menos un autor', 'error');
                         return;
                     }
 
