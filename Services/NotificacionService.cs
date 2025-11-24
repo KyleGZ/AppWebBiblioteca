@@ -8,8 +8,9 @@ namespace AppWebBiblioteca.Services
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public NotificacionService(HttpClient httpClient, IConfiguration configuration)
+        public NotificacionService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
@@ -17,13 +18,28 @@ namespace AppWebBiblioteca.Services
             {
                 PropertyNameCaseInsensitive = true
             };
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
 
         }
+
         public async Task<List<NotificacionView>> ObtenerNotificacionesAsync(int idUsuario)
         {
             if (idUsuario <= 0)
                 throw new ArgumentException("El ID de usuario proporcionado no es válido.", nameof(idUsuario));
-
+            AgregarTokenAutenticacion();
             var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Notificacion/ObtenerNotificaciones?idUsuario={idUsuario}";
             var response = await _httpClient.GetAsync(apiUrl);
 
@@ -39,6 +55,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Notificacion/MarcarLeida?idNotificacion={idNotificacion}";
                 var response = await _httpClient.PutAsync(apiUrl, null);
 
@@ -83,6 +100,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Notificacion/EliminarTodas?idUsuario={idUsuario}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 if (response.IsSuccessStatusCode)
@@ -122,6 +140,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Notificacion/MarcarTodasLeidas?idUsuario={idUsuario}";
                 var response = await _httpClient.PutAsync(apiUrl, null);
 

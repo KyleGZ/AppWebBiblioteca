@@ -20,15 +20,34 @@ namespace AppWebBiblioteca.Controllers
         private readonly IAuthService _authService;
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public PrestamosController(IUsuarioService usuarioService, ILibroService libroService, IAuthService authService, HttpClient httpClient, IConfiguration configuration)
+        public PrestamosController(IUsuarioService usuarioService, ILibroService libroService, IAuthService authService, HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _usuarioService = usuarioService;
             _libroService = libroService;
             _authService = authService;
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
         }
+
+
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
+        }
+
 
         // GET: /Prestamos
         public async Task<IActionResult> Index()
@@ -55,6 +74,7 @@ namespace AppWebBiblioteca.Controllers
                 // ✅ MODIFICADO: Cargar libros disponibles desde la API
                 try
                 {
+                    AgregarTokenAutenticacion();
                     var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/libros/disponibles";
                     var response = await _httpClient.GetAsync(apiUrl);
 
@@ -128,6 +148,7 @@ namespace AppWebBiblioteca.Controllers
 
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos";
                 var prestamoData = new
                 {
@@ -157,6 +178,7 @@ namespace AppWebBiblioteca.Controllers
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -179,6 +201,7 @@ namespace AppWebBiblioteca.Controllers
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/activos";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -204,6 +227,7 @@ namespace AppWebBiblioteca.Controllers
 
             try
             {
+                AgregarTokenAutenticacion();
                 var baseApi = _configuration["ApiSettings:BaseUrl"];
                 var url = $"{baseApi}/api/Prestamos/devolucion/{idPrestamo}";
 
@@ -232,6 +256,7 @@ namespace AppWebBiblioteca.Controllers
 
             try
             {
+                AgregarTokenAutenticacion();
                 var baseApi = _configuration["ApiSettings:BaseUrl"];
                 var url = $"{baseApi}/api/Prestamos/fecha-vencimiento/{idPrestamo}";
 
@@ -294,6 +319,7 @@ namespace AppWebBiblioteca.Controllers
 
             try
             {
+                AgregarTokenAutenticacion();
                 var baseApi = _configuration["ApiSettings:BaseUrl"];
                 // Construir URL directamente con el parámetro 'termino' que espera la API
                 var url = $"{baseApi}/api/Prestamos/buscar?termino={Uri.EscapeDataString(termino)}";
@@ -320,6 +346,7 @@ namespace AppWebBiblioteca.Controllers
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/libros/disponibles";
                 var response = await _httpClient.GetAsync(apiUrl);
 

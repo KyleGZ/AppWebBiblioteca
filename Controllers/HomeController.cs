@@ -26,17 +26,24 @@ namespace AppWebBiblioteca.Controllers
             if (!_authService.IsAuthenticated())
                 return RedirectToAction("Login", "Usuario");
 
-            var estadisticas = await _estadisticaService.ObtenerEstadisticasAsync();
-
-            ViewBag.Estadisticas = estadisticas;
-            //ViewBag.UserEmail = User.Identity?.Name ?? "Usuario";
-            //ViewBag.UserRoles = new List<string> { "Bibliotecario" }; // Ajusta según tu sistema de roles
             ViewBag.UserEmail = _authService.GetUserEmail();
            
             ViewBag.UserRoles = User.Claims
                 .Where(c => c.Type == ClaimTypes.Role)
                 .Select(c => c.Value)
                 .ToList();
+
+            if(User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+            {
+                var estadisticas = await _estadisticaService.ObtenerEstadisticasAsync();
+
+                ViewBag.Estadisticas = estadisticas;
+            }
+            else
+            {
+                ViewBag.Estadisticas = null;
+
+            }
 
             return View();
         }

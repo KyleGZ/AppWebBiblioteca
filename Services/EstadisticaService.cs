@@ -10,12 +10,27 @@ namespace AppWebBiblioteca.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger _logger;
         private readonly HttpClient _httpClient;
-
-        public EstadisticaService(IConfiguration configuration, HttpClient cliente)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public EstadisticaService(IConfiguration configuration, HttpClient cliente, IHttpContextAccessor httpContextAccessor)
         {
             _configuration = configuration;
             _httpClient = cliente;
+            _httpContextAccessor = httpContextAccessor;
         }
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
+        }
+
         //public async Task<EstadisticasPrestamosDTO> ObtenerEstadisticasAsync()
         //{
 
@@ -46,6 +61,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/GetEstadisticasPrestamos";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -75,7 +91,7 @@ namespace AppWebBiblioteca.Services
                     JsonSerializer.Serialize(filtro),
                     Encoding.UTF8,
                     "application/json");
-
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/GetEstadisticasPorFiltro";
                 var response = await _httpClient.PostAsync(apiUrl, content);
 
@@ -105,7 +121,7 @@ namespace AppWebBiblioteca.Services
                     JsonSerializer.Serialize(filtro),
                     Encoding.UTF8,
                     "application/json");
-
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/DescargarReporteExcel";
                 var response = await _httpClient.PostAsync(apiUrl, content);
 

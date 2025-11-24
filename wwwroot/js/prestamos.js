@@ -437,7 +437,11 @@ class PrestamosManager {
                 form.reset();
                 bootstrap.Modal.getInstance(document.getElementById('modalNuevoPrestamo'))?.hide();
                 showSuccess(j.message || 'Préstamo creado');
-                this.cargarPrestamos();
+                //this.cargarPrestamos();
+                setTimeout(() => {
+                location.reload(); // recargar página para actualizar lista
+
+                }, 2000);
                 if (document.getElementById('seccionDevoluciones')?.style.display==='block')
                     this.cargarPrestamosActivos();
             } else {

@@ -158,6 +158,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Rol/ObtenerRolesDeUsuario/{idUsuario}";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -175,31 +176,11 @@ namespace AppWebBiblioteca.Services
         }
 
 
-        //public async Task<UsuarioListaViewModel> ObtenerUsuarioPorIdAsync(int id)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/Obtener/{id}";
-        //        var response = await _httpClient.GetAsync(apiUrl);
-
-        //        if (response.IsSuccessStatusCode)
-        //        {
-        //            var result = await response.Content.ReadFromJsonAsync<dynamic>();
-        //            return result?.usuario?.ToObject<UsuarioListaViewModel>();
-        //        }
-
-        //        return null;
-        //    }
-        //    catch (Exception)
-        //    {
-        //        return null;
-        //    }
-        //}
-
         public async Task<UsuarioListaViewModel?> ObtenerUsuarioPorIdAsync(int id)
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/Obtener/{id}";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -222,29 +203,13 @@ namespace AppWebBiblioteca.Services
             }
         }
 
-        //public async Task<bool> CrearUsuarioAsync(RegistroUsuarioDto usuario)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Registro";
-
-        //        var json = JsonSerializer.Serialize(usuario);
-        //        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        //        var response = await _httpClient.PostAsync(apiUrl, content);
-        //        return response.IsSuccessStatusCode;
-        //    }
-        //    catch (Exception)
-        //    {
-        //        return false;
-        //    }
-        //}
 
         public async Task<ApiResponse> CrearUsuarioAsync(RegistroUsuarioDto usuario)
         {
-            AgregarTokenAutenticacion();
             try
             {
+                AgregarTokenAutenticacion();
+
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/Registro";
 
                 var json = JsonSerializer.Serialize(usuario);
@@ -454,6 +419,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/Eliminar/{id}";
 
                 var response = await _httpClient.DeleteAsync(apiUrl);
@@ -501,6 +467,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Usuario/PerfilUsuario?idUsuario={id}";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -534,6 +501,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Usuario/EditarPerfil";
 
                 var json = JsonSerializer.Serialize(perfilUsuario);

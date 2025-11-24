@@ -35,6 +35,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Seccion/Lista-Secciones?nombre={nombre}";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -50,55 +51,6 @@ namespace AppWebBiblioteca.Services
                 return new List<SeccionDto>();
             }
         }
-
-        // Registrar una nueva sección
-        //public async Task<ApiResponse> RegistrarSeccionAsync(string nombre, string ubicacion)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Registro";
-        //        var payload = new { IdSeccion = 0, Nombre = nombre, Ubicacion = ubicacion };
-
-        //        var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-        //        if (!response.IsSuccessStatusCode)
-        //            return new ApiResponse { Success = false, Message = "Error en la comunicación con el API" };
-
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        using var doc = JsonDocument.Parse(json);
-        //        var root = doc.RootElement;
-
-        //        if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean())
-        //        {
-        //            string message = "Registro exitoso";
-        //            if (root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
-        //            {
-        //                message = messageProp.GetString();
-        //            }
-
-        //            object data = null;
-        //            if (root.TryGetProperty("data", out var dataProp) && dataProp.ValueKind != JsonValueKind.Null)
-        //            {
-        //                data = JsonSerializer.Deserialize<object>(dataProp.GetRawText());
-        //            }
-
-        //            return new ApiResponse { Success = true, Message = message, Data = data };
-        //        }
-        //        else
-        //        {
-        //            string errorMessage = "Error en el registro";
-        //            if (root.TryGetProperty("message", out var messageProp) && messageProp.ValueKind == JsonValueKind.String)
-        //            {
-        //                errorMessage = messageProp.GetString();
-        //            }
-
-        //            return new ApiResponse { Success = false, Message = errorMessage };
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return new ApiResponse { Success = false, Message = $"Error interno: {ex.Message}" };
-        //    }
-        //}
 
         public async Task<ApiResponse> RegistrarSeccionAsync(string nombre, string ubicacion)
         {
@@ -141,108 +93,6 @@ namespace AppWebBiblioteca.Services
         }
 
 
-        //public async Task<int> RegistrarSeccionAsync(string nombre, string ubicacion)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Registro";
-        //        var payload = new { IdSeccion = 0, Nombre = nombre, Ubicacion = ubicacion };
-
-        //        var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-        //        if (!response.IsSuccessStatusCode) return 0;
-
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        using var doc = JsonDocument.Parse(json);
-        //        var root = doc.RootElement;
-
-        //        if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean() &&
-        //            root.TryGetProperty("data", out var dataProp) &&
-        //            dataProp.ValueKind == JsonValueKind.Object &&
-        //            dataProp.TryGetProperty("idSeccion", out var idProp) &&
-        //            idProp.TryGetInt32(out var id))
-        //        {
-        //            return id;
-        //        }
-
-        //        return 0;
-        //    }
-        //    catch
-        //    {
-        //        return 0;
-        //    }
-        //}
-
-        // Editar sección existente
-        //public async Task<bool> EditarSeccionAsync(int idSeccion, string nombre, string ubicacion)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Editar";
-        //        var payload = new { IdSeccion = idSeccion, Nombre = nombre, Ubicacion = ubicacion };
-
-        //        var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
-        //        if (!response.IsSuccessStatusCode) return false;
-
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        using var doc = JsonDocument.Parse(json);
-        //        var root = doc.RootElement;
-
-        //        return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
-        //    }
-        //    catch
-        //    {
-        //        return false;
-        //    }
-        //}
-
-        //public async Task<ApiResponse> EditarSeccionAsync(int idSeccion, string nombre, string ubicacion)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Editar";
-        //        var payload = new { IdSeccion = idSeccion, Nombre = nombre, Ubicacion = ubicacion };
-
-        //        var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
-
-        //        if (!response.IsSuccessStatusCode)
-        //        {
-        //            return new ApiResponse
-        //            {
-        //                Success = false,
-        //                Message = $"Error HTTP: {response.StatusCode}"
-        //            };
-        //        }
-
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        using var doc = JsonDocument.Parse(json);
-        //        var root = doc.RootElement;
-
-        //        var apiResponse = new ApiResponse
-        //        {
-        //            Success = root.TryGetProperty("success", out var okProp) && okProp.GetBoolean(),
-        //            Message = root.TryGetProperty("message", out var msgProp)
-        //                     ? msgProp.GetString()
-        //                     : "Operación completada"
-        //        };
-
-        //        // Opcional: incluir data si existe
-        //        if (root.TryGetProperty("data", out var dataProp))
-        //        {
-        //            apiResponse.Data = dataProp.GetRawText();
-        //        }
-
-        //        return apiResponse;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return new ApiResponse
-        //        {
-        //            Success = false,
-        //            Message = $"Error inesperado: {ex.Message}"
-        //        };
-        //    }
-        //}
-
         public async Task<ApiResponse> EditarSeccionAsync(int idSeccion, string nombre, string ubicacion)
         {
             try
@@ -284,74 +134,6 @@ namespace AppWebBiblioteca.Services
         }
 
 
-
-        // Eliminar sección
-        //public async Task<bool> EliminarSeccionAsync(int idSeccion)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Seccion/Eliminar?id={idSeccion}";
-        //        var response = await _httpClient.DeleteAsync(apiUrl);
-        //        if (!response.IsSuccessStatusCode) return false;
-
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        using var doc = JsonDocument.Parse(json);
-        //        var root = doc.RootElement;
-
-        //        return root.TryGetProperty("success", out var okProp) && okProp.GetBoolean();
-        //    }
-        //    catch
-        //    {
-        //        return false;
-        //    }
-        //}
-
-        //public async Task<ApiResponse> EliminarSeccionAsync(int idSeccion)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Seccion/Eliminar?id={idSeccion}";
-        //        var response = await _httpClient.DeleteAsync(apiUrl);
-
-        //        if (!response.IsSuccessStatusCode)
-        //        {
-        //            return new ApiResponse
-        //            {
-        //                Success = false,
-        //                Message = $"Error HTTP: {response.StatusCode}"
-        //            };
-        //        }
-
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        using var doc = JsonDocument.Parse(json);
-        //        var root = doc.RootElement;
-
-        //        // Asumiendo que la API ya retorna una estructura similar
-        //        var apiResponse = new ApiResponse
-        //        {
-        //            Success = root.TryGetProperty("success", out var okProp) && okProp.GetBoolean(),
-        //            Message = root.TryGetProperty("message", out var msgProp)
-        //                     ? msgProp.GetString()
-        //                     : "Operación completada"
-        //        };
-
-        //        // Opcional: incluir data si existe
-        //        if (root.TryGetProperty("data", out var dataProp))
-        //        {
-        //            apiResponse.Data = dataProp.GetRawText();
-        //        }
-
-        //        return apiResponse;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return new ApiResponse
-        //        {
-        //            Success = false,
-        //            Message = $"Error inesperado: {ex.Message}"
-        //        };
-        //    }
-        //}
         public async Task<ApiResponse> EliminarSeccionAsync(int idSeccion)
         {
             try

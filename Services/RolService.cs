@@ -7,17 +7,34 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public RolService(HttpClient httpClient, IConfiguration configuration)
+        public RolService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
         }
 
         public async Task<List<RolDto>> ObtenerRolesAsync()
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Rol/ObtenerRoles";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -38,6 +55,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"]
                            + $"/Rol/AsignarRolAUsuario?idUsuario={dto.IdUsuario}&idRol={dto.IdRol}";
 
@@ -63,6 +81,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"]
                            + $"/Rol/QuitarRolAUsuario?idUsuario={dto.IdUsuario}&idRol={dto.IdRol}";
 

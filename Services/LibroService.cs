@@ -598,6 +598,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/Get-libro?isbn={Uri.EscapeDataString(isbn)}";
                 var response = await _httpClient.GetAsync(apiUrl);
 
