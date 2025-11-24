@@ -1,4 +1,4 @@
-// ConfiguraciÛn de URLs (rutas MVC internas)
+Ôªø// Configuraci√≥n de URLs (rutas MVC internas)
 const PRESTAMOS_CONFIG = {
     urls: {
         prestamos: '/Prestamos/GetPrestamos',
@@ -6,7 +6,7 @@ const PRESTAMOS_CONFIG = {
         devolucion: '/Prestamos/RegistrarDevolucion', // se usa con ?idPrestamo=
         renovar: '/Prestamos/Renovar',                // se usa con ?idPrestamo=&nuevaFechaVencimiento=
         create: '/Prestamos/Create',
-        buscar: '/Prestamos/Buscar'                   // NUEVO: endpoint de b˙squeda
+        buscar: '/Prestamos/Buscar'                   // NUEVO: endpoint de b√∫squeda
     }
 };
 
@@ -38,7 +38,7 @@ class PrestamosManager {
             }
         });
         
-        // NUEVO: Evento para botÛn de b˙squeda
+        // NUEVO: Evento para bot√≥n de b√∫squeda
         document.getElementById('btnBuscar')?.addEventListener('click', () => this.buscarPrestamos());
         
         document.getElementById('filtroEstado')?.addEventListener('change', () => this.filtrarPrestamos());
@@ -57,12 +57,12 @@ class PrestamosManager {
                 return;
             }
 
-            // NUEVO: Ordenar por fecha m·s reciente
+            // NUEVO: Ordenar por fecha m√°s reciente
             if (data && Array.isArray(data)) {
                 data.sort((a, b) => {
                     const fechaA = new Date(a.FechaPrestamo || a.fechaPrestamo);
                     const fechaB = new Date(b.FechaPrestamo || b.fechaPrestamo);
-                    return fechaB - fechaA; // M·s reciente primero
+                    return fechaB - fechaA; // M√°s reciente primero
                 });
             }
 
@@ -74,13 +74,13 @@ class PrestamosManager {
         }
     }
 
-    // MODIFICADO: MÈtodo para buscar prÈstamos - CORREGIDO el par·metro a 'termino'
+    // MODIFICADO: M√©todo para buscar pr√©stamos - CORREGIDO el par√°metro a 'termino'
     async buscarPrestamos() {
         const searchInput = document.getElementById('searchInput');
         const query = searchInput?.value.trim();
 
         if (!query) {
-            showError('Por favor ingrese un criterio de b˙squeda');
+            showError('Por favor ingrese un criterio de b√∫squeda');
             return;
         }
 
@@ -91,7 +91,7 @@ class PrestamosManager {
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Buscando...</span>
                     </div>
-                    <p class="mt-2 text-muted">Buscando prÈstamos...</p>
+                    <p class="mt-2 text-muted">Buscando pr√©stamos...</p>
                 </div>`;
 
             // CORREGIDO: Usar 'termino' en lugar de 'q'
@@ -121,7 +121,7 @@ class PrestamosManager {
                     <div class="alert alert-info text-center">
                         <i class="fas fa-search fa-2x mb-2"></i>
                         <h5>No se encontraron resultados</h5>
-                        <p class="mb-0">No hay prÈstamos que coincidan con: <strong>"${query}"</strong></p>
+                        <p class="mb-0">No hay pr√©stamos que coincidan con: <strong>"${query}"</strong></p>
                     </div>`;
                 return;
             }
@@ -133,13 +133,13 @@ class PrestamosManager {
             showSuccess(`Se encontraron ${resultados.length} resultado(s)`);
 
         } catch (err) {
-            this.renderError('Error de conexiÛn: ' + err.message);
+            this.renderError('Error de conexi√≥n: ' + err.message);
         }
     }
 
-    // MODIFICADO: MÈtodo para limpiar filtros
+    // MODIFICADO: M√©todo para limpiar filtros
     limpiarFiltros() {
-        // Limpiar campo de b˙squeda
+        // Limpiar campo de b√∫squeda
         const searchInput = document.getElementById('searchInput');
         if (searchInput) searchInput.value = '';
         
@@ -147,13 +147,13 @@ class PrestamosManager {
         const filtroEstado = document.getElementById('filtroEstado');
         if (filtroEstado) filtroEstado.value = '';
         
-        // Recargar todos los prÈstamos
+        // Recargar todos los pr√©stamos
         this.cargarPrestamos();
         
         showSuccess('Filtros limpiados');
     }
 
-    // MODIFICADO: MÈtodo para filtrar prÈstamos localmente
+    // MODIFICADO: M√©todo para filtrar pr√©stamos localmente
     filtrarPrestamos() {
         const searchValue = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
         const estadoValue = document.getElementById('filtroEstado')?.value || '';
@@ -166,7 +166,7 @@ class PrestamosManager {
 
         let filtrados = this.prestamosData;
 
-        // Filtrar por texto (b˙squeda local)
+        // Filtrar por texto (b√∫squeda local)
         if (searchValue) {
             filtrados = filtrados.filter(p => {
                 const libro = (p.LibroTitulo || p.libroTitulo || '').toLowerCase();
@@ -237,10 +237,10 @@ class PrestamosManager {
             container.innerHTML = `
               <div class="empty-state text-center py-5">
                 <i class="fas fa-book-open fa-4x text-muted mb-3"></i>
-                <h4>No hay prÈstamos registrados</h4>
-                <p class="text-muted">Registra el primer prÈstamo para comenzar</p>
+                <h4>No hay pr√©stamos registrados</h4>
+                <p class="text-muted">Registra el primer pr√©stamo para comenzar</p>
                 <button class="btn btn-esparza-primary mt-3" data-bs-toggle="modal" data-bs-target="#modalNuevoPrestamo">
-                  <i class="fas fa-plus me-2"></i>Nuevo PrÈstamo
+                  <i class="fas fa-plus me-2"></i>Nuevo Pr√©stamo
                 </button>
               </div>`;
             return;
@@ -275,8 +275,8 @@ class PrestamosManager {
                       </div>
                       <div class="prestamo-estado">
                         <span class="badge ${badge}">${estado}</span>
-                        ${dias<0 && estado==='Activo'?`<div class="text-danger small mt-1"><i class="fas fa-exclamation-triangle"></i> ${Math.abs(dias)} dÌas de retraso</div>`:
-                          dias<=3 && dias>=0 && estado==='Activo'?`<div class="text-warning small mt-1"><i class="fas fa-clock"></i> Vence en ${dias} dÌas</div>`:''}
+                        ${dias<0 && estado==='Activo'?`<div class="text-danger small mt-1"><i class="fas fa-exclamation-triangle"></i> ${Math.abs(dias)} d√≠as de retraso</div>`:
+                          dias<=3 && dias>=0 && estado==='Activo'?`<div class="text-warning small mt-1"><i class="fas fa-clock"></i> Vence en ${dias} d√≠as</div>`:''}
                       </div>
                     </div>
                   </div>
@@ -294,8 +294,8 @@ class PrestamosManager {
             container.innerHTML = `
               <div class="empty-state text-center py-5">
                 <i class="fas fa-table fa-4x text-muted mb-3"></i>
-                <h4>No hay prÈstamos para mostrar</h4>
-                <p class="text-muted">La tabla se mostrar· cuando haya prÈstamos registrados</p>
+                <h4>No hay pr√©stamos para mostrar</h4>
+                <p class="text-muted">La tabla se mostrar√° cuando haya pr√©stamos registrados</p>
               </div>`;
             return;
         }
@@ -316,11 +316,11 @@ class PrestamosManager {
             else if (dias<=3){ row='table-warning'; badge='bg-warning'; }
             html += `<tr class="${row}">
               <td><strong>${libro}</strong><br><small class="text-muted">ISBN: ${p.LibroIsbn||p.libroIsbn||'N/A'}</small></td>
-              <td><strong>${usuario}</strong><br><small class="text-muted">CÈdula: ${p.UsuarioCedula||p.usuarioCedula||'N/A'}</small></td>
+              <td><strong>${usuario}</strong><br><small class="text-muted">C√©dula: ${p.UsuarioCedula||p.usuarioCedula||'N/A'}</small></td>
               <td><div><strong>Prestado:</strong> ${fPrestamo}</div><div><strong>Vence:</strong> ${fVenc}</div></td>
               <td><span class="badge ${badge}">${estado}</span>
-                ${dias<0 && estado==='Activo'?`<div class="text-danger small mt-1">${Math.abs(dias)} dÌas de retraso</div>`:
-                  dias<=3 && dias>=0 && estado==='Activo'?`<div class="text-warning small mt-1">Vence en ${dias} dÌas</div>`:''}
+                ${dias<0 && estado==='Activo'?`<div class="text-danger small mt-1">${Math.abs(dias)} d√≠as de retraso</div>`:
+                  dias<=3 && dias>=0 && estado==='Activo'?`<div class="text-warning small mt-1">Vence en ${dias} d√≠as</div>`:''}
               </td>
               <td>${(p.Observaciones||p.observaciones)?`<small>${p.Observaciones||p.observaciones}</small>`:'<span class="text-muted">-</span>'}</td>
             </tr>`;
@@ -329,7 +329,7 @@ class PrestamosManager {
         container.innerHTML = html;
     }
 
-    // GestiÛn de devoluciones -------------------------------------
+    // Gesti√≥n de devoluciones -------------------------------------
     async cargarPrestamosActivos() {
         try {
             const r = await fetch(PRESTAMOS_CONFIG.urls.prestamosActivos, { headers: { 'Accept':'application/json' } });
@@ -343,20 +343,20 @@ class PrestamosManager {
             this.mostrarPrestamosActivos(datos);
         } catch(err) {
             document.getElementById('prestamosActivosContainer').innerHTML =
-              `<div class="alert alert-danger">Error de conexiÛn: ${err.message}</div>`;
+              `<div class="alert alert-danger">Error de conexi√≥n: ${err.message}</div>`;
         }
     }
 
     mostrarPrestamosActivos(prestamos) {
         const cont = document.getElementById('prestamosActivosContainer');
         if (!prestamos || prestamos.length === 0) {
-            cont.innerHTML = '<div class="alert alert-info">No hay prÈstamos activos</div>';
+            cont.innerHTML = '<div class="alert alert-info">No hay pr√©stamos activos</div>';
             return;
         }
 
         let html = `<div class="table-responsive"><table class="table table-striped table-hover">
           <thead class="table-dark"><tr>
-            <th>Libro</th><th>Usuario</th><th>Fecha PrÈstamo</th><th>Fecha Vencimiento</th><th>Estado</th><th>Acciones</th>
+            <th>Libro</th><th>Usuario</th><th>Fecha Pr√©stamo</th><th>Fecha Vencimiento</th><th>Estado</th><th>Acciones</th>
           </tr></thead><tbody>`;
 
         prestamos.forEach(p => {
@@ -374,10 +374,10 @@ class PrestamosManager {
               <td><strong>${p.LibroTitulo || p.libroTitulo || 'N/A'}</strong><br>
                   <small class="text-muted">ISBN: ${p.LibroIsbn || p.libroIsbn || 'N/A'}</small></td>
               <td>${p.UsuarioNombre || p.usuarioNombre || 'N/A'}<br>
-                  <small class="text-muted">CÈdula: ${p.UsuarioCedula || p.usuarioCedula || 'N/A'}</small></td>
+                  <small class="text-muted">C√©dula: ${p.UsuarioCedula || p.usuarioCedula || 'N/A'}</small></td>
               <td>${fP}</td>
               <td>${fV}</td>
-              <td>${retraso ? '<span class="badge bg-danger">En retraso</span>' : '<span class="badge bg-success">Al dÌa</span>'}</td>
+              <td>${retraso ? '<span class="badge bg-danger">En retraso</span>' : '<span class="badge bg-success">Al d√≠a</span>'}</td>
               <td>
                 ${id ? `<div class="d-flex">
                     <button class="btn btn-success btn-sm" onclick="prestamosManager.registrarDevolucion(${idOnClick})">
@@ -386,7 +386,7 @@ class PrestamosManager {
                     <button class="btn btn-primary btn-sm ms-2" onclick="prestamosManager.abrirModalRenovar(${idOnClick}, '${fvISO}')">
                       <i class="fas fa-redo me-1"></i>Renovar
                     </button>
-                  </div>` : '<span class="text-muted">ID inv·lido</span>'}
+                  </div>` : '<span class="text-muted">ID inv√°lido</span>'}
               </td>
             </tr>`;
         });
@@ -397,8 +397,8 @@ class PrestamosManager {
 
     async registrarDevolucion(idPrestamo) {
         const id = Number(idPrestamo);
-        if (!Number.isFinite(id) || id<=0){ showError('ID inv·lido'); return; }
-        if (!confirm('øConfirmar devoluciÛn?')) return;
+        if (!Number.isFinite(id) || id<=0){ showError('ID inv√°lido'); return; }
+        if (!confirm('¬øConfirmar devoluci√≥n?')) return;
         try {
             const r = await fetch(`${PRESTAMOS_CONFIG.urls.devolucion}?idPrestamo=${id}`, { method:'PUT' });
             const raw = await r.text(); let j; try { j=JSON.parse(raw);} catch {}
@@ -410,7 +410,7 @@ class PrestamosManager {
                 showError(j?.message || raw || 'Error al devolver');
             }
         } catch(err){
-            showError('Error conexiÛn: '+err.message);
+            showError('Error conexi√≥n: '+err.message);
         }
     }
 
@@ -435,7 +435,7 @@ class PrestamosManager {
             if (j.success){
                 form.reset();
                 bootstrap.Modal.getInstance(document.getElementById('modalNuevoPrestamo'))?.hide();
-                showSuccess(j.message || 'PrÈstamo creado');
+                showSuccess(j.message || 'Pr√©stamo creado');
                 this.cargarPrestamos();
                 if (document.getElementById('seccionDevoluciones')?.style.display==='block')
                     this.cargarPrestamosActivos();
@@ -443,7 +443,7 @@ class PrestamosManager {
                 showError(j.message || 'Error al crear');
             }
         } catch(err){
-            showError('Error conexiÛn: '+err.message);
+            showError('Error conexi√≥n: '+err.message);
         }
     }
 
@@ -451,7 +451,7 @@ class PrestamosManager {
         const inputId = document.getElementById('renovarIdPrestamo');
         const inputFecha = document.getElementById('renovarFechaVencimiento');
         if (!inputId || !inputFecha) {
-            showError('Modal de renovaciÛn no disponible.');
+            showError('Modal de renovaci√≥n no disponible.');
             return;
         }
         inputId.value = idPrestamo;
@@ -477,19 +477,19 @@ class PrestamosManager {
             const text = await response.text();
             let data; try { data = JSON.parse(text); } catch {}
             if (response.ok && data?.success) {
-                showSuccess(data.mensaje || 'PrÈstamo renovado.');
+                showSuccess(data.mensaje || 'Pr√©stamo renovado.');
                 bootstrap.Modal.getInstance(document.getElementById('modalRenovarPrestamo'))?.hide();
                 this.cargarPrestamosActivos();
                 this.cargarPrestamos();
             } else {
-                showError(data?.message || text || 'Error al renovar prÈstamo');
+                showError(data?.message || text || 'Error al renovar pr√©stamo');
             }
         } catch (err) {
-            showError('Error de conexiÛn: ' + err.message);
+            showError('Error de conexi√≥n: ' + err.message);
         }
     }
 }
 
-// InicializaciÛn
+// Inicializaci√≥n
 let prestamosManager;
 document.addEventListener('DOMContentLoaded', ()=>{ prestamosManager = new PrestamosManager(); });
