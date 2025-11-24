@@ -23,10 +23,13 @@
                             </h2>
                             <p class="text-muted mb-0">Administra los autores disponibles para asociar a los libros</p>
                         </div>
-                        <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarAutor">
-                            <i class="fas fa-user-plus"></i>
-                            Nuevo Autor
-                        </button>
+                        @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                        {
+                            <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarAutor">
+                                <i class="fas fa-user-plus"></i>
+                                Nuevo Autor
+                            </button>
+                        }
                     </div>
 
                     <!-- Búsqueda -->
@@ -39,11 +42,11 @@
                                             <i class="fas fa-search text-muted"></i>
                                         </span>
                                         <input type="text"
-                                               class="form-control"
-                                               name="termino"
-                                               id="searchInput"
-                                               placeholder="Buscar por nombre de autor..."
-                                               value="@terminoBusqueda" />
+                                        class="form-control"
+                                        name="termino"
+                                        id="searchInput"
+                                        placeholder="Buscar por nombre de autor..."
+                                        value="@terminoBusqueda" />
                                         <button class="btn btn-esparza-primary" type="submit" id="btnBuscar">
                                             <i class="fas fa-search me-1"></i>Buscar
                                         </button>
@@ -107,7 +110,10 @@
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
-                                        <th class="text-center" style="width:220px;">Acciones</th>
+                                        @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                                        {
+                                            <th class="text-center" style="width:220px;">Acciones</th>
+                                        }
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -121,25 +127,28 @@
                                                 </div>
                                             </td>
                                             <td class="text-center">
-                                                <div class="btn-actions-group justify-content-center">
-                                                    <!-- Editar -->
-                                                    <button type="button" class="btn btn-action btn-action-edit"
-                                                            data-bs-toggle="modal" data-bs-target="#modalEditarAutor"
-                                                            data-id="@a.IdAutor"
-                                                            data-nombre="@a.Nombre"
-                                                            title="Editar Autor">
-                                                        <i class="fas fa-edit icon-elegant"></i>
-                                                    </button>
+                                                @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                                                {
+                                                    <div class="btn-actions-group justify-content-center">
+                                                        <!-- Editar -->
+                                                        <button type="button" class="btn btn-action btn-action-edit"
+                                                                data-bs-toggle="modal" data-bs-target="#modalEditarAutor"
+                                                                data-id="@a.IdAutor"
+                                                                data-nombre="@a.Nombre"
+                                                                title="Editar Autor">
+                                                            <i class="fas fa-edit icon-elegant"></i>
+                                                        </button>
 
-                                                    <!-- Eliminar -->
-                                                    <button type="button" class="btn btn-action btn-action-deactivate"
-                                                            data-bs-toggle="modal" data-bs-target="#modalEliminarAutor"
-                                                            data-id="@a.IdAutor"
-                                                            data-nombre="@a.Nombre"
-                                                            title="Eliminar Autor">
-                                                        <i class="fas fa-trash-alt icon-elegant"></i>
-                                                    </button>
-                                                </div>
+                                                        <!-- Eliminar -->
+                                                        <button type="button" class="btn btn-action btn-action-deactivate"
+                                                                data-bs-toggle="modal" data-bs-target="#modalEliminarAutor"
+                                                                data-id="@a.IdAutor"
+                                                                data-nombre="@a.Nombre"
+                                                                title="Eliminar Autor">
+                                                            <i class="fas fa-trash-alt icon-elegant"></i>
+                                                        </button>
+                                                    </div>
+                                                }
                                             </td>
                                         </tr>
                                     }

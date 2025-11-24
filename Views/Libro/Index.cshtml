@@ -27,15 +27,19 @@
                             <p class="text-muted mb-0">Gestiona el inventario de libros de la biblioteca</p>
                         </div>
                         <div class="d-flex gap-2">
-                            <!-- Botón Importar desde Excel - MOVIDO ARRIBA -->
-                            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importarLibrosModal">
-                                <i class="fas fa-file-import"></i> Importar Excel
-                            </button>
+                            @if (User.IsInRole("Admin") || User.IsInRole("Supervisor")){
+                                <!-- Botón Importar desde Excel - MOVIDO ARRIBA -->
+                                <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importarLibrosModal">
+                                    <i class="fas fa-file-import"></i> Importar Excel
+                                </button>
 
-                            <!-- Botón Nuevo Libro - MOVIDO ABAJO -->
-                            <button class="btn btn-libros-primary" data-bs-toggle="modal" data-bs-target="#agregarLibroModal">
-                                <i class="fas fa-plus-circle"></i> Nuevo Libro
-                            </button>
+                                <!-- Botón Nuevo Libro - MOVIDO ABAJO -->
+                                <button class="btn btn-libros-primary" data-bs-toggle="modal" data-bs-target="#agregarLibroModal">
+                                    <i class="fas fa-plus-circle"></i> Nuevo Libro
+                                </button>
+                            
+                            }
+
                         </div>
                     </div>
 
@@ -215,12 +219,16 @@
                                                     <span class="d-none d-sm-inline">Detalle</span>
                                                 </button>
 
-                                                <button type="button" class="btn btn-sm btn-warning"
-                                                        onclick="editarLibro(@libro.IdLibro)"
-                                                        title="Editar libro">
-                                                    <i class="fas fa-edit"></i>
-                                                    <span class="d-none d-sm-inline">Editar</span>
-                                                </button>
+                                                @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-warning"
+                                                            onclick="editarLibro(@libro.IdLibro)"
+                                                            title="Editar libro">
+                                                        <i class="fas fa-edit"></i>
+                                                        <span class="d-none d-sm-inline">Editar</span>
+                                                    </button>
+                                                }
+                                                
                                             </div>
                                         </div>
                                     </div>

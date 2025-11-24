@@ -7,17 +7,34 @@ namespace AppWebBiblioteca.Services
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<EmailService> _logger;
-        public EmailService(HttpClient httpClient, IConfiguration configuration, ILogger<EmailService> logger)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public EmailService(HttpClient httpClient, IConfiguration configuration, ILogger<EmailService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
         }
 
         public async Task<EmailSettings> GetSettingsAsync()
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/EmailSettings/GetSettings";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -41,6 +58,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/EmailSettings/UpdateSettings";
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, settings);
 
@@ -101,6 +119,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/EmailSettings/TestConnection";
                 var response = await _httpClient.GetAsync(apiUrl);
 

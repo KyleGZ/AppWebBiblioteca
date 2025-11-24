@@ -71,12 +71,16 @@ builder.Services.AddScoped<IEditorialService, EditorialService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<INotificacionService, NotificacionService>();
-
+builder.Services.AddScoped<IEstadisticaService, EstadisticaService>();
+builder.Services.AddScoped<IBitacoraService, BitacoraService>();
 /*
  * Servicio para manejo de imágenes
  */
 builder.Services.AddScoped<IImageService, ImageService>();
 
+
+
+builder.Services.AddTransient<JwtHandler>();
 
 // CONFIGURAR HTTP CLIENT
 builder.Services.AddHttpClient("ApiClient", client =>
@@ -84,7 +88,7 @@ builder.Services.AddHttpClient("ApiClient", client =>
     client.BaseAddress = new Uri(builder.Configuration["ApiSettings:BaseUrl"]);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
     client.Timeout = TimeSpan.FromSeconds(30);
-});
+}).AddHttpMessageHandler<JwtHandler>();
 
 var app = builder.Build();
 

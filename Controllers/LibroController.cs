@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Text.Json;
@@ -15,10 +16,10 @@ namespace AppWebBiblioteca.Controllers
         private readonly ISeccionService _seccionService;
         private readonly IEditorialService _editorialService;
         private readonly IImageService _imageService;
+        private readonly IBitacoraService _bitacoraService;
 
 
-
-        public LibroController(IAuthService authService, ILibroService libroService, IAutorService autorService, IGeneroService generoService, ISeccionService seccionService, IEditorialService editorialService, IImageService imageService)
+        public LibroController(IAuthService authService, ILibroService libroService, IAutorService autorService, IGeneroService generoService, ISeccionService seccionService, IEditorialService editorialService, IImageService imageService, IBitacoraService bitacoraService)
         {
             _authService = authService;
             _libroService = libroService;
@@ -27,6 +28,7 @@ namespace AppWebBiblioteca.Controllers
             _seccionService = seccionService;
             _editorialService = editorialService;
             _imageService = imageService;
+            _bitacoraService = bitacoraService;
         }
 
         //[HttpGet]
@@ -62,6 +64,7 @@ namespace AppWebBiblioteca.Controllers
 
         //}
 
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpGet] // Cambiar a GET
         public async Task<IActionResult> Index(string termino = "", bool buscarPorDescripcion = false, int pagina = 1, int resultadosPorPagina = 20)
         {
@@ -106,7 +109,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         // Puedes eliminar el método [HttpPost] Buscar ya que ahora todo se maneja en el Index
-
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpPost]
         public async Task<IActionResult> Buscar(string termino, bool buscarPorDescripcion = false, int pagina = 1)
         {
@@ -246,7 +249,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RegistroLibro(CrearLibroFrontDto model)
@@ -256,6 +259,7 @@ namespace AppWebBiblioteca.Controllers
                 if (!_authService.IsAuthenticated())
                     return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
 
+                var idUsuario = _authService.GetUserId();
                 // Validaciones básicas
                 if (!ModelState.IsValid)
                 {
@@ -314,13 +318,20 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+
+                    var libroId = await _libroService.ObtenerIdLibro(model.ISBN);
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value,"CREAR_LIBRO", "LIBRO", libroId);
+
                     return Json(new
                     {
                         success = true,
                         message = "Libro creado exitosamente",
                         // Opcional: si necesitas datos adicionales para el frontend
                         data = new { libroId = resultado.Data } // ajusta según tu respuesta
+
+                        
                     });
+
                 }
                 else
                 {
@@ -338,7 +349,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * Metodo para cargar datos del libro a editar
          */
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpGet]
         public async Task<IActionResult> ObtenerLibroParaEditar(int id)
         {
@@ -552,7 +563,7 @@ namespace AppWebBiblioteca.Controllers
         //    }
         //}
 
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int idLibro, CrearLibroFrontDto model)
@@ -616,6 +627,8 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "EDITAR_LIBRO", "LIBRO", idLibro);
                     return Json(new
                     {
                         success = true,
@@ -640,7 +653,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * Metodo para ver el detalle de un libro
          */
-
+        [Authorize(Policy = "AuthenticatedUsers")]
         [HttpGet]
         public async Task<IActionResult> ObtenerDetalleLibro(int id)
         {
@@ -731,6 +744,7 @@ namespace AppWebBiblioteca.Controllers
         /*
          * 
          */
+        [Authorize(Policy = "StaffOnly")]
         [HttpGet]
         public async Task<IActionResult> DescargarPlantillaImportacion()
         {
@@ -752,7 +766,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
 
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         public async Task<IActionResult> ImportarLibrosExcel(IFormFile archivo)
         {

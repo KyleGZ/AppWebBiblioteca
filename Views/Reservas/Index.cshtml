@@ -3,18 +3,17 @@
 @{
     Layout = "_Layout";
     ViewData["Title"] = "Gestión de Reservas - Biblioteca Esparza";
-    ViewData["PageTitle"] = "Gestión de Reservas";
 
     var reservas = Model?.Data ?? new List<ReservaResponseDto>();
     var pag = Model?.Pagination ?? new PaginationInfo();
     var termino = ViewBag.TerminoBusqueda as string ?? "";
     var rpp = pag.ResultadosPorPagina <= 0 ? 10 : pag.ResultadosPorPagina;
-
-    // Calcular reservas activas del usuario actual
     var reservasActivasCount = ViewBag.ReservasActivasCount ?? 0;
+    var tipoVista = ViewBag.TipoVista as string ?? "activas";
+    var tituloSeccion = ViewBag.TituloSeccion as string ?? "Reservas Activas";
 
-    string Q(int pagina)
-        => $"?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={rpp}";
+    string Q(int pagina, string tipo = null)
+        => $"?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={rpp}&tipoVista={tipo ?? tipoVista}";
 }
 
 <div class="container-fluid p-4">
@@ -28,7 +27,7 @@
                         <div>
                             <h2 class="mb-1">
                                 <i class="fas fa-calendar-check me-2"></i>
-                                Reservas
+                                @tituloSeccion
                             </h2>
                             <p class="text-muted mb-0">Administra las reservas de libros realizadas por los usuarios.</p>
                         </div>
@@ -37,7 +36,7 @@
                         </button>
                     </div>
 
-                    <!-- Tarjeta de estado de reservas -->
+                    <!-- NAVEGACIÓN ENTRE VISTAS -->
                     <div class="row mb-4">
                         <div class="col-md-4">
                             <div class="card bg-primary text-white">
@@ -52,6 +51,32 @@
                                         <div class="display-6">
                                             <i class="fas fa-calendar-check"></i>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="btn-group w-100" role="group">
+                                        <a href="@Q(1, "activas")"
+                                           class="btn @(tipoVista == "activas" ? "btn-primary" : "btn-outline-primary")">
+                                            <i class="fas fa-clock me-1"></i>
+                                            Reservas Activas
+                                            @if (tipoVista == "activas")
+                                            {
+                                                <span class="badge bg-light text-dark ms-1">@pag.TotalResultados</span>
+                                            }
+                                        </a>
+                                        <a href="@Q(1, "historicas")"
+                                           class="btn @(tipoVista == "historicas" ? "btn-secondary" : "btn-outline-secondary")">
+                                            <i class="fas fa-history me-1"></i>
+                                            Históricas
+                                            @if (tipoVista == "historicas")
+                                            {
+                                                <span class="badge bg-light text-dark ms-1">@pag.TotalResultados</span>
+                                            }
+                                        </a>
                                     </div>
                                 </div>
                             </div>
@@ -115,7 +140,6 @@
                             <table class="table table-hover">
                                 <thead class="table-light">
                                     <tr>
-                                        <th>ID</th>
                                         <th>Usuario</th>
                                         <th>Libro</th>
                                         <th>Fecha Reserva</th>
@@ -128,7 +152,6 @@
                                     @foreach (var r in reservas)
                                     {
                                         <tr>
-                                            <td class="fw-bold text-muted">#@r.IdReserva</td>
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <i class="fas fa-user me-2 text-muted"></i>
@@ -158,10 +181,16 @@
                                                         <i class="fas fa-clock me-1"></i>@r.Estado
                                                     </span>
                                                 }
+                                                else if (r.Estado == "Cancelada")
+                                                {
+                                                    <span class="badge bg-danger">
+                                                        <i class="fas fa-times me-1"></i>@r.Estado
+                                                    </span>
+                                                }
                                                 else
                                                 {
                                                     <span class="badge bg-secondary">
-                                                        <i class="fas fa-times me-1"></i>@r.Estado
+                                                        <i class="fas fa-question me-1"></i>@r.Estado
                                                     </span>
                                                 }
                                             </td>
@@ -173,12 +202,15 @@
                                                             title="Ver detalles">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
-                                                    <button type="button"
-                                                            class="btn btn-outline-danger"
-                                                            onclick="cancelarReserva(@r.IdReserva)"
-                                                            title="Cancelar reserva">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
+                                                    @if (r.Estado == "Activa")
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-outline-danger"
+                                                                onclick="cancelarReserva(@r.IdReserva)"
+                                                                title="Cancelar reserva">
+                                                            <i class="fas fa-times"></i>
+                                                        </button>
+                                                    }
                                                 </div>
                                             </td>
                                         </tr>
@@ -256,7 +288,6 @@
     </div>
 </div>
 
-<!-- MODALES (mantengo los mismos modales que ya funcionan) -->
 <!-- Modal Buscar Libros para Reserva -->
 <div class="modal fade" id="modalBuscarLibros" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -464,16 +495,10 @@
             document.getElementById('infoReservaCancelar').textContent = `Reserva #${id}`;
             new bootstrap.Modal(document.getElementById('modalCancelarReserva')).show();
         }
-        // function eliminarReserva(id) {
-        //     document.getElementById('eliminarIdReserva').value = id;
-        //     document.getElementById('infoReservaEliminar').textContent = `Reserva #${id}`;
-        //     new bootstrap.Modal(document.getElementById('modalEliminarReserva')).show();
-        // }
 
         // Función para mostrar alertas
         function showAlert(message, type) {
-            // Implementar función de alerta según tu sistema existente
-            alert(message); // Reemplazar con tu sistema de notificaciones
+            alert(message); // Reemplazar sistema de notificaciones
         }
 
         // Variables para la búsqueda de libros
@@ -597,7 +622,7 @@
             modalBuscar.hide();
         }
 
-        //  TODOS LOS EVENT LISTENERS EN UN SOLO LUGAR
+        //  TODOS LOS EVENT LISTENERS
         document.addEventListener('DOMContentLoaded', function() {
             const buscarLibroInput = document.getElementById('buscarLibroInput');
             const btnBuscarLibro = document.getElementById('btnBuscarLibro');
@@ -682,13 +707,13 @@
                             setTimeout(() => window.location.reload(), 1500);
                         } else {
                             showAlert(data.message, 'error');
-                            // Cerrar modal incluso en error
+                            // Cerrar modal 
                             const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalCancelarReserva'));
                             modalEliminar.hide();
                         }
                     })
                     .catch(error => {
-                        // SIEMPRE CERRAR EL MODAL (incluso con errores)
+                        // SIEMPRE CERRAR EL MODAL
                         const modalEliminar = bootstrap.Modal.getInstance(document.getElementById('modalCancelarReserva'));
                         modalEliminar.hide();
                         showAlert('Error al cancelar la reserva', 'error');

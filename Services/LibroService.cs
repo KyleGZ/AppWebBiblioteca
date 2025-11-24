@@ -8,17 +8,35 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public LibroService(HttpClient httpClient, IConfiguration configuration)
+        public LibroService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
         }
 
         public async Task<List<LibroListaView>> ObtenerLibrosAsync()
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Libro/ListaView";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -106,6 +124,7 @@ namespace AppWebBiblioteca.Services
                 
                 if (string.IsNullOrWhiteSpace(termino))
                 {
+                    AgregarTokenAutenticacion();
                     var apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/ListaView?pagina={pagina}&resultadosPorPagina={resultadosPorPagina}";
                     var response = await _httpClient.GetAsync(apiUrl);
 
@@ -137,7 +156,7 @@ namespace AppWebBiblioteca.Services
                 }
 
 
-
+                AgregarTokenAutenticacion();
                 var buscarUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/buscar-rapida?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={resultadosPorPagina}";
 
                 var buscarResponse = await _httpClient.GetAsync(buscarUrl);
@@ -181,6 +200,8 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
+
                 var buscarUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/Busqueda-Descripcion?terminoBusqueda={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadosPorPagina={resultadosPorPagina}";
 
                 var buscarResponse = await _httpClient.GetAsync(buscarUrl);
@@ -217,6 +238,8 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
+
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Libro/Registro-Libro";
 
                 var json = JsonSerializer.Serialize(libroDto);
@@ -251,6 +274,8 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
+
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/Editar-Libro?idLibro={idLibro}";
 
                 var json = JsonSerializer.Serialize(libroDto);
@@ -286,6 +311,8 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
+
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/ObtenerLibro-Editar?idLibro={idLibro}";
 
                 var response = await _httpClient.GetAsync(apiUrl);
@@ -324,6 +351,8 @@ namespace AppWebBiblioteca.Services
 
             try
             {
+                AgregarTokenAutenticacion();
+
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/Detalle-Libro?idLibro={idLibro}";
                 var response = await _httpClient.GetAsync(apiUrl);
                 if (response.IsSuccessStatusCode)
@@ -348,6 +377,8 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
+
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Libro/Plantilla-Importacion";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -498,6 +529,8 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
+
                 var apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Libro/Importar-Libro";
 
                 using var content = new MultipartFormDataContent();
@@ -561,6 +594,33 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        public async Task<int> ObtenerIdLibro(string isbn)
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Libro/Get-libro?isbn={Uri.EscapeDataString(isbn)}";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                // Leer contenido como string
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Intentar convertir directamente a int
+                if (int.TryParse(content, out int idLibro))
+                    return idLibro;
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID del libro por ISBN: {ex.Message}");
+                return 0;
+            }
+        }
+
+
 
     }
 
@@ -578,6 +638,7 @@ namespace AppWebBiblioteca.Services
 
         Task<byte[]> DescargarPlantillaImportacionAsync();
         Task<ApiResponse> ImportarLibrosDesdeExcelAsync(IFormFile archivo);
+        Task<int> ObtenerIdLibro(string isbn);
 
     }
 }

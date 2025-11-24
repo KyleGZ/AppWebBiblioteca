@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppWebBiblioteca.Controllers
@@ -8,13 +9,17 @@ namespace AppWebBiblioteca.Controllers
     {
         private readonly IGeneroService _generoService;
         private readonly IAuthService _authService;
+        private readonly IBitacoraService _bitacoraService;
 
-        public GeneroController(IGeneroService generoService, IAuthService authService)
+        public GeneroController(IGeneroService generoService, IAuthService authService, IBitacoraService bitacoraService)
         {
             _generoService = generoService;
             _authService = authService;
+            _bitacoraService = bitacoraService;
+            
         }
 
+        [Authorize(Policy = ("AuthenticatedUsers"))]
         [HttpGet]
         public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
         {
@@ -53,6 +58,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         //Metodo para crear
+        [Authorize(Policy = ("StaffOnly"))]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(string nombre, string? returnUrl = null)
@@ -64,10 +70,14 @@ namespace AppWebBiblioteca.Controllers
 
             try
             {
+                
                 var resultado = await _generoService.RegistrarGeneroAsync(nombre.Trim());
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    var idGenero =  await _generoService.ObtenerIdGenero(nombre);
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "CREAR_GENERO", "GENERO", idGenero);
                     return Json(new
                     {
                         success = true,
@@ -95,6 +105,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         //Metodo para editar
+        [Authorize(Policy = ("StaffOnly"))]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int idGenero, string nombre, string? returnUrl = null)
@@ -110,6 +121,10 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                   
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "EDITAR_GENERO", "GENERO", idGenero);
+
                     return Json(new
                     {
                         success = true,
@@ -137,6 +152,7 @@ namespace AppWebBiblioteca.Controllers
         }
 
         //Metodo para eliminar
+        [Authorize(Policy = ("StaffOnly"))]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Eliminar(int idGenero, string? returnUrl = null)
@@ -152,8 +168,11 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "ELIMINAR_GENERO", "GENERO", idGenero);
                     return Json(new
                     {
+
                         success = true,
                         message = resultado.Message ?? "Género eliminado correctamente.",
                         data = resultado.Data

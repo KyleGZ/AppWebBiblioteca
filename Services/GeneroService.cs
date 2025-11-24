@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using AppWebBiblioteca.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AppWebBiblioteca.Services
 {
@@ -7,17 +8,34 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public GeneroService(HttpClient httpClient, IConfiguration configuration)
+        public GeneroService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
         }
 
         public async Task<List<GeneroDto>> ObtenerGenerosAsync(string? nombre)
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Genero/Lista-Generos?nombre={nombre}";
                 var response = await _httpClient.GetAsync(apiUrl);
 
@@ -72,6 +90,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Genero/Registro";
                 var payload = new { IdGenero = 0, Nombre = nombre };
 
@@ -195,6 +214,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Genero/Editar";
                 var payload = new { IdGenero = idGenero, Nombre = nombre };
 
@@ -302,6 +322,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Genero/Eliminar?id={idGenero}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 var json = await response.Content.ReadAsStringAsync();
@@ -382,17 +403,21 @@ namespace AppWebBiblioteca.Services
         //}
 
         // ✅ Búsqueda y paginación
+       
         public async Task<PaginacionResponse<GeneroDto>> BuscarGenerosRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20)
         {
             try
             {
+                
                 string apiUrl;
                 if (string.IsNullOrWhiteSpace(termino))
                 {
+                    AgregarTokenAutenticacion();
                     apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Genero/ListarViewGenero?pagina={pagina}&resultadoPorPagina={resultadosPorPagina}";
                 }
                 else
                 {
+                    AgregarTokenAutenticacion();
                     apiUrl = $"{_configuration["ApiSettings:BaseUrl"]}/Genero/Busqueda-Genero?termino={Uri.EscapeDataString(termino)}&pagina={pagina}&resultadoPorPagina={resultadosPorPagina}";
                 }
 
@@ -514,6 +539,33 @@ namespace AppWebBiblioteca.Services
             }
         }
 
+        public async Task<int> ObtenerIdGenero(string nombre)
+        {
+            try
+            {
+                AgregarTokenAutenticacion();
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Genero/Get-genero?nombre={Uri.EscapeDataString(nombre)}";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                // Leer contenido como string
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Intentar convertir directamente a int
+                if (int.TryParse(content, out int idGenero))
+                    return idGenero;
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID del Genero por nombre: {ex.Message}");
+                return 0;
+            }
+        }
+
 
     }
 
@@ -523,6 +575,8 @@ namespace AppWebBiblioteca.Services
         Task<ApiResponse> RegistrarGeneroAsync(string nombre);
         Task<ApiResponse> EditarGeneroAsync(int idGenero, string nombre);
         Task<ApiResponse> EliminarGeneroAsync(int idGenero);
+
+        Task<int> ObtenerIdGenero(string nombre);
         Task<PaginacionResponse<GeneroDto>> BuscarGenerosRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
     }
 }

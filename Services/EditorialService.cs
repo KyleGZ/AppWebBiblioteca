@@ -9,11 +9,28 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public EditorialService(HttpClient httpClient, IConfiguration configuration)
+        public EditorialService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+            
+        }
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+            if (!string.IsNullOrEmpty(token))
+            {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+
         }
 
         public async Task<List<EditorialDto>> ObtenerEditorialesAsync(string? nombre)
@@ -185,6 +202,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Editorial/Registro";
                 var payload = new { IdEditorial = 0, Nombre = nombre };
 
@@ -224,6 +242,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Editorial/Editar";
                 var payload = new { IdEditorial = idEditorial, Nombre = nombre };
 
@@ -263,6 +282,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Editorial/Eliminar?id={idEditorial}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 var json = await response.Content.ReadAsStringAsync();
@@ -433,6 +453,33 @@ namespace AppWebBiblioteca.Services
                 };
             }
         }
+
+        public async Task<int> ObtenerIdEditorial(string nombre)
+        {
+            try
+            {
+                AgregarTokenAutenticacion();
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Editorial/Get-editorial?nombre={Uri.EscapeDataString(nombre)}";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                // Leer contenido como string
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Intentar convertir directamente a int
+                if (int.TryParse(content, out int idEditorial))
+                    return idEditorial;
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID de la editorial por nombre: {ex.Message}");
+                return 0;
+            }
+        }
     }
 
     public interface IEditorialService
@@ -442,5 +489,6 @@ namespace AppWebBiblioteca.Services
         Task<ApiResponse> EditarEditorialAsync(int idEditorial, string nombre);
         Task<ApiResponse> EliminarEditorialAsync(int idEditorial);
         Task<PaginacionResponse<EditorialDto>> BuscarEditorialesRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
+        Task<int> ObtenerIdEditorial(string nombre);
     }
 }

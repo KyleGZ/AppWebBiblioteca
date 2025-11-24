@@ -4,6 +4,7 @@
     ViewData["PageTitle"] = "Dashboard Biblioteca";
     var userEmail = ViewBag.UserEmail as string;
     var userRoles = ViewBag.UserRoles as List<string> ?? new List<string>();
+    var estadisticas = ViewBag.Estadisticas as AppWebBiblioteca.Models.EstadisticasPrestamosDTO;
 }
 
 <!-- Contenido específico de Home -->
@@ -13,104 +14,326 @@
         <div class="col-12 col-xxl-10">
             <div class="card main-card">
                 <div class="card-body p-3 p-md-4">
-                    <div class="alert alert-library border-0 mb-4">
-                        <h4 class="alert-heading h5 h4-md">
-                            <i class="fas fa-book-reader me-2"></i>¡Bienvenido al Sistema Bibliotecario!
-                        </h4>
-                        <p class="mb-0 small small-md">Biblioteca Pública de Esparza - Sistema integrado de gestión bibliotecaria</p>
-                    </div>
+                    
+                    @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                    {
+                        <div class="alert alert-library border-0 mb-4">
+                            <h4 class="alert-heading h5 h4-md">
+                                <i class="fas fa-book-reader me-2"></i>¡Bienvenido al Sistema Bibliotecario!
+                            </h4>
+                            <p class="mb-0 small small-md">Biblioteca Pública de Esparza - Sistema integrado de gestión bibliotecaria</p>
+                        </div>
+                        <!-- Filtros y controles -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title h6 h5-md">
+                                            <i class="fas fa-filter me-2"></i>
+                                            Filtros de Estadísticas
+                                        </h5>
+                                        <form id="filtroForm" class="row g-3 align-items-end">
+                                            <div class="col-md-3">
+                                                <label for="fechaInicio" class="form-label small">Fecha Inicio</label>
+                                                <input type="date" class="form-control form-control-sm" id="fechaInicio"
+                                                       value="@DateTime.Now.ToString("yyyy-MM-01")">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label for="fechaFin" class="form-label small">Fecha Fin</label>
+                                                <input type="date" class="form-control form-control-sm" id="fechaFin"
+                                                       value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                                            </div>
+                                            <div class="col-md-6">
+                                                <button type="button" id="btnFiltrar" class="btn btn-esparza-primary btn-sm">
+                                                    <i class="fas fa-search me-1"></i>Filtrar
+                                                </button>
+                                                <button type="button" id="btnDescargar" class="btn btn-success btn-sm">
+                                                    <i class="fas fa-file-excel me-1"></i>Descargar Excel
+                                                </button>
+                                                <button type="button" id="btnReset" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-sync me-1"></i>Reset
+                                                </button>
+                                            </div>
+                                        </form>
 
-                    <!-- Estadísticas rápidas -->
-                    <div class="row mb-4 g-2 g-md-3">
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number">1,247</div>
-                                <div class="stats-label">Libros Disponibles</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number">89</div>
-                                <div class="stats-label">Préstamos Activos</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number">324</div>
-                                <div class="stats-label">Socios Registrados</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stats-card text-center h-100">
-                                <div class="stats-number">5</div>
-                                <div class="stats-label">Eventos del Mes</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Información del usuario -->
-                    <div class="row mb-4 g-3">
-                        <div class="col-12 col-lg-6">
-                            <div class="card feature-card library h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title h6 h5-md">
-                                        <i class="fas fa-user-circle me-2 user-icon"></i>
-                                        Información del Bibliotecario
-                                    </h5>
-                                    <p class="mb-1 small small-md"><strong>Email:</strong> @userEmail</p>
-                                    <p class="mb-1 small small-md"><strong>Roles:</strong> @string.Join(", ", userRoles)</p>
-                                    <p class="mb-0 small small-md"><strong>Último acceso:</strong> @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-12 col-lg-6">
-                            <div class="card feature-card users h-100">
-                                <div class="card-body">
-                                    <h5 class="card-title h6 h5-md">
-                                        <i class="fas fa-chart-line me-2 book-icon"></i>
-                                        Estado del Sistema
-                                    </h5>
-                                    <p class="mb-1 small small-md"><i class="fas fa-circle text-success me-2"></i>Catálogo digital activo</p>
-                                    <p class="mb-1 small small-md"><i class="fas fa-circle text-success me-2"></i>Sistema de préstamos online</p>
-                                    <p class="mb-0 small small-md"><i class="fas fa-circle text-success me-2"></i>Base de datos sincronizada</p>
+
+                        <!-- Estadísticas rápidas ACTUALIZADAS -->
+                        <div id="estadisticasContainer">
+                            @await Html.PartialAsync("_EstadisticasPartial", estadisticas)
+                        </div>
+
+                    }
+                    else
+                    {
+                        <!-- Dashboard para usuarios lectores -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card feature-card">
+                                    <div class="card-body p-4">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <!-- Mensaje personalizado de bienvenida -->
+                                                <div class="mb-3">
+                                                    <h3 class="h5 h4-md mb-1">
+                                                        <i class="fas fa-book-open text-primary me-2"></i>
+                                                        ¡Hola, @User.Identity.Name!
+                                                    </h3>
+                                                    <p class="text-muted small mb-3">Bienvenido a tu espacio personal en la biblioteca</p>
+                                                </div>
+
+                                                <p class="mb-3 small-md">
+                                                    Explora nuestro catálogo, gestiona tus reservas y mantén actualizado tu perfil.
+                                                    Encuentra los libros que buscas y descubre nuevas lecturas.
+                                                </p>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <a href="@Url.Action("Index", "Libro")" class="btn btn-esparza-primary btn-md-normal">
+                                                        <i class="fas fa-book me-1"></i>
+                                                        <span class="btn-text">Catálogo de Libros</span>
+                                                    </a>
+                                                    <a href="@Url.Action("PerfilUsuario", "Usuario")" class="btn btn-esparza-outline btn-md-normal">
+                                                        <i class="fas fa-user me-1"></i>
+                                                        <span class="btn-text">Mi Perfil</span>
+                                                    </a>
+                                                    <a href="@Url.Action("Index", "Reservas")" class="btn btn-library btn-md-normal">
+                                                        <i class="fas fa-calendar-check me-1"></i>
+                                                        <span class="btn-text">Mis Reservas</span>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 text-center d-none d-md-block">
+                                                <i class="fas fa-book-reader library-icon" style="font-size: 5rem; opacity: 0.7;"></i>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Botones de acción -->
-                    <div class="row">
-                        <div class="col-12">
-                            <h5 class="mb-3 h6 h5-md text-center">
-                                <i class="fas fa-bolt me-2 text-warning"></i>
-                                Acciones Rápidas
-                            </h5>
-                            <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">
-                                <a href="@Url.Action("Index", "Libro")" class="btn btn-esparza-primary btn-sm btn-md-normal">
-                                    <i class="fas fa-search me-1 me-md-2"></i>
-                                    <span class="btn-text">Buscar en Catálogo</span>
-                                </a>
-                                <a href="@Url.Action("Index", "Prestamos")" class="btn btn-library btn-sm btn-md-normal">
-                                    <i class="fas fa-hand-holding me-1 me-md-2"></i>
-                                    <span class="btn-text">Nuevo Préstamo</span>
-                                </a>
-                                <a href="@Url.Action("Index", "Usuario")" class="btn btn-esparza-outline btn-sm btn-md-normal">
-                                    <i class="fas fa-user-plus me-1 me-md-2"></i>
-                                    <span class="btn-text">Registrar Usuario</span>
-                                </a>
-                                <a href="@Url.Action("Index", "Reservas")" class="btn btn-esparza-outline btn-sm btn-md-normal">
-                                    <i class="fas fa-bookmark me-1 me-md-2"></i>
-                                    <span class="btn-text">Gestionar Reservas</span>
-                                </a>
-                                <a href="@Url.Action("Index", "GestionBibliografica")" class="btn btn-esparza-outline btn-sm btn-md-normal">
-                                    <i class="fas fa-book me-1 me-md-2"></i>
-                                    <span class="btn-text">Gestión Bibliográfica</span>
-                                </a>
+                        <!-- Sección de información rápida -->
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card feature-card h-100">
+                                    <div class="card-body text-center p-3">
+                                        <i class="fas fa-search library-icon mb-2" style="font-size: 2rem;"></i>
+                                        <h5 class="h6 h5-md">Buscar Libros</h5>
+                                        <p class="small small-md mb-2">Encuentra libros por título, autor o categoría</p>
+                                        <a href="@Url.Action("Index", "Libro")" class="btn btn-sm btn-esparza-outline">Explorar</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card feature-card h-100">
+                                    <div class="card-body text-center p-3">
+                                        <i class="fas fa-bookmark user-icon mb-2" style="font-size: 2rem;"></i>
+                                        <h5 class="h6 h5-md">Mis Reservas</h5>
+                                        <p class="small small-md mb-2">Consulta y gestiona tus libros reservados</p>
+                                        <a href="@Url.Action("Index", "Reservas")" class="btn btn-sm btn-esparza-outline">Ver</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card feature-card h-100">
+                                    <div class="card-body text-center p-3">
+                                        <i class="fas fa-user-circle book-icon mb-2" style="font-size: 2rem;"></i>
+                                        <h5 class="h6 h5-md">Mi Perfil</h5>
+                                        <p class="small small-md mb-2">Actualiza tu información personal</p>
+                                        <a href="@Url.Action("PerfilUsuario", "Usuario")" class="btn btn-sm btn-esparza-outline">Editar</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar gráficos con datos iniciales
+            const estadisticas = @Html.Raw(Json.Serialize(estadisticas));
+            if (estadisticas) {
+                crearGraficos(estadisticas);
+            }
+
+            // Evento para filtrar
+            document.getElementById('btnFiltrar').addEventListener('click', filtrarEstadisticas);
+
+            // Evento para descargar Excel
+            document.getElementById('btnDescargar').addEventListener('click', descargarExcel);
+
+            // Evento para reset
+            document.getElementById('btnReset').addEventListener('click', resetFiltros);
+
+            // Enter en los filtros también ejecuta la búsqueda
+            document.getElementById('fechaInicio').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') filtrarEstadisticas();
+            });
+            document.getElementById('fechaFin').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') filtrarEstadisticas();
+            });
+        });
+
+        async function filtrarEstadisticas() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+
+            try {
+                const formData = new FormData();
+                formData.append('fechaInicio', fechaInicio);
+                formData.append('fechaFin', fechaFin);
+
+                const response = await fetch('/Home/FiltrarEstadisticas', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                if (response.ok) {
+                    const html = await response.text();
+                    document.getElementById('estadisticasContainer').innerHTML = html;
+
+                    // Extraer datos del HTML para los gráficos
+                    const estadisticasScript = document.getElementById('estadisticasData');
+                    if (estadisticasScript) {
+                        const estadisticas = JSON.parse(estadisticasScript.textContent);
+                        crearGraficos(estadisticas);
+                    }
+                } else {
+                    alert('Error al filtrar estadísticas');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al filtrar estadísticas');
+            }
+        }
+
+        async function descargarExcel() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+
+            try {
+                const formData = new FormData();
+                formData.append('fechaInicio', fechaInicio);
+                formData.append('fechaFin', fechaFin);
+
+                const response = await fetch('/Home/DescargarReporte', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `ReportePrestamos_${new Date().toISOString().slice(0,16).replace(/[-T:]/g,'')}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert('Error al descargar el reporte');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error al descargar el reporte');
+            }
+        }
+
+        function resetFiltros() {
+            const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const today = new Date();
+
+            document.getElementById('fechaInicio').value = firstDay.toISOString().split('T')[0];
+            document.getElementById('fechaFin').value = today.toISOString().split('T')[0];
+
+            filtrarEstadisticas();
+        }
+
+        function crearGraficos(estadisticas) {
+            crearGraficoEstadoLibros(estadisticas);
+            crearGraficoPrestamosDia(estadisticas.prestamosPorDia);
+        }
+
+        function crearGraficoEstadoLibros(data) {
+            const ctx = document.getElementById('estadoLibrosChart');
+            if (!ctx) return;
+
+            // Destruir gráfico existente
+            if (window.estadoLibrosChartInstance) {
+                window.estadoLibrosChartInstance.destroy();
+            }
+
+            window.estadoLibrosChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Disponibles', 'Prestados'],
+                    datasets: [{
+                        data: [data.librosDisponibles, data.librosPrestados],
+                        backgroundColor: ['#4BC0C0', '#FF6384'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function crearGraficoPrestamosDia(datosPorDia) {
+            const ctx = document.getElementById('prestamosDiaChart');
+            if (!ctx) return;
+
+            // Destruir gráfico existente
+            if (window.prestamosDiaChartInstance) {
+                window.prestamosDiaChartInstance.destroy();
+            }
+
+            window.prestamosDiaChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: datosPorDia.map(d => d.fecha),
+                    datasets: [{
+                        label: 'Préstamos por Día',
+                        data: datosPorDia.map(d => d.cantidad),
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+}

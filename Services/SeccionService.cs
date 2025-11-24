@@ -7,11 +7,28 @@ namespace AppWebBiblioteca.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public SeccionService(HttpClient httpClient, IConfiguration configuration)
+        public SeccionService(HttpClient httpClient, IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _httpClient = httpClient;
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
+        }
+
+
+        private void AgregarTokenAutenticacion()
+        {
+
+            var token = _httpContextAccessor.HttpContext?.Session.GetString("JWTToken");
+
+                if (!string.IsNullOrEmpty(token))
+                {
+
+                _httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                }
+            
         }
 
         public async Task<List<SeccionDto>> ObtenerSeccionesAsync(string? nombre)
@@ -87,6 +104,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Registro";
                 var payload = new { IdSeccion = 0, Nombre = nombre, Ubicacion = ubicacion };
 
@@ -229,6 +247,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Seccion/Editar";
                 var payload = new { IdSeccion = idSeccion, Nombre = nombre, Ubicacion = ubicacion };
 
@@ -337,6 +356,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Seccion/Eliminar?id={idSeccion}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 var json = await response.Content.ReadAsStringAsync();
@@ -377,6 +397,7 @@ namespace AppWebBiblioteca.Services
         {
             try
             {
+                AgregarTokenAutenticacion();
                 string apiUrl;
                 if (string.IsNullOrWhiteSpace(termino))
                 {
@@ -503,7 +524,32 @@ namespace AppWebBiblioteca.Services
                 };
             }
         }
+        public async Task<int> ObtenerIdSeccion(string nombre)
+        {
+            try
+            {
+                AgregarTokenAutenticacion();
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Seccion/Get-seccion?nombre={Uri.EscapeDataString(nombre)}";
+                var response = await _httpClient.GetAsync(apiUrl);
 
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                // Leer contenido como string
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Intentar convertir directamente a int
+                if (int.TryParse(content, out int idSeccion))
+                    return idSeccion;
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID de la Seccion por nombre: {ex.Message}");
+                return 0;
+            }
+        }
 
     }
 
@@ -514,5 +560,6 @@ namespace AppWebBiblioteca.Services
         Task<ApiResponse> EditarSeccionAsync(int idSeccion, string nombre, string ubicacion);
         Task<ApiResponse> EliminarSeccionAsync(int idSeccion);
         Task<PaginacionResponse<SeccionDto>> BuscarSeccionesRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
+        Task<int> ObtenerIdSeccion(string nombre);
     }
 }

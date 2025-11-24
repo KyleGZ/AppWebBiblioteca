@@ -29,9 +29,12 @@
                             </h2>
                             <p class="text-muted mb-0">Administra las secciones de la biblioteca.</p>
                         </div>
-                        <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarSeccion">
-                            <i class="fas fa-plus"></i> Nueva Sección
-                        </button>
+                        @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                        {
+                            <button type="button" class="btn btn-autores-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarSeccion">
+                                <i class="fas fa-plus"></i> Nueva Sección
+                            </button>
+                        }
                     </div>
 
                     <!-- Búsqueda -->
@@ -111,7 +114,10 @@
                                 <thead>
                                     <tr>
                                         <th>Nombre</th>
-                                        <th class="text-center" style="width:220px;">Acciones</th>
+                                        @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                                        {
+                                            <th class="text-center" style="width:220px;">Acciones</th>
+                                        }
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -120,24 +126,27 @@
                                         <tr>
                                             <td><i class="fas fa-layer-group me-2 text-muted"></i>@s.Nombre</td>
                                             <td class="text-center">
-                                                <div class="btn-actions-group justify-content-center">
-                                                    <button type="button"
-                                                            class="btn btn-action btn-action-edit"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalEditarSeccion"
-                                                            data-id="@s.IdSeccion"
-                                                            data-nombre="@s.Nombre">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button type="button"
-                                                            class="btn btn-action btn-action-deactivate"
-                                                            data-bs-toggle="modal"
-                                                            data-bs-target="#modalEliminarSeccion"
-                                                            data-id="@s.IdSeccion"
-                                                            data-nombre="@s.Nombre">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
-                                                </div>
+                                                @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                                                {
+                                                    <div class="btn-actions-group justify-content-center">
+                                                        <button type="button"
+                                                                class="btn btn-action btn-action-edit"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalEditarSeccion"
+                                                                data-id="@s.IdSeccion"
+                                                                data-nombre="@s.Nombre">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button type="button"
+                                                                class="btn btn-action btn-action-deactivate"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#modalEliminarSeccion"
+                                                                data-id="@s.IdSeccion"
+                                                                data-nombre="@s.Nombre">
+                                                            <i class="fas fa-trash-alt"></i>
+                                                        </button>
+                                                    </div>
+                                                }
                                             </td>
                                         </tr>
                                     }

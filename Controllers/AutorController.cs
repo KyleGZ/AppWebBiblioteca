@@ -1,5 +1,6 @@
 ﻿using AppWebBiblioteca.Models;
 using AppWebBiblioteca.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AppWebBiblioteca.Controllers
@@ -8,14 +9,15 @@ namespace AppWebBiblioteca.Controllers
     {
         private readonly IAutorService _autorService;
         private readonly IAuthService _authService;
+        private readonly IBitacoraService _bitacoraService;
 
         //constructor
-        public AutorController(IAutorService autorService, IAuthService authService)
+        public AutorController(IAutorService autorService, IAuthService authService, IBitacoraService bitacoraService)
         {
             _autorService = autorService;
             _authService = authService;
+            _bitacoraService = bitacoraService;
         }
-
 
         [HttpGet]
         public async Task<IActionResult> Index(string termino = "", int pagina = 1, int resultadosPorPagina = 10)
@@ -162,7 +164,7 @@ namespace AppWebBiblioteca.Controllers
         //}
 
         // ================== CRUD JSON PARA TABS (como Sección) ==================
-
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Crear(string nombre, string? returnUrl = null)
@@ -176,6 +178,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    var idAutor = await _autorService.ObtenerIdAutor(nombre);
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "CREAR_AUTOR", "AUTOR", idAutor);
                     return Json(new
                     {
                         success = true,
@@ -196,6 +201,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Editar(int idAutor, string nombre, string? returnUrl = null)
@@ -209,6 +215,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "EDITAR_AUTOR", "AUTOR", idAutor);
                     return Json(new
                     {
                         success = true,
@@ -229,6 +238,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
+        [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Eliminar(int idAutor, string? returnUrl = null)
@@ -242,6 +252,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "ELIMINAR_AUTOR", "AUTOR", idAutor);
                     return Json(new
                     {
                         success = true,
