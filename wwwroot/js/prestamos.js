@@ -7,6 +7,7 @@ const PRESTAMOS_CONFIG = {
         renovar: '/Prestamos/Renovar',                // se usa con ?idPrestamo=&nuevaFechaVencimiento=
         create: '/Prestamos/Create',
         buscar: '/Prestamos/Buscar'                   // NUEVO: endpoint de búsqueda
+        //librosDisponibles: '/Prestamos/GetLibrosDisponibles' // NUEVO
     }
 };
 

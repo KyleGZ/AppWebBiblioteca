@@ -12,7 +12,7 @@ using System.Text;
 
 namespace AppWebBiblioteca.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Supervisor")]
     public class PrestamosController : Controller
     {
         private readonly IUsuarioService _usuarioService;
@@ -41,6 +41,7 @@ namespace AppWebBiblioteca.Controllers
                 ViewData["Title"] = "Préstamos y Devoluciones";
                 ViewData["PageTitle"] = "Préstamos y Devoluciones";
 
+                // Cargar usuarios activos
                 var usuarios = await _usuarioService.ObtenerUsuariosAsync();
                 ViewBag.Usuarios = usuarios
                     .Where(u => u.Estado == "Activo")
@@ -51,15 +52,52 @@ namespace AppWebBiblioteca.Controllers
                     })
                     .ToList();
 
-                var libros = await _libroService.ObtenerLibrosAsync();
-                ViewBag.Libros = libros
-                    ?.Where(l => l.Estado == "Disponible")
-                    .Select(l => new SelectListItem
+                // ✅ MODIFICADO: Cargar libros disponibles desde la API
+                try
+                {
+                    var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/libros/disponibles";
+                    var response = await _httpClient.GetAsync(apiUrl);
+
+                    if (response.IsSuccessStatusCode)
                     {
-                        Value = l.IdLibro.ToString(),
-                        Text = $"{l.Titulo} - ISBN: {l.ISBN}"
-                    })
-                    .ToList() ?? new List<SelectListItem>();
+                        // Deserializar con estructura específica
+                        var librosApi = await response.Content.ReadFromJsonAsync<List<LibroDisponibleDto>>();
+
+                        ViewBag.Libros = librosApi?
+                            .Select(l => new SelectListItem
+                            {
+                                Value = l.Id.ToString(),
+                                Text = l.DisplayText ?? $"{l.Titulo} - {l.Isbn}"
+                            })
+                            .ToList() ?? new List<SelectListItem>();
+                    }
+                    else
+                    {
+                        // Fallback: usar servicio local si la API falla
+                        var libros = await _libroService.ObtenerLibrosAsync();
+                        ViewBag.Libros = libros
+                            ?.Where(l => l.Estado == "Disponible")
+                            .Select(l => new SelectListItem
+                            {
+                                Value = l.IdLibro.ToString(),
+                                Text = $"{l.Titulo} - ISBN: {l.ISBN}"
+                            })
+                            .ToList() ?? new List<SelectListItem>();
+                    }
+                }
+                catch
+                {
+                    // Fallback en caso de error de conexión
+                    var libros = await _libroService.ObtenerLibrosAsync();
+                    ViewBag.Libros = libros
+                        ?.Where(l => l.Estado == "Disponible")
+                        .Select(l => new SelectListItem
+                        {
+                            Value = l.IdLibro.ToString(),
+                            Text = $"{l.Titulo} - ISBN: {l.ISBN}"
+                        })
+                        .ToList() ?? new List<SelectListItem>();
+                }
 
                 return View();
             }
@@ -273,6 +311,40 @@ namespace AppWebBiblioteca.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        // NUEVO: Obtener libros disponibles desde la API
+        [HttpGet]
+        public async Task<IActionResult> GetLibrosDisponibles()
+        {
+            try
+            {
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/api/Prestamos/libros/disponibles";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    return StatusCode((int)response.StatusCode, new
+                    {
+                        success = false,
+                        message = "Error al cargar libros disponibles",
+                        error = errorContent
+                    });
+                }
+
+                var libros = await response.Content.ReadFromJsonAsync<List<LibroDisponibleDto>>();
+                return Json(libros ?? new List<LibroDisponibleDto>());
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error al cargar libros disponibles",
+                    error = ex.Message
+                });
             }
         }
     }

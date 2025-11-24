@@ -79,13 +79,16 @@
                 </div>
 
 
-                <div class="nav-item">
-                    <a href="@Url.Action("Index", "Prestamos")"
-                    class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Prestamos" ? "active" : "")">
-                        <i class="fas fa-exchange-alt"></i>
-                        <span class="nav-text">Préstamos y Devoluciones</span>
-                    </a>
-                </div>
+                @if (User.IsInRole("Admin") || User.IsInRole("Supervisor"))
+                {
+                    <div class="nav-item">
+                        <a href="@Url.Action("Index", "Prestamos")"
+                           class="nav-link @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Prestamos" ? "active" : "")">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span class="nav-text">Préstamos y Devoluciones</span>
+                        </a>
+                    </div>
+                }
 
                 <div class="nav-item">
                     <a href="@Url.Action("Index", "Reservas")"
