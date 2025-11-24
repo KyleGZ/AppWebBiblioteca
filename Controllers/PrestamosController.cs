@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Configuration;
+using System.Text;
 
 namespace AppWebBiblioteca.Controllers
 {
@@ -213,6 +214,38 @@ namespace AppWebBiblioteca.Controllers
                     return StatusCode((int)response.StatusCode, new { success = false, message = body });
 
                 return Json(new { success = true, mensaje = "Préstamo renovado correctamente", nuevaFecha = nuevaFechaVencimiento.ToString("yyyy-MM-dd") });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
+            }
+        }
+
+        // MODIFICADO: Buscar préstamos - ahora acepta 'termino' directamente
+        [HttpGet]
+        public async Task<IActionResult> Buscar(string? termino)
+        {
+            // Validar que el término de búsqueda no esté vacío
+            if (string.IsNullOrWhiteSpace(termino))
+            {
+                return BadRequest(new { success = false, message = "Debe indicar al menos un criterio de búsqueda." });
+            }
+
+            try
+            {
+                var baseApi = _configuration["ApiSettings:BaseUrl"];
+                // Construir URL directamente con el parámetro 'termino' que espera la API
+                var url = $"{baseApi}/api/Prestamos/buscar?termino={Uri.EscapeDataString(termino)}";
+
+                var response = await _httpClient.GetAsync(url);
+                var raw = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, new { success = false, message = raw });
+
+                // La API devuelve directamente la lista de préstamos
+                var lista = await response.Content.ReadFromJsonAsync<List<object>>() ?? new List<object>();
+                return Json(lista);
             }
             catch (Exception ex)
             {

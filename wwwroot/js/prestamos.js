@@ -5,7 +5,8 @@ const PRESTAMOS_CONFIG = {
         prestamosActivos: '/Prestamos/GetPrestamosActivos',
         devolucion: '/Prestamos/RegistrarDevolucion', // se usa con ?idPrestamo=
         renovar: '/Prestamos/Renovar',                // se usa con ?idPrestamo=&nuevaFechaVencimiento=
-        create: '/Prestamos/Create'
+        create: '/Prestamos/Create',
+        buscar: '/Prestamos/Buscar'                   // NUEVO: endpoint de búsqueda
     }
 };
 
@@ -18,7 +19,7 @@ class PrestamosManager {
 
     init() {
         this.setupEventListeners();
-        const formRenovar = document.getElementById('formRenovarPrestamo');
+        const formRenovar = document.getElementById('formRenovarPremostamo');
         if (formRenovar) formRenovar.addEventListener('submit', (e) => this.renovarPrestamoSubmit(e));
         this.cargarPrestamos();
     }
@@ -28,7 +29,18 @@ class PrestamosManager {
         document.getElementById('formNuevoPrestamo')?.addEventListener('submit', (e) => this.handleFormSubmit(e));
         document.getElementById('vista-tarjetas')?.addEventListener('click', () => this.cambiarVista('tarjetas'));
         document.getElementById('vista-tabla')?.addEventListener('click', () => this.cambiarVista('tabla'));
-        document.getElementById('searchInput')?.addEventListener('input', () => this.filtrarPrestamos());
+        
+        // MODIFICADO: Evento para buscar con Enter
+        document.getElementById('searchInput')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.buscarPrestamos();
+            }
+        });
+        
+        // NUEVO: Evento para botón de búsqueda
+        document.getElementById('btnBuscar')?.addEventListener('click', () => this.buscarPrestamos());
+        
         document.getElementById('filtroEstado')?.addEventListener('change', () => this.filtrarPrestamos());
         document.getElementById('btnLimpiarFiltros')?.addEventListener('click', () => this.limpiarFiltros());
     }
@@ -41,9 +53,17 @@ class PrestamosManager {
 
             if (!response.ok) {
                 const msg = (data && (data.message || data.mensaje || data.error)) || raw || 'Error desconocido';
-                console.error('GetPrestamos fallo:', response.status, msg);
                 this.renderError(msg);
                 return;
+            }
+
+            // NUEVO: Ordenar por fecha más reciente
+            if (data && Array.isArray(data)) {
+                data.sort((a, b) => {
+                    const fechaA = new Date(a.FechaPrestamo || a.fechaPrestamo);
+                    const fechaB = new Date(b.FechaPrestamo || b.fechaPrestamo);
+                    return fechaB - fechaA; // Más reciente primero
+                });
             }
 
             this.prestamosData = data;
@@ -52,6 +72,122 @@ class PrestamosManager {
         } catch (e) {
             this.renderError(e.message);
         }
+    }
+
+    // MODIFICADO: Método para buscar préstamos - CORREGIDO el parámetro a 'termino'
+    async buscarPrestamos() {
+        const searchInput = document.getElementById('searchInput');
+        const query = searchInput?.value.trim();
+
+        if (!query) {
+            showError('Por favor ingrese un criterio de búsqueda');
+            return;
+        }
+
+        try {
+            // Mostrar indicador de carga
+            document.getElementById('lista-prestamos').innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Buscando...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Buscando préstamos...</p>
+                </div>`;
+
+            // CORREGIDO: Usar 'termino' en lugar de 'q'
+            const url = `${PRESTAMOS_CONFIG.urls.buscar}?termino=${encodeURIComponent(query)}`;
+            
+            const response = await fetch(url, { 
+                headers: { 'Accept': 'application/json' } 
+            });
+
+            const raw = await response.text();
+            let data;
+            try { 
+                data = JSON.parse(raw); 
+            } catch { }
+
+            if (!response.ok) {
+                const msg = (data && (data.message || data.mensaje || data.error)) || raw || 'Error al buscar';
+                this.renderError(msg);
+                return;
+            }
+
+            // La respuesta puede venir como { success: true, data: [...] } o directamente como array
+            const resultados = data.data || data;
+
+            if (!resultados || resultados.length === 0) {
+                document.getElementById('lista-prestamos').innerHTML = `
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <h5>No se encontraron resultados</h5>
+                        <p class="mb-0">No hay préstamos que coincidan con: <strong>"${query}"</strong></p>
+                    </div>`;
+                return;
+            }
+
+            this.prestamosData = resultados;
+            this.actualizarEstadisticas(resultados);
+            this.mostrarPrestamos(resultados);
+            
+            showSuccess(`Se encontraron ${resultados.length} resultado(s)`);
+
+        } catch (err) {
+            this.renderError('Error de conexión: ' + err.message);
+        }
+    }
+
+    // MODIFICADO: Método para limpiar filtros
+    limpiarFiltros() {
+        // Limpiar campo de búsqueda
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) searchInput.value = '';
+        
+        // Limpiar filtro de estado
+        const filtroEstado = document.getElementById('filtroEstado');
+        if (filtroEstado) filtroEstado.value = '';
+        
+        // Recargar todos los préstamos
+        this.cargarPrestamos();
+        
+        showSuccess('Filtros limpiados');
+    }
+
+    // MODIFICADO: Método para filtrar préstamos localmente
+    filtrarPrestamos() {
+        const searchValue = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
+        const estadoValue = document.getElementById('filtroEstado')?.value || '';
+
+        if (!searchValue && !estadoValue) {
+            // Si no hay filtros, mostrar todos
+            this.mostrarPrestamos(this.prestamosData);
+            return;
+        }
+
+        let filtrados = this.prestamosData;
+
+        // Filtrar por texto (búsqueda local)
+        if (searchValue) {
+            filtrados = filtrados.filter(p => {
+                const libro = (p.LibroTitulo || p.libroTitulo || '').toLowerCase();
+                const usuario = (p.UsuarioNombre || p.usuarioNombre || '').toLowerCase();
+                const isbn = (p.LibroIsbn || p.libroIsbn || '').toLowerCase();
+                
+                return libro.includes(searchValue) || 
+                       usuario.includes(searchValue) || 
+                       isbn.includes(searchValue);
+            });
+        }
+
+        // Filtrar por estado
+        if (estadoValue) {
+            filtrados = filtrados.filter(p => {
+                const estado = p.Estado || p.estado || 'Activo';
+                return estado === estadoValue;
+            });
+        }
+
+        this.mostrarPrestamos(filtrados);
     }
 
     renderError(msg) {
@@ -211,7 +347,6 @@ class PrestamosManager {
         }
     }
 
-    // IMPORTANTE: esta función faltaba
     mostrarPrestamosActivos(prestamos) {
         const cont = document.getElementById('prestamosActivosContainer');
         if (!prestamos || prestamos.length === 0) {
@@ -265,7 +400,6 @@ class PrestamosManager {
         if (!Number.isFinite(id) || id<=0){ showError('ID inválido'); return; }
         if (!confirm('¿Confirmar devolución?')) return;
         try {
-            // El action MVC actual recibe query ?idPrestamo=
             const r = await fetch(`${PRESTAMOS_CONFIG.urls.devolucion}?idPrestamo=${id}`, { method:'PUT' });
             const raw = await r.text(); let j; try { j=JSON.parse(raw);} catch {}
             if (r.ok && j?.success){
@@ -280,7 +414,6 @@ class PrestamosManager {
         }
     }
 
-    // Otros --------------------------------------------------------
     toggleSeccionDevoluciones() {
         const s = document.getElementById('seccionDevoluciones');
         if (!s) return;
@@ -323,7 +456,7 @@ class PrestamosManager {
         }
         inputId.value = idPrestamo;
         const hoyISO = new Date().toISOString().substring(0,10);
-        inputFecha.min = fechaActualVenc; // obligar a fecha posterior
+        inputFecha.min = fechaActualVenc;
         inputFecha.value = fechaActualVenc > hoyISO ? fechaActualVenc : hoyISO;
         const modalEl = document.getElementById('modalRenovarPrestamo');
         const modal = new bootstrap.Modal(modalEl);
@@ -339,7 +472,6 @@ class PrestamosManager {
             return;
         }
         try {
-            // El action MVC actual recibe query ?idPrestamo=&nuevaFechaVencimiento=
             const url = `${PRESTAMOS_CONFIG.urls.renovar}?idPrestamo=${encodeURIComponent(id)}&nuevaFechaVencimiento=${encodeURIComponent(nuevaFecha)}`;
             const response = await fetch(url, { method: 'PUT' });
             const text = await response.text();
@@ -356,7 +488,7 @@ class PrestamosManager {
             showError('Error de conexión: ' + err.message);
         }
     }
-    }
+}
 
 // Inicialización
 let prestamosManager;
