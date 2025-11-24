@@ -9,12 +9,14 @@ namespace AppWebBiblioteca.Controllers
     {
         private readonly IAutorService _autorService;
         private readonly IAuthService _authService;
+        private readonly IBitacoraService _bitacoraService;
 
         //constructor
-        public AutorController(IAutorService autorService, IAuthService authService)
+        public AutorController(IAutorService autorService, IAuthService authService, IBitacoraService bitacoraService)
         {
             _autorService = autorService;
             _authService = authService;
+            _bitacoraService = bitacoraService;
         }
 
         [HttpGet]
@@ -176,6 +178,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    var idAutor = await _autorService.ObtenerIdAutor(nombre);
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "CREAR_AUTOR", "AUTOR", idAutor);
                     return Json(new
                     {
                         success = true,
@@ -210,6 +215,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "EDITAR_AUTOR", "AUTOR", idAutor);
                     return Json(new
                     {
                         success = true,
@@ -244,6 +252,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "ELIMINAR_AUTOR", "AUTOR", idAutor);
                     return Json(new
                     {
                         success = true,

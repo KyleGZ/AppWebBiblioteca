@@ -10,11 +10,13 @@ namespace AppWebBiblioteca.Controllers
     {
         private readonly ISeccionService _seccionService;
         private readonly IAuthService _authService;
+        private readonly IBitacoraService _bitacoraService;
 
-        public SeccionController(ISeccionService seccionService, IAuthService authService)
+        public SeccionController(ISeccionService seccionService, IAuthService authService, IBitacoraService bitacoraService)
         {
             _seccionService = seccionService;
             _authService = authService;
+            _bitacoraService = bitacoraService;
         }
 
         [HttpGet]
@@ -70,6 +72,10 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    var idSeccion = await _seccionService.ObtenerIdSeccion(nombre);
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "CREAR_SECCION", "SECCION", idSeccion);
+
                     return Json(new
                     {
                         success = true,
@@ -207,6 +213,10 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "EDITAR_SECCION", "SECCION", idSeccion);
+
                     return Json(new
                     {
                         success = true,
@@ -252,6 +262,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "ELIMINAR_SECCION", "SECCION", idSeccion);
                     return Json(new
                     {
                         success = true,

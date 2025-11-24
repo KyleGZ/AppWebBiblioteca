@@ -524,7 +524,32 @@ namespace AppWebBiblioteca.Services
                 };
             }
         }
+        public async Task<int> ObtenerIdSeccion(string nombre)
+        {
+            try
+            {
+                AgregarTokenAutenticacion();
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Seccion/Get-seccion?nombre={Uri.EscapeDataString(nombre)}";
+                var response = await _httpClient.GetAsync(apiUrl);
 
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                // Leer contenido como string
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Intentar convertir directamente a int
+                if (int.TryParse(content, out int idSeccion))
+                    return idSeccion;
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID de la Seccion por nombre: {ex.Message}");
+                return 0;
+            }
+        }
 
     }
 
@@ -535,5 +560,6 @@ namespace AppWebBiblioteca.Services
         Task<ApiResponse> EditarSeccionAsync(int idSeccion, string nombre, string ubicacion);
         Task<ApiResponse> EliminarSeccionAsync(int idSeccion);
         Task<PaginacionResponse<SeccionDto>> BuscarSeccionesRapidaAsync(string termino, int pagina = 1, int resultadosPorPagina = 20);
+        Task<int> ObtenerIdSeccion(string nombre);
     }
 }

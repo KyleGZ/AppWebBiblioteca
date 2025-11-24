@@ -9,11 +9,13 @@ namespace AppWebBiblioteca.Controllers
     {
         private readonly IEditorialService _editorialService;
         private readonly IAuthService _authService;
+        private readonly IBitacoraService _bitacoraService;
 
-        public EditorialController(IEditorialService editorialService, IAuthService authService)
+        public EditorialController(IEditorialService editorialService, IAuthService authService, IBitacoraService bitacoraService)
         {
             _editorialService = editorialService;
             _authService = authService;
+            _bitacoraService = bitacoraService;
         }
 
         [HttpGet]
@@ -69,6 +71,9 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    var idEditorial = await _editorialService.ObtenerIdEditorial(nombre);
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "CREAR_EDITORIAL", "EDITORIAL", idEditorial);
                     return Json(new
                     {
                         success = true,
@@ -112,6 +117,8 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "EDITAR_EDITORIAL", "EDITORIAL", idEditorial);
                     return Json(new
                     {
                         success = true,
@@ -155,6 +162,8 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Success)
                 {
+                    var idUsuario = _authService.GetUserId();
+                    await _bitacoraService.RegistrarAccionAsync(idUsuario.Value, "ELIMINAR_EDITORIAL", "EDITORIAL", idEditorial);
                     return Json(new
                     {
                         success = true,

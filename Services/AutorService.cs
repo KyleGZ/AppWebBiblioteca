@@ -499,6 +499,32 @@ namespace AppWebBiblioteca.Services
                 };
             }
         }
+        public async Task<int> ObtenerIdAutor(string nombre)
+        {
+            try
+            {
+                AgregarTokenAutenticacion();
+                var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Autor/Get-autor?nombre={Uri.EscapeDataString(nombre)}";
+                var response = await _httpClient.GetAsync(apiUrl);
+
+                if (!response.IsSuccessStatusCode)
+                    return 0;
+
+                // Leer contenido como string
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Intentar convertir directamente a int
+                if (int.TryParse(content, out int idEditorial))
+                    return idEditorial;
+
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener ID de la editorial por nombre: {ex.Message}");
+                return 0;
+            }
+        }
 
     }
 
@@ -510,5 +536,7 @@ namespace AppWebBiblioteca.Services
         Task<ApiResponse> RegistrarAutorAsync(string nombre);
         Task<ApiResponse> EditarAutorAsync(int idAutor, string nombre);
         Task<ApiResponse> EliminarAutorAsync(int idAutor);
+        Task<int> ObtenerIdAutor(string nombre);
+
     }
 }
