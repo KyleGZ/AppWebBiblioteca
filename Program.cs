@@ -112,9 +112,9 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// IMPORTANTE: ORDEN CORRECTO DE MIDDLEWARES
+// ORDEN CORRECTO DE MIDDLEWARES
 app.UseSession();
-app.UseAuthentication(); // ← Debe ir antes de Authorization
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 app.MapControllerRoute(

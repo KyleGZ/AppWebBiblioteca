@@ -27,7 +27,6 @@ namespace AppWebBiblioteca.Controllers
                 if (!_authService.IsAuthenticated())
                     return RedirectToAction("Login", "Usuario");
 
-                // Si tu servicio aún no tiene la búsqueda paginada, reemplaza por ObtenerSeccionesAsync(nombre).
                 PaginacionResponse<SeccionDto> resultado =
                     await _seccionService.BuscarSeccionesRapidaAsync(termino ?? string.Empty, pagina, resultadosPorPagina);
 
@@ -101,98 +100,6 @@ namespace AppWebBiblioteca.Controllers
                 });
             }
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Crear(string nombre, string? ubicacion, string? returnUrl = null)
-        //{
-        //    if (string.IsNullOrWhiteSpace(nombre))
-        //    {
-        //        TempData["Error"] = "El nombre es requerido.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    try
-        //    {
-        //        var id = await _seccionService.RegistrarSeccionAsync(nombre.Trim(), ubicacion?.Trim());
-        //        TempData[id > 0 ? "Ok" : "Error"] = id > 0
-        //            ? "Sección creada con éxito."
-        //            : "No se pudo crear la sección.";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["Error"] = $"No se pudo crear la sección. Detalle: {ex.Message}";
-        //    }
-
-        //    if (!string.IsNullOrEmpty(returnUrl))
-        //        return LocalRedirect(returnUrl);
-
-        //    return RedirectToAction(nameof(Index));
-        //}
-
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Editar(int idSeccion, string nombre, string? ubicacion, string? returnUrl = null)
-        //{
-        //    if (idSeccion <= 0 || string.IsNullOrWhiteSpace(nombre))
-        //    {
-        //        TempData["Error"] = "Datos de edición inválidos.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    try
-        //    {
-        //        var ok = await _seccionService.EditarSeccionAsync(idSeccion, nombre.Trim(), ubicacion?.Trim());
-        //        TempData[ok ? "Ok" : "Error"] = ok
-        //            ? "Sección actualizada correctamente."
-        //            : "No se pudo actualizar la sección.";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["Error"] = $"Error al actualizar sección: {ex.Message}";
-        //    }
-
-        //    if (!string.IsNullOrEmpty(returnUrl))
-        //        return LocalRedirect(returnUrl);
-
-        //    return RedirectToAction(nameof(Index));
-        //}
-
-
-
-        /*
-         * Eliminar Sección
-         */
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Eliminar(int idSeccion, string? returnUrl = null)
-        //{
-        //    if (idSeccion <= 0)
-        //    {
-        //        TempData["Error"] = "Id inválido.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    try
-        //    {
-        //        var ok = await _seccionService.EliminarSeccionAsync(idSeccion);
-        //        TempData[ok ? "Ok" : "Error"] = ok
-        //            ? "Sección eliminada correctamente."
-        //            : "No se pudo eliminar la sección.";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["Error"] = $"Error al eliminar sección: {ex.Message}";
-        //    }
-
-        //    if (!string.IsNullOrEmpty(returnUrl))
-        //        return LocalRedirect(returnUrl);
-
-        //    return RedirectToAction(nameof(Index));
-        //}
-
 
         /*
          * Metodo para editar sección que devuelve JSON

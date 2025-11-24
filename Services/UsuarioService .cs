@@ -193,7 +193,6 @@ namespace AppWebBiblioteca.Services
                         return wrapper.Usuario;
                 }
 
-                // Fallback: si /Obtener no trae el esquema esperado, uso /Listar y filtro
                 var lista = await ObtenerUsuariosAsync();
                 return lista?.FirstOrDefault(u => u.IdUsuario == id);
             }
@@ -221,7 +220,7 @@ namespace AppWebBiblioteca.Services
                 Console.WriteLine($"Código: {response.StatusCode}");
                 Console.WriteLine($"Contenido recibido: {responseContent}");
 
-                // ✅ Caso 1: Respuesta exitosa
+                // Respuesta exitosa
                 if (response.IsSuccessStatusCode)
                 {
                     try
@@ -247,7 +246,7 @@ namespace AppWebBiblioteca.Services
                     }
                 }
 
-                // ✅ Caso 2: Respuesta con error (código 4xx o 5xx)
+                // Respuesta con error (código 4xx o 5xx)
                 string mensajeError = $"Error: {response.StatusCode}";
                 string contenido = responseContent?.Trim();
 
@@ -326,7 +325,7 @@ namespace AppWebBiblioteca.Services
                 Console.WriteLine($"Código: {response.StatusCode}");
                 Console.WriteLine($"Contenido recibido: {responseContent}");
 
-                // ✅ Caso 1: Respuesta exitosa
+                // Respuesta exitosa
                 if (response.IsSuccessStatusCode)
                 {
                     try
@@ -352,7 +351,7 @@ namespace AppWebBiblioteca.Services
                     }
                 }
 
-                // ✅ Caso 2: Respuesta con error (código 4xx o 5xx)
+                // Respuesta con error (código 4xx o 5xx)
                 string mensajeError = $"Error: {response.StatusCode}";
                 string contenido = responseContent?.Trim();
 

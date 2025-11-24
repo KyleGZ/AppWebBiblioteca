@@ -44,7 +44,7 @@ namespace AppWebBiblioteca.Controllers
                 ViewBag.PaginaActual = pagina;
                 ViewBag.ResultadosPorPagina = resultadosPorPagina;
 
-                return View(resultado); // Vista tipada a PaginacionResponse<AutorDto>
+                return View(resultado); 
             }
             catch
             {
@@ -65,105 +65,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-
-        //// POST: /Autor/Crear
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Crear(string nombre, string? returnUrl = null)
-        //{
-        //    if (string.IsNullOrWhiteSpace(nombre))
-        //    {
-        //        TempData["Error"] = "El nombre es requerido.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    try
-        //    {
-        //        var id = await _autorService.RegistrarAutorAsync(nombre.Trim());
-
-        //        // Si no hubo excepción, asumimos creación exitosa aunque el id sea 0 (fallback)
-        //        if (id > 0)
-        //        {
-        //            TempData["Ok"] = "Autor creado con éxito.";
-        //            TempData["AutorCreadoId"] = id;
-        //        }
-        //        else
-        //        {
-        //            // Fallback cuando la API no devuelve id pero sí creó el autor
-        //            TempData["Ok"] = "Autor creado con éxito.";
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["Error"] = $"No se pudo crear el autor. Detalle: {ex.Message}";
-        //    }
-
-        //    if (!string.IsNullOrEmpty(returnUrl))
-        //        return LocalRedirect(returnUrl);
-
-        //    return RedirectToAction(nameof(Index));
-        //}
-
-
-        //// POST: /Autor/Editar
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Editar(int idAutor, string nombre, string? returnUrl = null)
-        //{
-        //    if (idAutor <= 0 || string.IsNullOrWhiteSpace(nombre))
-        //    {
-        //        TempData["Error"] = "Datos de edición inválidos.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    try
-        //    {
-        //        var ok = await _autorService.EditarAutorAsync(idAutor, nombre.Trim());
-        //        TempData[ok ? "Ok" : "Error"] = ok
-        //            ? "Autor actualizado correctamente."
-        //            : "No se pudo actualizar el autor.";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["Error"] = $"Error al actualizar autor: {ex.Message}";
-        //    }
-
-        //    if (!string.IsNullOrEmpty(returnUrl))
-        //        return LocalRedirect(returnUrl);
-
-        //    return RedirectToAction(nameof(Index));
-        //}
-
-        //// POST: /Autor/Eliminar
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> Eliminar(int idAutor, string? returnUrl = null)
-        //{
-        //    if (idAutor <= 0)
-        //    {
-        //        TempData["Error"] = "Id inválido.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-
-        //    try
-        //    {
-        //        var ok = await _autorService.EliminarAutorAsync(idAutor);
-        //        TempData[ok ? "Ok" : "Error"] = ok
-        //            ? "Autor eliminado correctamente."
-        //            : "No se pudo eliminar el autor.";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["Error"] = $"Error al eliminar autor: {ex.Message}";
-        //    }
-
-        //    if (!string.IsNullOrEmpty(returnUrl))
-        //        return LocalRedirect(returnUrl);
-
-        //    return RedirectToAction(nameof(Index));
-        //}
-
-        // ================== CRUD JSON PARA TABS (como Sección) ==================
+        // ================== CRUD JSON PARA TABS ==================
         [Authorize(Policy = "StaffOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]

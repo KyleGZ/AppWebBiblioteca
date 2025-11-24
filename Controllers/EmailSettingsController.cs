@@ -38,7 +38,7 @@ namespace AppWebBiblioteca.Controllers
                     SmtpPort = settings.SmtpPort,
                     UseStartTls = settings.UseStartTls,
                     Username = settings.Username,
-                    Password = string.Empty // No llenar el campo de contraseña por seguridad
+                    Password = string.Empty 
                 };
 
                 return View(updateModel);
@@ -50,43 +50,6 @@ namespace AppWebBiblioteca.Controllers
                 return View(new EmailSettings());
             }
         }
-
-        //[HttpPost]
-        //public async Task<IActionResult> Update(UpdateEmailSettings settings)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //        {
-        //            return RedirectToAction("Login", "Usuario");
-        //        }
-
-        //        if (!ModelState.IsValid)
-        //        {
-        //            TempData["ErrorMessage"] = "Hay errores en el formulario. Verifique los datos.";
-        //            return View("Index", settings);
-        //        }
-
-        //        var result = await _emailService.UpdateSettingsAsync(settings);
-
-        //        if (result.Success)
-        //        {
-        //            TempData["SuccessMessage"] = result.Message ?? "Configuración de correo actualizada correctamente.";
-        //        }
-        //        else
-        //        {
-        //            TempData["ErrorMessage"] = result.Message ?? "No se pudo actualizar la configuración.";
-        //        }
-
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error inesperado al actualizar configuración de correo");
-        //        TempData["ErrorMessage"] = "Error inesperado al procesar la solicitud.";
-        //        return RedirectToAction(nameof(Index));
-        //    }
-        //}
 
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(UpdateEmailSettings settings)

@@ -225,7 +225,7 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Mostrar mensajes del TempData en el modal global
+            // Mostrar mensajes del TempData en el modal global
             const successMessage = '@Html.Raw(TempData["SuccessMessage"] != null ? System.Net.WebUtility.HtmlEncode(TempData["SuccessMessage"].ToString()) : "")';
             const errorMessage = '@Html.Raw(TempData["ErrorMessage"] != null ? System.Net.WebUtility.HtmlEncode(TempData["ErrorMessage"].ToString()) : "")';
             const viewErrorMessage = '@Html.Raw(ViewBag.ErrorMessage != null ? System.Net.WebUtility.HtmlEncode(ViewBag.ErrorMessage.ToString()) : "")';
@@ -242,7 +242,7 @@
                 showError(viewErrorMessage);
             }
 
-            // 2. Configurar el formulario
+            // configurar el formulario
             const form = document.getElementById('formEmailConfig');
             form.addEventListener('submit', function(e) {
                 // Mostrar confirmación
@@ -252,7 +252,7 @@
                 }
             });
 
-            // 3. Probar conexión automáticamente al cargar la página
+            // Probar conexión automáticamente al cargar la página
             testConnectionStatus();
 
         });

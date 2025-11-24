@@ -58,7 +58,7 @@ class PrestamosManager {
                 return;
             }
 
-            // NUEVO: Ordenar por fecha más reciente
+            //  Ordenar por fecha más reciente
             if (data && Array.isArray(data)) {
                 data.sort((a, b) => {
                     const fechaA = new Date(a.FechaPrestamo || a.fechaPrestamo);
@@ -75,7 +75,7 @@ class PrestamosManager {
         }
     }
 
-    // MODIFICADO: Método para buscar préstamos - CORREGIDO el parámetro a 'termino'
+    //  Método para buscar préstamos
     async buscarPrestamos() {
         const searchInput = document.getElementById('searchInput');
         const query = searchInput?.value.trim();
@@ -95,7 +95,6 @@ class PrestamosManager {
                     <p class="mt-2 text-muted">Buscando préstamos...</p>
                 </div>`;
 
-            // CORREGIDO: Usar 'termino' en lugar de 'q'
             const url = `${PRESTAMOS_CONFIG.urls.buscar}?termino=${encodeURIComponent(query)}`;
             
             const response = await fetch(url, { 
@@ -114,7 +113,6 @@ class PrestamosManager {
                 return;
             }
 
-            // La respuesta puede venir como { success: true, data: [...] } o directamente como array
             const resultados = data.data || data;
 
             if (!resultados || resultados.length === 0) {
@@ -138,7 +136,7 @@ class PrestamosManager {
         }
     }
 
-    // MODIFICADO: Método para limpiar filtros
+    // Método para limpiar filtros
     limpiarFiltros() {
         // Limpiar campo de búsqueda
         const searchInput = document.getElementById('searchInput');
@@ -154,7 +152,7 @@ class PrestamosManager {
         showSuccess('Filtros limpiados');
     }
 
-    // MODIFICADO: Método para filtrar préstamos localmente
+    //  Método para filtrar préstamos localmente
     filtrarPrestamos() {
         const searchValue = document.getElementById('searchInput')?.value.toLowerCase().trim() || '';
         const estadoValue = document.getElementById('filtroEstado')?.value || '';
@@ -437,9 +435,8 @@ class PrestamosManager {
                 form.reset();
                 bootstrap.Modal.getInstance(document.getElementById('modalNuevoPrestamo'))?.hide();
                 showSuccess(j.message || 'Préstamo creado');
-                //this.cargarPrestamos();
                 setTimeout(() => {
-                location.reload(); // recargar página para actualizar lista
+                location.reload(); 
 
                 }, 2000);
                 if (document.getElementById('seccionDevoluciones')?.style.display==='block')
@@ -499,7 +496,7 @@ class PrestamosManager {
         }
 
         try {
-            // ✅ Enviar con query parameters como antes
+            // Enviar con query parameters como antes
             const url = `${PRESTAMOS_CONFIG.urls.renovar}?idPrestamo=${encodeURIComponent(idPrestamo)}&nuevaFechaVencimiento=${encodeURIComponent(nuevaFecha)}`;
             
             const response = await fetch(url, { 
@@ -511,13 +508,11 @@ class PrestamosManager {
             });
             
             const text = await response.text();
-            console.log('Respuesta del servidor:', text); // ✅ Para debugging
             
             let data;
             try { 
                 data = JSON.parse(text); 
             } catch (parseError) {
-                console.error('Error al parsear JSON:', parseError);
                 showError('Error en la respuesta del servidor');
                 return;
             }

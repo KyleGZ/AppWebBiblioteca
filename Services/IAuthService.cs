@@ -119,11 +119,6 @@ namespace AppWebBiblioteca.Services
             await _httpContextAccessor.HttpContext.SignOutAsync("Cookies");
         }
 
-        //public bool IsAuthenticated()
-        //{
-        //    var token = _httpContextAccessor.HttpContext.Session.GetString("JWTToken");
-        //    return !string.IsNullOrEmpty(token);
-        //}
         public bool IsAuthenticated()
         {
             // Ahora verificamos tanto la sesión como la autenticación por cookies

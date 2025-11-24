@@ -17,7 +17,7 @@ namespace AppWebBiblioteca.Models
         public string Estado { get; set; }
         public string? Descripcion { get; set; }
         public IFormFile? ImagenArchivo { get; set; }
-        public string GenerosSeleccionados { get; set; } // Cadena separada por comas: "1,2,3"
-        public string AutoresSeleccionados { get; set; } // Cadena separada por comas: "1,2,3"
+        public string GenerosSeleccionados { get; set; } 
+        public string AutoresSeleccionados { get; set; } 
     }
 }

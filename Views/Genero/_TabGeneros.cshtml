@@ -1,7 +1,7 @@
 ﻿@model PaginacionResponse<AppWebBiblioteca.Models.GeneroDto>
 
 @{
-    // Partial (sin Layout)
+    // Partial 
     var items = Model?.Data ?? new List<AppWebBiblioteca.Models.GeneroDto>();
     var pag = Model?.Pagination ?? new PaginationInfo();
     var termino = ViewBag.TerminoBusqueda as string ?? "";

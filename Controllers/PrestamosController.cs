@@ -71,7 +71,7 @@ namespace AppWebBiblioteca.Controllers
                     })
                     .ToList();
 
-                // ✅ MODIFICADO: Cargar libros disponibles desde la API
+                // Cargar libros disponibles desde la API
                 try
                 {
                     AgregarTokenAutenticacion();
@@ -245,7 +245,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-        // NUEVO: Renovar préstamo (extender fecha de vencimiento)
+        // Renovar préstamo 
         [HttpPut]
         public async Task<IActionResult> Renovar(int idPrestamo, DateTime nuevaFechaVencimiento)
         {
@@ -260,7 +260,7 @@ namespace AppWebBiblioteca.Controllers
                 var baseApi = _configuration["ApiSettings:BaseUrl"];
                 var url = $"{baseApi}/api/Prestamos/fecha-vencimiento/{idPrestamo}";
 
-                // ✅ CORRECCIÓN: Enviar como objeto JSON en el body
+                //  Enviar como objeto JSON en el body
                 var payload = new
                 {
                     fechaVencimiento = nuevaFechaVencimiento
@@ -285,7 +285,7 @@ namespace AppWebBiblioteca.Controllers
                     }
                 }
 
-                // ✅ Parsear respuesta exitosa
+                // Parsear respuesta exitosa
                 try
                 {
                     var resultado = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(body);
@@ -307,7 +307,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-        // MODIFICADO: Buscar préstamos - ahora acepta 'termino' directamente
+        //Buscar préstamos
         [HttpGet]
         public async Task<IActionResult> Buscar(string? termino)
         {
@@ -340,7 +340,7 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-        // NUEVO: Obtener libros disponibles desde la API
+        //Obtener libros disponibles desde la API
         [HttpGet]
         public async Task<IActionResult> GetLibrosDisponibles()
         {

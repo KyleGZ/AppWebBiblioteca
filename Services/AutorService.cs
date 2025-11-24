@@ -132,9 +132,6 @@ namespace AppWebBiblioteca.Services
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
                 var json = await response.Content.ReadAsStringAsync();
 
-                // Debug opcional
-                // Console.WriteLine($"API Registrar Autor Response - Status: {response.StatusCode}, Body: {json}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     return await HandleErrorResponse(response, json);
@@ -173,9 +170,6 @@ namespace AppWebBiblioteca.Services
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
                 var json = await response.Content.ReadAsStringAsync();
 
-                // Debug opcional
-                // Console.WriteLine($"API Editar Autor Response - Status: {response.StatusCode}, Body: {json}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     return await HandleErrorResponse(response, json);
@@ -210,9 +204,6 @@ namespace AppWebBiblioteca.Services
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Autor/Eliminar?id={idAutor}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 var json = await response.Content.ReadAsStringAsync();
-
-                // Debug opcional
-                // Console.WriteLine($"API Eliminar Autor Response - Status: {response.StatusCode}, Body: {json}");
 
                 if (!response.IsSuccessStatusCode)
                 {

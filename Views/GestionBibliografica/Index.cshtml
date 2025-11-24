@@ -247,8 +247,6 @@
                 });
               }
             });
-
-            // [Mantener el resto del código igual: paginación, resultados por página, relleno de modales]
             host.addEventListener('click', (e) => {
               const btn = e.target.closest('.js-page');
               if(!btn) return;
@@ -280,7 +278,6 @@
             });
 
             host.addEventListener('click', (e) => {
-              // [Mantener el código de relleno de modales igual]
               const btnEdit = e.target.closest('[data-bs-target^="#modalEditar"]');
               if(btnEdit){
                 const target = btnEdit.getAttribute('data-bs-target');

@@ -282,7 +282,7 @@
         font-size: 1.5rem;
     }
 }
-/* Animaciones de entrada - MANTENIDA (solo entrada, no giros) */
+/* Animaciones de entrada */
 
 .fade-in-login {
     animation: fadeInLogin 0.8s ease-out;
@@ -291,7 +291,7 @@
 @keyframes fadeInLogin {
     from {
         opacity: 0;
-        transform: translateY(30px); /* Solo movimiento vertical, sin escala */
+        transform: translateY(30px); 
     }
 
     to {

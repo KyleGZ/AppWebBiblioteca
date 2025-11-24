@@ -914,42 +914,29 @@
                         console.log('Datos del formulario editar:', Object.fromEntries(formData));
 
                         const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-                        // const response = await fetch('@Url.Action("EditarUsuario")', {
-                        //     method: 'POST',
-                        //     body: formData,
-                        //     headers: {
-                        //         'RequestVerificationToken': token
-                        //     }
-                        // });
                                 const response = await fetch('@Url.Action("EditarUsuario")', {
             method: 'POST',
             body: formData,
             headers: {
                 'RequestVerificationToken': token,
-                'X-Requested-With': 'XMLHttpRequest' // 👈 Importante para que el backend devuelva JSON
+                'X-Requested-With': 'XMLHttpRequest' 
             }
         });
 
-
-                        console.log('Respuesta editar recibida, status:', response.status);
 
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
 
                         const resultado = await response.json();
-                        console.log('Resultado editar JSON:', resultado);
 
                         if (resultado.success) {
-                            console.log('✅ Edición exitosa');
 
                             // Cerrar el modal de editar usuario
                             if (modalEditarUsuario) {
                                 const modalInstance = bootstrap.Modal.getInstance(modalEditarUsuario);
                                 if (modalInstance) {
                                     modalInstance.hide();
-                                    console.log('Modal editar cerrado');
                                 }
                             }
 
@@ -958,7 +945,6 @@
 
                             // Recargar la página después de 2 segundos
                             setTimeout(() => {
-                                console.log('Recargando página...');
                                 window.location.reload();
                             }, 2000);
 

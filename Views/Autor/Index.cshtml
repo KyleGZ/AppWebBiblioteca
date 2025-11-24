@@ -404,9 +404,6 @@
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // =============================================
-            // 🔍 BÚSQUEDA AUTOMÁTICA (debounce 500 ms)
-            // =============================================
             const searchInput = document.getElementById('searchInput');
             const searchForm  = document.getElementById('searchForm');
             const btnBuscar   = document.getElementById('btnBuscar');
@@ -441,9 +438,7 @@
                 });
             }
 
-            // =============================================
-            // 🧭 PAGINACIÓN
-            // =============================================
+            //  PAGINACIÓN
             window.cambiarPagina = function (pagina) {
                 if (paginaHidden && searchForm) {
                     paginaHidden.value = pagina;
@@ -468,9 +463,7 @@
                 searchForm.submit();
             };
 
-            // =============================================
-            // ✏️ MODAL EDITAR
-            // =============================================
+            // MODAL EDITAR
             const modalEditar = document.getElementById('modalEditarAutor');
             if (modalEditar) {
                 modalEditar.addEventListener('show.bs.modal', function (event) {
@@ -483,9 +476,7 @@
                 });
             }
 
-            // =============================================
-            // 🗑️ MODAL ELIMINAR
-            // =============================================
+            // MODAL ELIMINAR
             const modalEliminar = document.getElementById('modalEliminarAutor');
             if (modalEliminar) {
                 modalEliminar.addEventListener('show.bs.modal', function (event) {

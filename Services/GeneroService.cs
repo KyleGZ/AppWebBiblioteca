@@ -51,41 +51,6 @@ namespace AppWebBiblioteca.Services
                 return new List<GeneroDto>();
             }
         }
-
-        // ✅ Registrar un nuevo género
-        //public async Task<int> RegistrarGeneroAsync(string nombre)
-        //{
-        //    try
-        //    {
-        //        var apiUrl = _configuration["ApiSettings:BaseUrl"] + "/Genero/Registro";
-        //        var payload = new { IdGenero = 0, Nombre = nombre };
-
-        //        var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-        //        if (!response.IsSuccessStatusCode) return 0;
-
-        //        var json = await response.Content.ReadAsStringAsync();
-        //        using var doc = JsonDocument.Parse(json);
-        //        var root = doc.RootElement;
-
-        //        if (root.TryGetProperty("success", out var okProp) && okProp.GetBoolean() &&
-        //            root.TryGetProperty("data", out var dataProp) &&
-        //            dataProp.ValueKind == JsonValueKind.Object &&
-        //            dataProp.TryGetProperty("idGenero", out var idProp) &&
-        //            idProp.TryGetInt32(out var id))
-        //        {
-        //            return id;
-        //        }
-
-        //        return 0;
-        //    }
-        //    catch
-        //    {
-        //        return 0;
-        //    }
-        //}
-
-        // ✅ Registrar un nuevo género con ApiResponse
-
         public async Task<ApiResponse> RegistrarGeneroAsync(string nombre)
         {
             try
@@ -95,10 +60,7 @@ namespace AppWebBiblioteca.Services
                 var payload = new { IdGenero = 0, Nombre = nombre };
 
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, payload);
-                var json = await response.Content.ReadAsStringAsync();
-
-                // Log para debugging
-                Console.WriteLine($"API Response: {json}");
+                var json = await response.Content.ReadAsStringAsync();;
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -148,9 +110,6 @@ namespace AppWebBiblioteca.Services
                 var response = await _httpClient.PutAsJsonAsync(apiUrl, payload);
                 var json = await response.Content.ReadAsStringAsync();
 
-                // Debug opcional
-                // Console.WriteLine($"API Edit Response - Status: {response.StatusCode}, Body: {json}");
-
                 if (!response.IsSuccessStatusCode)
                 {
                     return await HandleErrorResponse(response, json);
@@ -185,9 +144,6 @@ namespace AppWebBiblioteca.Services
                 var apiUrl = _configuration["ApiSettings:BaseUrl"] + $"/Genero/Eliminar?id={idGenero}";
                 var response = await _httpClient.DeleteAsync(apiUrl);
                 var json = await response.Content.ReadAsStringAsync();
-
-                // Debug opcional
-                // Console.WriteLine($"API Delete Response - Status: {response.StatusCode}, Body: {json}");
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -372,7 +328,6 @@ namespace AppWebBiblioteca.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al obtener ID del Genero por nombre: {ex.Message}");
                 return 0;
             }
         }

@@ -180,7 +180,7 @@
     background-color: #f8f9fa;
 }
 
-/* Legibilidad: tarjeta Totales en gris claro con texto oscuro */
+/*tarjeta Totales en gris claro con texto oscuro */
 .stats-card--totales{
     background-color:#f1f3f5 !important;
     color:#212529 !important;

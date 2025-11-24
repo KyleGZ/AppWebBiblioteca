@@ -113,9 +113,6 @@ namespace AppWebBiblioteca.Controllers
 
                 if (resultado.Resultado)
                 {
-
-
-
                     //TempData["SuccessMessage"] = $"¡Bienvenido {resultado.Nombre}!";
                     return RedirectToAction("Index", "Home");
                 }
@@ -144,91 +141,6 @@ namespace AppWebBiblioteca.Controllers
             await CargarRolesAsync();
             return View(new RegistroUsuarioDto());
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> CrearUsuario(RegistroUsuarioDto usuario, int? idRol)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //            return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
-
-
-        //        if (!ModelState.IsValid)
-        //            return Json(new { success = false, message = "Datos del usuario inválidos" });
-
-        //        var apiResponse = await _usuarioService.CrearUsuarioAsync(usuario);
-
-        //        if (!apiResponse.Success)
-        //        {
-        //            return Json(new
-        //            {
-        //                success = false,
-        //                message = apiResponse.Message,
-        //                detail = apiResponse.Data
-        //            });
-        //        }
-
-        //        // Obtener información de la sesión actual para bitácora
-        //        var userSession = _authService.GetUserId();
-
-        //        int idUsuarioCreado = 0;
-        //        var usuarios = await _usuarioService.ObtenerUsuariosAsync();
-        //        var creadoVm = usuarios.FirstOrDefault(u =>
-        //            string.Equals(u.Email?.Trim(), usuario.Email?.Trim(), StringComparison.OrdinalIgnoreCase));
-
-        //        if (creadoVm != null)
-        //        {
-        //            idUsuarioCreado = creadoVm.IdUsuario;
-
-        //            // Registrar en bitácora
-        //            _ = _bitacoraService.RegistrarAccionAsync(userSession, "Creación", "usuario", idUsuarioCreado);
-
-        //        }
-
-
-        //        // Asignación de rol (igual que antes)
-        //        if (idRol.HasValue && idRol.Value > 0)
-        //        {
-
-
-        //            if (creadoVm != null)
-        //            {
-        //                var dto = new AsignacionRolDto
-        //                {
-        //                    IdUsuario = creadoVm.IdUsuario,
-        //                    IdRol = idRol.Value
-        //                };
-
-        //                var (okRol, msgRol) = await _rolService.AsignarRolAUsuarioAsync(dto);
-        //                if (okRol)
-        //                    apiResponse.Message += $" {msgRol ?? "Rol asignado correctamente."}";
-        //                else
-        //                    apiResponse.Message += $" {msgRol ?? "Usuario creado, pero no se pudo asignar el rol."}";
-        //            }
-        //            else
-        //            {
-        //                apiResponse.Message += " No se pudo localizar su Id para asignar el rol.";
-        //            }
-        //        }
-
-        //        return Json(new
-        //        {
-        //            success = true,
-        //            message = apiResponse.Message
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new
-        //        {
-        //            success = false,
-        //            message = "Error interno del sistema al crear usuario",
-        //            detail = ex.Message
-        //        });
-        //    }
-        //}
 
         [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
@@ -357,83 +269,10 @@ namespace AppWebBiblioteca.Controllers
                 IdUsuario = usuario.IdUsuario,
                 Nombre = usuario.Nombre,
                 Email = usuario.Email
-                // (sin IdRol)
             };
-
-            await CargarRolesAsync(); // lista de roles para UI (asignar/quitar aparte)
+            await CargarRolesAsync();
             return View(dto);
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> EditarUsuario(EditarUsuarioDto usuario)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //        {
-        //            // Si es AJAX → devolver JSON
-        //            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        //                return Json(new { success = false, message = "Sesión no válida. Inicie sesión nuevamente." });
-
-        //            return RedirectToAction("Login", "Usuario");
-        //        }
-
-        //        if (!ModelState.IsValid)
-        //        {
-        //            var mensaje = "Datos del usuario inválidos. Por favor, verifique la información.";
-
-        //            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        //                return Json(new { success = false, message = mensaje });
-
-        //            ViewData["ModalError"] = mensaje;
-        //            await CargarRolesAsync();
-        //            return View("Editar", usuario);
-        //        }
-
-        //        var apiResponse = await _usuarioService.ActualizarUsuarioAsync(usuario);
-
-        //        // ✅ Si la solicitud viene de AJAX → devolver JSON directamente
-        //        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        //        {
-        //            return Json(new
-        //            {
-        //                success = apiResponse.Success,
-        //                message = apiResponse.Message,
-        //                detail = apiResponse.Data
-        //            });
-        //        }
-
-        //        // ✅ Si es un submit normal → usar ViewData y mostrar modal
-        //        if (apiResponse.Success)
-        //        {
-        //            ViewData["ModalSuccess"] = apiResponse.Message;
-        //        }
-        //        else
-        //        {
-        //            ViewData["ModalError"] = apiResponse.Message;
-        //            if (apiResponse.Data != null)
-        //                ViewData["ModalDetail"] = apiResponse.Data.ToString();
-        //        }
-
-        //        await CargarRolesAsync();
-        //        return View("Editar", usuario);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        var mensajeError = "Error interno del sistema al actualizar usuario";
-
-        //        // AJAX → JSON
-        //        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-        //            return Json(new { success = false, message = mensajeError, detail = ex.Message });
-
-        //        // No AJAX → View
-        //        ViewData["ModalError"] = mensajeError;
-        //        ViewData["ModalDetail"] = ex.Message;
-        //        await CargarRolesAsync();
-        //        return View("Editar", usuario);
-        //    }
-        //}
 
         [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
@@ -463,12 +302,12 @@ namespace AppWebBiblioteca.Controllers
                     return View("Editar", usuario);
                 }
 
-                // ✅ Obtener información de la sesión actual para bitácora
+                // Obtener información de la sesión actual para bitácora
                 var userSession = _authService.GetUserId();
 
                 var apiResponse = await _usuarioService.ActualizarUsuarioAsync(usuario);
 
-                // ✅ REGISTRAR EN BITÁCORA - EDICIÓN DE USUARIO
+                // REGISTRAR EN BITÁCORA - EDICIÓN DE USUARIO
                 if (apiResponse.Success && userSession.HasValue)
                 {
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "EDITAR_USUARIO", "Usuarios", usuario.IdUsuario);
@@ -478,7 +317,7 @@ namespace AppWebBiblioteca.Controllers
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "ERROR_EDITAR_USUARIO", "Usuarios", usuario.IdUsuario);
                 }
 
-                // ✅ Si la solicitud viene de AJAX → devolver JSON directamente
+                // Si la solicitud viene de AJAX → devolver JSON directamente
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
                     return Json(new
@@ -489,7 +328,7 @@ namespace AppWebBiblioteca.Controllers
                     });
                 }
 
-                // ✅ Si es un submit normal → usar ViewData y mostrar modal
+                // Si es un submit normal → usar ViewData y mostrar modal
                 if (apiResponse.Success)
                 {
                     ViewData["ModalSuccess"] = apiResponse.Message;
@@ -506,7 +345,7 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                // ✅ REGISTRAR EN BITÁCORA - ERROR EN EDICIÓN
+                // REGISTRAR EN BITÁCORA - ERROR EN EDICIÓN
                 var userSession = _authService.GetUserId();
                 if (userSession.HasValue)
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "ERROR_EXCEPCION_EDITAR_USUARIO", "Usuarios", usuario?.IdUsuario ?? 0);
@@ -525,35 +364,6 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-
-        // ======== ACTIVAR / DESACTIVAR ========
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> DesactivarUsuario(int id)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //        {
-        //            return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
-        //        }
-
-
-        //        var resultado = await _usuarioService.DesactivarUsuarioAsync(id);
-
-        //        return Json(new
-        //        {
-        //            success = resultado,
-        //            message = resultado ? "Usuario desactivado exitosamente" : "Error al desactivar el usuario"
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = "Error interno del sistema al desactivar usuario" });
-        //    }
-        //}
-
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -566,12 +376,12 @@ namespace AppWebBiblioteca.Controllers
                     return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
                 }
 
-                // ✅ Obtener información de la sesión actual para bitácora
+                // Obtener información de la sesión actual para bitácora
                 var userSession = _authService.GetUserId();
 
                 var resultado = await _usuarioService.DesactivarUsuarioAsync(id);
 
-                // ✅ REGISTRAR EN BITÁCORA
+                // REGISTRAR EN BITÁCORA
                 if (userSession.HasValue)
                 {
                     if (resultado)
@@ -588,7 +398,7 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                // ✅ REGISTRAR EN BITÁCORA - ERROR
+                // REGISTRAR EN BITÁCORA - ERROR
                 var userSession = _authService.GetUserId();
                 if (userSession.HasValue)
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "ERROR_EXCEPCION_DESACTIVAR_USUARIO", "Usuarios", id);
@@ -596,32 +406,6 @@ namespace AppWebBiblioteca.Controllers
                 return Json(new { success = false, message = "Error interno del sistema al desactivar usuario" });
             }
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> ActivarUsuario(int id)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //        {
-        //            return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
-        //        }
-
-        //        var resultado = await _usuarioService.ActivarUsuarioAsync(id);
-
-        //        return Json(new
-        //        {
-        //            success = resultado,
-        //            message = resultado ? "Usuario activado exitosamente" : "Error al activar el usuario"
-        //        });
-        //    }
-        //    catch
-        //    {
-        //        return Json(new { success = false, message = "Error interno del sistema al desactivar usuario" });
-
-        //    }
-        //}
 
         [Authorize(Policy = "AdminOnly")]
         [HttpPost]
@@ -635,12 +419,12 @@ namespace AppWebBiblioteca.Controllers
                     return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
                 }
 
-                // ✅ Obtener información de la sesión actual para bitácora
+                // Obtener información de la sesión actual para bitácora
                 var userSession = _authService.GetUserId();
 
                 var resultado = await _usuarioService.ActivarUsuarioAsync(id);
 
-                // ✅ REGISTRAR EN BITÁCORA
+                // REGISTRAR EN BITÁCORA
                 if (userSession.HasValue)
                 {
                     if (resultado)
@@ -657,7 +441,7 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                // ✅ REGISTRAR EN BITÁCORA - ERROR
+                // REGISTRAR EN BITÁCORA - ERROR
                 var userSession = _authService.GetUserId();
                 if (userSession.HasValue)
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "ERROR_EXCEPCION_ACTIVAR_USUARIO", "Usuarios", id);
@@ -665,38 +449,6 @@ namespace AppWebBiblioteca.Controllers
                 return Json(new { success = false, message = "Error interno del sistema al activar usuario" });
             }
         }
-
-        //// ======== ASIGNAR / QUITAR ROLES ========
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> AsignarRol([FromBody] AsignacionRolDto dto)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //        {
-        //            return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
-        //        }
-
-        //        if (dto.IdUsuario <= 0 || dto.IdRol <= 0)
-        //        {
-        //            return Json(new { success = false, message = "Datos inválidos para asignar rol" });
-        //        }
-
-        //        var (ok, mensaje) = await _rolService.AsignarRolAUsuarioAsync(dto);
-
-        //        return Json(new
-        //        {
-        //            success = ok,
-        //            message = mensaje ?? (ok ? "Rol asignado correctamente" : "Error al asignar el rol")
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = "Error interno al asignar rol" });
-        //    }
-        //}
 
         [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
@@ -715,12 +467,12 @@ namespace AppWebBiblioteca.Controllers
                     return Json(new { success = false, message = "Datos inválidos para asignar rol" });
                 }
 
-                // ✅ Obtener información de la sesión actual para bitácora
+                // Obtener información de la sesión actual para bitácora
                 var userSession = _authService.GetUserId();
 
                 var (ok, mensaje) = await _rolService.AsignarRolAUsuarioAsync(dto);
 
-                // ✅ REGISTRAR EN BITÁCORA
+                // REGISTRAR EN BITÁCORA
                 if (userSession.HasValue)
                 {
                     if (ok)
@@ -737,7 +489,7 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                // ✅ REGISTRAR EN BITÁCORA - ERROR
+                // REGISTRAR EN BITÁCORA - ERROR
                 var userSession = _authService.GetUserId();
                 if (userSession.HasValue)
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "ERROR_EXCEPCION_ASIGNAR_ROL", "UsuarioRoles", dto?.IdUsuario ?? 0);
@@ -745,38 +497,6 @@ namespace AppWebBiblioteca.Controllers
                 return Json(new { success = false, message = "Error interno al asignar rol" });
             }
         }
-
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> QuitarRol([FromBody] AsignacionRolDto dto)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //        {
-        //            return Json(new { success = false, message = "Debe iniciar sesión para realizar esta acción" });
-        //        }
-
-        //        if (dto.IdUsuario <= 0 || dto.IdRol <= 0)
-        //        {
-        //            return Json(new { success = false, message = "Datos inválidos para quitar rol" });
-        //        }
-
-        //        var (ok, mensaje) = await _rolService.QuitarRolAUsuarioAsync(dto);
-
-        //        return Json(new
-        //        {
-        //            success = ok,
-        //            message = mensaje ?? (ok ? "Rol quitado correctamente" : "Error al quitar el rol")
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = "Error interno al quitar rol" });
-        //    }
-        //}
-
 
         [Authorize(Policy = "PuedeGestionarUsuarios")]
         [HttpPost]
@@ -795,12 +515,12 @@ namespace AppWebBiblioteca.Controllers
                     return Json(new { success = false, message = "Datos inválidos para quitar rol" });
                 }
 
-                // ✅ Obtener información de la sesión actual para bitácora
+                // Obtener información de la sesión actual para bitácora
                 var userSession = _authService.GetUserId();
 
                 var (ok, mensaje) = await _rolService.QuitarRolAUsuarioAsync(dto);
 
-                // ✅ REGISTRAR EN BITÁCORA
+                // REGISTRAR EN BITÁCORA
                 if (userSession.HasValue)
                 {
                     if (ok)
@@ -817,7 +537,7 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                // ✅ REGISTRAR EN BITÁCORA - ERROR
+                // REGISTRAR EN BITÁCORA - ERROR
                 var userSession = _authService.GetUserId();
                 if (userSession.HasValue)
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "ERROR_EXCEPCION_QUITAR_ROL", "UsuarioRoles", dto?.IdUsuario ?? 0);
@@ -872,52 +592,6 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-
-
-
-
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public async Task<IActionResult> EditarPerfil(PerfilUsuarioDto perfilUsuario, bool DebeReautenticar)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //            return RedirectToAction("Login", "Usuario");
-
-        //        if (!ModelState.IsValid)
-        //        {
-        //            TempData["ErrorMessage"] = "Datos del usuario inválidos";
-        //            return View("PerfilUsuario", perfilUsuario);
-        //        }
-
-        //        var actualizado = await _usuarioService.ActualizarPerfilsync(perfilUsuario);
-
-        //        if (actualizado)
-        //        {
-        //            if (DebeReautenticar)
-        //            {
-        //                //TempData["SuccessMessage"] = "Tu perfil fue actualizado. Por seguridad, inicia sesión nuevamente.";
-        //                // Cierra sesión y redirige al login
-        //                await _authService.LogoutAsync();
-        //                return RedirectToAction("Login", "Usuario");
-        //            }
-
-        //            TempData["SuccessMessage"] = "Perfil actualizado exitosamente";
-        //            return RedirectToAction(nameof(PerfilUsuario));
-        //        }
-
-        //        TempData["ErrorMessage"] = "Error al actualizar el perfil";
-        //        return View("PerfilUsuario", perfilUsuario);
-        //    }
-        //    catch
-        //    {
-        //        TempData["ErrorMessage"] = "Error interno del sistema al actualizar el perfil";
-        //        return View("PerfilUsuario", perfilUsuario);
-        //    }
-        //}
-
         [Authorize(Policy = "AuthenticatedUsers")]
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -934,12 +608,12 @@ namespace AppWebBiblioteca.Controllers
                     return View("PerfilUsuario", perfilUsuario);
                 }
 
-                // ✅ Obtener información de la sesión actual para bitácora
+                // Obtener información de la sesión actual para bitácora
                 var userSession = _authService.GetUserId();
 
                 var actualizado = await _usuarioService.ActualizarPerfilsync(perfilUsuario);
 
-                // ✅ REGISTRAR EN BITÁCORA
+                // REGISTRAR EN BITÁCORA
                 if (userSession.HasValue)
                 {
                     if (actualizado)
@@ -952,7 +626,7 @@ namespace AppWebBiblioteca.Controllers
                 {
                     if (DebeReautenticar)
                     {
-                        // ✅ REGISTRAR EN BITÁCORA - REAUTENTICACIÓN REQUERIDA
+                        // REGISTRAR EN BITÁCORA - REAUTENTICACIÓN REQUERIDA
                         if (userSession.HasValue)
                             _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "REAUTENTICACION_REQUERIDA", "Usuarios", perfilUsuario.idUsuario);
 
@@ -970,7 +644,7 @@ namespace AppWebBiblioteca.Controllers
             }
             catch (Exception ex)
             {
-                // ✅ REGISTRAR EN BITÁCORA - ERROR
+                // REGISTRAR EN BITÁCORA - ERROR
                 var userSession = _authService.GetUserId();
                 if (userSession.HasValue)
                     _ = _bitacoraService.RegistrarAccionAsync(userSession.Value, "ERROR_EXCEPCION_EDITAR_PERFIL", "Usuarios", perfilUsuario?.idUsuario ?? 0);
@@ -989,12 +663,8 @@ namespace AppWebBiblioteca.Controllers
         public async Task<IActionResult> Logout()
         {
             await _authService.LogoutAsync();
-            //TempData["SuccessMessage"] = "Sesión cerrada exitosamente";
-
-
             return RedirectToAction("Login");
         }
-
 
         public IActionResult ForgotPassword()
         {

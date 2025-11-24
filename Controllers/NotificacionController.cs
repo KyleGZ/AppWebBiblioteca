@@ -41,28 +41,6 @@ namespace AppWebBiblioteca.Controllers
             }
         }
 
-        //[HttpPost]
-        //public async Task<IActionResult> MarcarComoLeida(int idNotificacion)
-        //{
-        //    try
-        //    {
-        //        if (!_authService.IsAuthenticated())
-        //            return Json(new { success = false, message = "Debe iniciar sesión" });
-
-        //        var resultado = await _notificacionService.MarcarComoLeidaAsync(idNotificacion);
-
-        //        return Json(new
-        //        {
-        //            success = resultado.Success,
-        //            message = resultado.Message
-        //        });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return Json(new { success = false, message = ex.Message });
-        //    }
-        //}
-
         [HttpPost]
         public async Task<IActionResult> MarcarComoLeida(int idNotificacion)
         {
@@ -82,7 +60,7 @@ namespace AppWebBiblioteca.Controllers
                 // NORMALIZAR el retorno para que SIEMPRE use camelCase
                 return Json(new
                 {
-                    success = resultado.Success,   // <-- aquí lo convertimos a camelCase
+                    success = resultado.Success, 
                     message = resultado.Message ?? "Operación completada"
                 });
             }

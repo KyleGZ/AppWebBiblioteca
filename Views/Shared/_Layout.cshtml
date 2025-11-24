@@ -634,14 +634,6 @@
                     const originalText = btnMarcarTodasLeidas.innerHTML;
                     btnMarcarTodasLeidas.disabled = true;
                     btnMarcarTodasLeidas.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Procesando...';
-
-                    // fetch("/Notificacion/MarcarTodasComoLeidas", {
-                    //     method: 'POST',
-                    //     headers: {
-                    //         'Content-Type': 'application/json',
-                    //         'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                    //     }
-                    // })
                             fetch("/Notificacion/MarcarTodasComoLeidas", {
             method: 'POST'
         })
@@ -730,7 +722,6 @@
 
         // 3. Función GLOBAL para marcar una notificación como leída
         window.marcarComoLeida = function(idNotificacion) {
-            console.log('✅ marcarComoLeida llamada con ID:', idNotificacion);
 
             // Mostrar feedback visual inmediato
             const btn = document.querySelector(`[data-id="${idNotificacion}"]`);
@@ -751,9 +742,7 @@
                 return response.json();
             })
             .then(res => {
-                console.log('Respuesta del servidor:', res);
                 if (res.success) {
-                    console.log('Notificación marcada como leída');
                     // Usar toast en lugar de modal
                     mostrarToastExito(res.message || "Notificación marcada como leída");
 

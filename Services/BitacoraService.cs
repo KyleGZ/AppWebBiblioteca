@@ -49,19 +49,13 @@
 
                     _ = _httpClient.PostAsJsonAsync(apiUrl, bitacoraData);
 
-                    // Opcional: Podrías loggear que se envió la solicitud
-                    Console.WriteLine($"Solicitud de bitácora enviada: {accion} para {tablaAfectada}:{idRegistro}");
                 }
             }
             catch (Exception ex)
             {
-                // Log silencioso - no debe afectar el flujo principal
-                Console.WriteLine($"Error no crítico al enviar bitácora: {ex.Message}");
+
             }
         }
-
-
-
     }
 
     public interface IBitacoraService

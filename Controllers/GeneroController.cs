@@ -28,7 +28,6 @@ namespace AppWebBiblioteca.Controllers
                 if (!_authService.IsAuthenticated())
                     return RedirectToAction("Login", "Usuario");
 
-                // Si tu servicio aún no tiene la búsqueda paginada, reemplaza por ObtenerGenerosAsync(nombre) y arma tú la vista.
                 PaginacionResponse<GeneroDto> resultado =
                     await _generoService.BuscarGenerosRapidaAsync(termino ?? string.Empty, pagina, resultadosPorPagina);
 

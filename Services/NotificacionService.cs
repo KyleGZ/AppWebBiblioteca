@@ -170,7 +170,6 @@ namespace AppWebBiblioteca.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error al marcar todas las notificaciones como leídas: {ex.Message}");
                 return new ApiResponse
                 {
                     Success = false,
@@ -181,9 +180,6 @@ namespace AppWebBiblioteca.Services
 
 
     }
-
-
-
     public interface INotificacionService
     {
         Task <List<NotificacionView>> ObtenerNotificacionesAsync(int idUsuario);

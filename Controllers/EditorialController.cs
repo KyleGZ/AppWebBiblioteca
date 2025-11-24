@@ -198,8 +198,6 @@ namespace AppWebBiblioteca.Controllers
                 return Unauthorized("No autenticado");
 
             var modelo = await _editorialService.BuscarEditorialesRapidaAsync(termino ?? "", pagina, resultadosPorPagina);
-
-            // Debe existir: Views/Editorial/_TabEditoriales.cshtml
             return PartialView("_TabEditoriales", modelo);
         }
 
