@@ -20,17 +20,22 @@ namespace AppWebBiblioteca.Services
         int pagina = 1,
         int resultadosPorPagina = 10,
         int? userId = null,
-        string estadoFiltro = "Activa")
+        string estadoFiltro = "Activa",
+        bool esAdministrador = false)
         {
             try
             {
                 var url = _configuration["ApiSettings:BaseUrl"] + "/Reserva/ListaReservas";
 
                 var parameters = new List<string>();
-                if (userId.HasValue)
+                // SOLO enviar userId si NO es administrador
+                if (!esAdministrador && userId.HasValue)
                     parameters.Add($"userId={userId.Value}");
+
                 if (!string.IsNullOrEmpty(estadoFiltro))
                     parameters.Add($"estado={estadoFiltro}");
+
+                parameters.Add($"esAdministrador={esAdministrador}");
 
                 if (parameters.Any())
                     url += "?" + string.Join("&", parameters);
@@ -90,9 +95,9 @@ namespace AppWebBiblioteca.Services
             string termino = "",
             int pagina = 1,
             int resultadosPorPagina = 10,
-            int? userId = null)
+            int? userId = null, bool esAdministrador = false)
         {
-            return await ObtenerReservasAsync(termino, pagina, resultadosPorPagina, userId, "Activa");
+            return await ObtenerReservasAsync(termino, pagina, resultadosPorPagina, userId, "Activa", esAdministrador);
         }
 
         // MÉTODO PARA OBTENER RESERVAS HISTÓRICAS (NO ACTIVAS)
@@ -100,9 +105,9 @@ namespace AppWebBiblioteca.Services
             string termino = "",
             int pagina = 1,
             int resultadosPorPagina = 10,
-            int? userId = null)
+            int? userId = null, bool esAdministrador = false)
         {
-            return await ObtenerReservasAsync(termino, pagina, resultadosPorPagina, userId, "NoActiva");
+            return await ObtenerReservasAsync(termino, pagina, resultadosPorPagina, userId, "NoActiva", esAdministrador);
         }
 
         // Obtener conteo de reservas activas del usuario
@@ -303,9 +308,9 @@ namespace AppWebBiblioteca.Services
     // INTERFAZ IReservaService
     public interface IReservaService
     {
-        Task<PaginacionResponse<ReservaResponseDto>> ObtenerReservasAsync(string termino = "", int pagina = 1, int resultadosPorPagina = 10, int? userId = null, string estadoFiltro = "Activa");
-        Task<PaginacionResponse<ReservaResponseDto>> ObtenerReservasActivasAsync(string termino = "", int pagina = 1, int resultadosPorPagina = 10, int? userId = null);
-        Task<PaginacionResponse<ReservaResponseDto>> ObtenerReservasHistoricasAsync(string termino = "", int pagina = 1, int resultadosPorPagina = 10, int? userId = null);
+        Task<PaginacionResponse<ReservaResponseDto>> ObtenerReservasAsync(string termino = "", int pagina = 1, int resultadosPorPagina = 10, int? userId = null, string estadoFiltro = "Activa", bool esAdministrador = false);
+        Task<PaginacionResponse<ReservaResponseDto>> ObtenerReservasActivasAsync(string termino = "", int pagina = 1, int resultadosPorPagina = 10, int? userId = null, bool esAdministrador = false);
+        Task<PaginacionResponse<ReservaResponseDto>> ObtenerReservasHistoricasAsync(string termino = "", int pagina = 1, int resultadosPorPagina = 10, int? userId = null, bool esAdministrador = false);
         Task<ReservaResponseDto> ObtenerReservaIDAsync(int id);
         Task<ApiResponse> RegistrarReservaAsync(ReservaDto reservaDto);
         Task<ApiResponse> EliminarReservaAsync(int id);

@@ -30,21 +30,31 @@ namespace AppWebBiblioteca.Controllers
                 if (userId == null)
                     return RedirectToAction("Login", "Usuario");
 
+                var esAdministrador = User.IsInRole("Admin");
+
                 PaginacionResponse<ReservaResponseDto> resultado;
 
-                // DECIDIR QUÉ DATOS CARGAR SEGÚN EL TIPO DE VISTA
                 if (tipoVista == "historicas")
                 {
-                    resultado = await _reservaService.ObtenerReservasHistoricasAsync(termino, pagina, resultadosPorPagina, userId.Value);
-                    ViewBag.TipoVista = "historicas";
-                    ViewBag.TituloSeccion = "Reservas Históricas";
+                    resultado = await _reservaService.ObtenerReservasHistoricasAsync(
+                        termino, pagina, resultadosPorPagina,
+                        esAdministrador ? null : userId,  
+                        esAdministrador);
                 }
                 else
                 {
-                    resultado = await _reservaService.ObtenerReservasActivasAsync(termino, pagina, resultadosPorPagina, userId.Value);
-                    ViewBag.TipoVista = "activas";
-                    ViewBag.TituloSeccion = "Reservas Activas";
+                    resultado = await _reservaService.ObtenerReservasActivasAsync(
+                        termino, pagina, resultadosPorPagina,
+                        esAdministrador ? null : userId,
+                        esAdministrador);
                 }
+
+                //Pasar información del rol a la vista
+                ViewBag.EsAdministrador = esAdministrador;
+                ViewBag.TipoVista = tipoVista;
+                ViewBag.TituloSeccion = esAdministrador ?
+                    "Todas las Reservas " + (tipoVista == "activas" ? "Activas" : "Históricas") :
+                    "Mis Reservas " + (tipoVista == "activas" ? "Activas" : "Históricas");
 
                 // Obtener conteo de reservas activas del usuario
                 var reservasActivasCount = await _reservaService.ObtenerConteoReservasActivasAsync(userId.Value);
